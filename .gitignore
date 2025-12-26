@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Backend (not needed for frontend)
+backend/
+backend-*.tar.gz
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+.output/
+.nuxt/
+.next/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Uploads and data (not needed in repo)
+uploads/
+output/
+data/
+voice-tags/
+
+# Documentation (optional - you can include these)
+# *.txt
+# *.md

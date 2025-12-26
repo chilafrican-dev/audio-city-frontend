@@ -1,0 +1,106 @@
+═══════════════════════════════════════════════════════════════
+  WHERE TO DEPLOY AUDIO CITY
+═══════════════════════════════════════════════════════════════
+
+YOU NEED 2 DEPLOYMENTS:
+───────────────────────
+
+1️⃣ FRONTEND (Your HTML pages)
+   ✅ RECOMMENDED: Netlify (FREE)
+   → https://www.netlify.com
+   → Drag & drop your "online master" folder
+   → Get: https://your-site.netlify.app
+   → Takes: 5 minutes
+
+   Alternatives:
+   • Cloudflare Pages (FREE)
+   • GitHub Pages (FREE)
+   • Vercel (FREE)
+
+2️⃣ BACKEND (Mastering server with FFmpeg)
+   ✅ REQUIRED: VPS (Virtual Private Server)
+   → Cannot use Cloudflare Workers (FFmpeg not supported)
+   → Must use a real server
+
+   FREE VPS OPTIONS:
+   ─────────────────
+   A) Alavps.com
+      • FREE forever
+      • No credit card needed
+      • 2 CPU, 8GB RAM, 128GB storage
+      • Instant activation
+
+   B) FreeVPS.info
+      • 200 days FREE trial
+      • No credit card needed
+      • 2 CPU, 4GB RAM, 60GB storage
+
+   C) Hetzner Cloud
+      • €4/month (cheapest paid option)
+      • Very reliable
+      • 2 CPU, 2GB RAM, 20GB storage
+
+═══════════════════════════════════════════════════════════════
+  QUICK START (RECOMMENDED PATH)
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Deploy Frontend (5 minutes)
+────────────────────────────────────
+1. Go to https://www.netlify.com
+2. Sign up (free, use GitHub/Google)
+3. Drag & drop your "online master" folder
+4. Wait 30 seconds
+5. Done! You get: https://your-site-123.netlify.app
+
+STEP 2: Deploy Backend (30 minutes)
+─────────────────────────────────────
+1. Get free VPS from Alavps.com
+2. Follow instructions in: HOW_TO_DEPLOY.txt
+3. Upload backend code
+4. Install Node.js, FFmpeg, PM2, Nginx
+5. Start server
+6. Update frontend API URL
+
+═══════════════════════════════════════════════════════════════
+  COST BREAKDOWN
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: Completely FREE
+─────────────────────────
+• Frontend: Netlify (FREE)
+• Backend: Alavps (FREE)
+• Total: $0/month
+
+OPTION 2: Reliable & Cheap
+───────────────────────────
+• Frontend: Netlify (FREE)
+• Backend: Hetzner (€4/month ≈ $4.50/month)
+• Total: ~$4.50/month
+
+═══════════════════════════════════════════════════════════════
+  DETAILED INSTRUCTIONS
+═══════════════════════════════════════════════════════════════
+
+See: HOW_TO_DEPLOY.txt (complete step-by-step guide)
+
+═══════════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════════
+
+✅ Frontend → Netlify (FREE, 5 min)
+✅ Backend → VPS (FREE or €4/month, 30 min)
+
+Total time: ~35 minutes
+Total cost: $0 (with free VPS) or $4.50/month (with Hetzner)
+
+
+
+
+
+
+
+
+
+
+
+

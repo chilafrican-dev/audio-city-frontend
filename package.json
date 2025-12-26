@@ -1,0 +1,28 @@
+{
+  "name": "audio-city",
+  "version": "1.0.0",
+  "description": "Audio City - Music Community & Mastering Platform",
+  "main": "index.html",
+  "scripts": {
+    "build": "npm run sync",
+    "sync": "npx cap sync",
+    "android": "npx cap open android",
+    "android:build": "npx cap sync && cd android && ./gradlew assembleDebug",
+    "android:release": "npx cap sync && cd android && ./gradlew assembleRelease"
+  },
+  "keywords": [
+    "music",
+    "mastering",
+    "audio"
+  ],
+  "author": "Audio City",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.56.0"
+  }
+}

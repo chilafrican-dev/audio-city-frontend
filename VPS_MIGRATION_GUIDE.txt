@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════
+  VMSOCKET LIMITATIONS - MIGRATION GUIDE
+═══════════════════════════════════════════════════════════════
+
+ISSUE: VMSocket has no firewall settings, blocking SSH access.
+
+═══════════════════════════════════════════════════════════════
+  OPTION 1: CHECK FOR WEB CONSOLE FIRST
+═══════════════════════════════════════════════════════════════
+
+Before switching, check VMSocket dashboard for:
+  - "Console" button
+  - "Web Terminal" 
+  - "VNC" / "NoVNC"
+  - "Access Server" button
+
+If found, we can upload files through web console!
+
+═══════════════════════════════════════════════════════════════
+  OPTION 2: SWITCH TO HETZNER (RECOMMENDED - €4/month)
+═══════════════════════════════════════════════════════════════
+
+1. Sign up: https://www.hetzner.com/cloud
+2. Create new server (Ubuntu 22.04)
+3. Get new IP address
+4. I'll help you deploy everything there
+5. Full firewall control - no more issues!
+
+Time: 10 minutes
+Cost: €4/month (~$4.50)
+
+═══════════════════════════════════════════════════════════════
+  OPTION 3: SWITCH TO ALAVPS (FREE)
+═══════════════════════════════════════════════════════════════
+
+1. Sign up: https://alavps.com/vps.html
+2. Create new server (Ubuntu 22.04)
+3. Get new IP address
+4. I'll help you deploy everything there
+5. Full control, no credit card needed!
+
+Time: 15 minutes
+Cost: FREE
+
+═══════════════════════════════════════════════════════════════

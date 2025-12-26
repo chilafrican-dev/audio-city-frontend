@@ -1,0 +1,50 @@
+═══════════════════════════════════════════════════════════════
+  URGENT: SSH PORT 22 STILL BLOCKED AFTER RESTART
+═══════════════════════════════════════════════════════════════
+
+Server: audio-city-server (168.119.241.59)
+Status: Server restarted, but SSH port 22 is still closed
+
+═══════════════════════════════════════════════════════════════
+  PLEASE RUN THESE COMMANDS ON THE SERVER:
+═══════════════════════════════════════════════════════════════
+
+1. Check SSH service status:
+   systemctl status ssh
+
+2. If SSH is not running, start it:
+   systemctl start ssh
+   systemctl enable ssh
+
+3. Check if SSH is listening:
+   netstat -tlnp | grep :22
+   OR
+   ss -tlnp | grep :22
+
+4. Check firewall:
+   ufw status
+   iptables -L -n | grep 22
+
+5. If firewall is blocking, allow port 22:
+   ufw allow 22/tcp
+   ufw reload
+   
+   OR if using iptables:
+   iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+   iptables-save
+
+6. Restart SSH service:
+   systemctl restart ssh
+
+7. Verify SSH is working:
+   systemctl status ssh
+   (Should show "active (running)")
+
+═══════════════════════════════════════════════════════════════
+
+Once SSH is working, I need to deploy an update to:
+/opt/backend/api-server.js
+
+Thank you!
+
+═══════════════════════════════════════════════════════════════

@@ -1,0 +1,28 @@
+═══════════════════════════════════════════════════════════════
+  DEPLOYMENT READY - WAITING FOR FIREWALL ACCESS
+═══════════════════════════════════════════════════════════════
+
+✅ Updated api-server.js with /api/quick-master endpoint
+✅ SSH key verified (AUDIO CITY SERVER - Dec 19, 2025)
+✅ Server is online (ping works)
+
+❌ BLOCKED: Firewall is blocking SSH port 22
+
+═══════════════════════════════════════════════════════════════
+  TO FIX:
+═══════════════════════════════════════════════════════════════
+
+1. Go to VMSocket dashboard
+2. Find "Firewall" or "Security" settings
+3. Allow port 22 (SSH)
+4. Allow port 3002 (Backend API)
+
+═══════════════════════════════════════════════════════════════
+  ONCE FIREWALL IS OPEN, RUN:
+═══════════════════════════════════════════════════════════════
+
+cd "/Users/nicopan/online master"
+scp -i ~/.ssh/id_ed25519 backend/api-server.js root@168.119.241.59:/opt/backend/api-server.js
+ssh -i ~/.ssh/id_ed25519 root@168.119.241.59 "cd /opt/backend && pm2 restart audio-city-api && pm2 save"
+
+═══════════════════════════════════════════════════════════════

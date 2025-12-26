@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════
+  MESSAGE FOR VMSOCKET SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Server: audio-city-server (168.119.241.59)
+Issue: Cannot connect via SSH (port 22 timeout)
+
+Please help with:
+
+1. RESTART THE SERVER
+   → This will fix memory issues and restart SSH service
+   Command: reboot (or use VMSocket restart button)
+
+2. CHECK SSH SERVICE STATUS
+   → Verify SSH is running
+   Command: systemctl status ssh
+
+3. RESTART SSH SERVICE
+   → If SSH is stopped, restart it
+   Command: systemctl restart ssh
+
+4. CHECK SERVER FIREWALL
+   → See if ufw or iptables is blocking port 22
+   Commands: 
+     - ufw status
+     - iptables -L -n | grep 22
+
+5. RESET FIREWALL IF NEEDED
+   → If firewall is blocking, allow port 22
+   Commands:
+     - ufw allow 22/tcp
+     - ufw reload
+
+6. CHECK MEMORY USAGE
+   → See if server is out of memory
+   Command: free -h
+
+═══════════════════════════════════════════════════════════════
+
+Once SSH is working, I need to deploy an update to:
+/opt/backend/api-server.js
+
+Thank you!
+
+═══════════════════════════════════════════════════════════════

@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.05);
+      --shadow: rgba(0, 0, 0, 0.4);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      background: #000000 !important;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      display: block;
+      margin-left: 8px;
+    }
+    
+    .nav-main {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    
+    .nav-item:hover {
+      background: var(--glass);
+      color: white !important;
+    }
+    
+    .nav-item.active {
+      color: white !important;
+      background: var(--glass);
+    }
+    
+    .nav-dropdown { position: relative; }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+    .nav-dropdown:hover .dropdown-menu { display: block; }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .dropdown-item:hover {
+      background: var(--accent-glow);
+      color: white !important;
+    }
+    
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn-mastering {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+      color: white !important;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      display: inline-block !important;
+      visibility: visible !important;
+    }
+    
+    .btn-mastering:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2));
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    
+    .create-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .profile-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    
+    /* Settings Container */
+    .settings-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .settings-header {
+      margin-bottom: 32px;
+    }
+    
+    .settings-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    
+    .settings-subtitle {
+      font-size: 16px;
+      color: var(--muted);
+    }
+    
+    /* Settings Sections */
+    .settings-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-light);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+    
+    .setting-label {
+      flex: 1;
+    }
+    
+    .setting-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    
+    .setting-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    .setting-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .toggle-switch {
+      width: 48px;
+      height: 24px;
+      background: var(--bg-light);
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+    }
+    
+    .toggle-switch.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s;
+    }
+    
+    .toggle-switch.active::after {
+      left: 26px;
+    }
+    
+    .btn-link {
+      color: white !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+      cursor: pointer;
+      display: inline-block;
+      position: relative;
+      z-index: 10;
+      pointer-events: auto;
+    }
+    
+    .btn-link:hover {
+      opacity: 0.8;
+    }
+    
+    .btn-link:active {
+      opacity: 0.6;
+    }
+    
+    .btn-danger {
+      color: #ff3b5c;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .settings-container {
+        padding: 16px;
+      }
+      
+      .nav-main {
+        display: none;
+      }
+      
+      .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="index.html" class="logo-brand">
+        <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none';">
+        <div class="brand-text">AUDIO CITY</div>
+      </a>
+      <nav class="nav-main">
+        <a href="feed.html" class="nav-item">Feed</a>
+        <a href="discover.html" class="nav-item">Discover</a>
+        <a href="artists.html" class="nav-item">Artists</a>
+        <div class="nav-dropdown">
+          <a href="#" class="nav-item">🛠️ Tools</a>
+          <div class="dropdown-menu">
+            <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
+          </div>
+        </div>
+        <a href="inbox.html" class="nav-item">Inbox</a>
+      </nav>
+      <div class="nav-right">
+        <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
+        <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <button class="create-btn" id="createBtn" title="Create" style="display: none !important;">+</button>
+        <div class="profile-btn" id="profileBtn" style="display: none !important;">
+          <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <div class="settings-container">
+    <div class="settings-header">
+      <h1 class="settings-title">Settings</h1>
+      <p class="settings-subtitle">Manage your account and preferences</p>
+    </div>
+    
+    <!-- Profile Settings -->
+    <div class="settings-section">
+      <h2 class="section-title">👤 Profile</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Edit Profile</div>
+          <div class="setting-desc">Update your name, bio, and profile picture</div>
+        </div>
+        <div class="setting-control">
+          <a href="profile.html" class="btn-link">Edit →</a>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Change Password</div>
+          <div class="setting-desc">Update your account password</div>
+        </div>
+        <div class="setting-control">
+          <a href="#" class="btn-link" onclick="showChangePasswordModal(); return false;">Change →</a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Privacy Settings -->
+    <div class="settings-section">
+      <h2 class="section-title">🔒 Privacy</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Private Profile</div>
+          <div class="setting-desc">Only approved followers can see your content</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch" id="privateProfile"></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Show Activity Status</div>
+          <div class="setting-desc">Let others see when you're online</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" id="activityStatus"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Notifications -->
+    <div class="settings-section">
+      <h2 class="section-title">🔔 Notifications</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">New Followers</div>
+          <div class="setting-desc">Get notified when someone follows you</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" id="notifFollowers"></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Likes & Comments</div>
+          <div class="setting-desc">Notifications for track interactions</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" id="notifInteractions"></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Messages</div>
+          <div class="setting-desc">Notifications for new messages</div>
+        </div>
+        <div class="setting-control">
+          <div class="toggle-switch active" id="notifMessages"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Payments (Future) -->
+    <div class="settings-section">
+      <h2 class="section-title">💳 Payments</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Payment Methods</div>
+          <div class="setting-desc">Manage your payment options</div>
+        </div>
+        <div class="setting-control">
+          <a href="#" class="btn-link">Manage →</a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Verification (Future) -->
+    <div class="settings-section">
+      <h2 class="section-title">✓ Verification</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Verified Creator Badge</div>
+          <div class="setting-desc">Apply for verified creator status</div>
+        </div>
+        <div class="setting-control">
+          <a href="#" class="btn-link">Apply →</a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Legal & Help -->
+    <div class="settings-section">
+      <h2 class="section-title">ℹ️ Legal & Help</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">About Audio City</div>
+          <div class="setting-desc">Learn more about our platform</div>
+        </div>
+        <div class="setting-control">
+          <a href="about.html" class="btn-link">View →</a>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Terms & Conditions</div>
+          <div class="setting-desc">Read our terms of service</div>
+        </div>
+        <div class="setting-control">
+          <a href="terms.html" class="btn-link">View →</a>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Privacy Policy</div>
+          <div class="setting-desc">How we handle your data</div>
+        </div>
+        <div class="setting-control">
+          <a href="privacy.html" class="btn-link">View →</a>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Community Guidelines</div>
+          <div class="setting-desc">Our community standards</div>
+        </div>
+        <div class="setting-control">
+          <a href="community-guidelines.html" class="btn-link">View →</a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Danger Zone -->
+    <div class="settings-section">
+      <h2 class="section-title">⚠️ Account</h2>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Delete Account</div>
+          <div class="setting-desc">Permanently delete your account and all data</div>
+        </div>
+        <div class="setting-control">
+          <a href="#" class="btn-link btn-danger">Delete →</a>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <div class="setting-name">Sign Out</div>
+          <div class="setting-desc">Sign out of your account</div>
+        </div>
+        <div class="setting-control">
+          <a href="#" class="btn-link" id="signOutBtn">Sign Out →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sign Out Confirmation Modal -->
+  <div id="signOutModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); position: relative;">
+      <button onclick="closeSignOutModal()" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--muted); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-light)'; this.style.color='var(--text)'" onmouseout="this.style.background='transparent'; this.style.color='var(--muted)'">×</button>
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🚪</div>
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Sign Out</h2>
+        <p style="color: var(--muted); font-size: 14px;">Are you sure you want to sign out of your account?</p>
+      </div>
+      
+      <div style="display: flex; gap: 12px;">
+        <button type="button" onclick="handleSignOut()" id="signOutConfirmBtn" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; color: white; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Sign Out</button>
+        <button type="button" onclick="closeSignOutModal()" style="padding: 12px 24px; background: var(--bg-light); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-card)'" onmouseout="this.style.background='var(--bg-light)'">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Change Password Modal -->
+  <div id="changePasswordModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); position: relative;">
+      <button onclick="closeChangePasswordModal()" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--muted); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-light)'; this.style.color='var(--text)'" onmouseout="this.style.background='transparent'; this.style.color='var(--muted)'">×</button>
+      
+      <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Change Password</h2>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">Update your account password</p>
+      
+      <form id="changePasswordForm" onsubmit="handlePasswordChange(event); return false;">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Current Password</label>
+          <input type="password" id="oldPassword" required style="width: 100%; padding: 12px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; transition: all 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" placeholder="Enter your current password">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">New Password</label>
+          <input type="password" id="newPassword" required minlength="6" style="width: 100%; padding: 12px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; transition: all 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" placeholder="Enter new password (min 6 characters)">
+          <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Password must be at least 6 characters long</p>
+        </div>
+        
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Confirm New Password</label>
+          <input type="password" id="confirmPassword" required minlength="6" style="width: 100%; padding: 12px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; transition: all 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" placeholder="Confirm your new password">
+        </div>
+        
+        <div id="passwordError" style="display: none; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-size: 14px; margin-bottom: 20px;"></div>
+        
+        <div style="display: flex; gap: 12px;">
+          <button type="submit" id="changePasswordSubmit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Change Password</button>
+          <button type="button" onclick="closeChangePasswordModal()" style="padding: 12px 24px; background: var(--bg-light); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-card)'" onmouseout="this.style.background='var(--bg-light)'">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    // Use local API for development, production API for deployed site
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://audio-city-api.chilafrican.workers.dev';
+    
+    // Update header profile picture
+    async function updateHeaderProfilePicture() {
+      const userId = localStorage.getItem('user_id');
+      const headerImg = document.getElementById('headerProfileImg');
+      const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+      
+      if (!headerImg || !headerPlaceholder) return;
+      
+      let avatar = null;
+      
+      // Try to fetch from backend API first
+      if (userId && typeof API_BASE_URL !== 'undefined') {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+          if (response.ok) {
+            const userData = await response.json();
+            avatar = userData?.profile_image || userData?.avatar_url;
+            
+            // If avatar URL is relative, make it absolute
+            if (avatar && avatar.startsWith('/uploads/')) {
+              avatar = `${API_BASE_URL}${avatar}`;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load profile picture from API:', error);
+        }
+      }
+      
+      // Fallback to localStorage if API didn't return an avatar
+      if (!avatar) {
+        avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+      }
+      
+      // Update header image
+      if (avatar) {
+        headerImg.src = avatar;
+        headerImg.style.display = 'block';
+        headerPlaceholder.style.display = 'none';
+      } else {
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+      }
+    }
+    
+    // Update on load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHeaderProfilePicture);
+    } else {
+      updateHeaderProfilePicture();
+    }
+    
+    // ============================================
+    // FUTURE-PROOF SETTINGS SYSTEM
+    // ============================================
+    // This system automatically handles:
+    // - New settings (just add toggle with ID)
+    // - Old user migration (automatic)
+    // - Error handling (graceful failures)
+    // - User-specific scoping (per-user settings)
+    //
+    // HOW TO ADD NEW SETTINGS:
+    // 1. Add HTML toggle: <div class="toggle-switch" id="newSettingId"></div>
+    // 2. Add to SETTINGS_CONFIG below with default value
+    // 3. That's it! The system will automatically handle it.
+    //
+    // EXAMPLE:
+    // const SETTINGS_CONFIG = {
+    //   ...existing settings...
+    //   darkMode: { default: false, migrateFrom: ['theme'] },
+    //   autoPlay: { default: true, migrateFrom: [] }
+    // };
+    // ============================================
+    
+    // Settings Configuration Registry
+    // Add new settings here with their default values
+    // Format: { settingId: { default: boolean, migrateFrom: [oldKeys] } }
+    const SETTINGS_CONFIG = {
+      privateProfile: { default: false, migrateFrom: ['privateProfile'] },
+      activityStatus: { default: true, migrateFrom: ['activityStatus'] },
+      notifFollowers: { default: true, migrateFrom: ['notifFollowers'] },
+      notifInteractions: { default: true, migrateFrom: ['notifInteractions'] },
+      notifMessages: { default: true, migrateFrom: ['notifMessages'] }
+      // Future settings can be added here automatically
+      // Example: newSetting: { default: true, migrateFrom: ['oldSettingName'] }
+    };
+    
+    // Get current user ID for scoping settings
+    function getUserId() {
+      try {
+        return localStorage.getItem('user_id') || 'guest';
+      } catch (error) {
+        console.error('Error getting user ID:', error);
+        return 'guest';
+      }
+    }
+    
+    // Get setting key scoped to current user
+    function getSettingKey(settingName) {
+      const userId = getUserId();
+      return `setting_${userId}_${settingName}`;
+    }
+    
+    // Get setting value (with default fallback)
+    function getSetting(settingName) {
+      try {
+        const config = SETTINGS_CONFIG[settingName];
+        if (!config) {
+          console.warn(`Setting "${settingName}" not found in config, using default`);
+          return true; // Safe default
+        }
+        
+        const userId = getUserId();
+        if (!userId || userId === 'guest') {
+          return config.default;
+        }
+        
+        const key = getSettingKey(settingName);
+        const value = localStorage.getItem(key);
+        
+        // Return default if not set
+        if (value === null) {
+          return config.default;
+        }
+        
+        // Parse boolean
+        return value === 'true';
+      } catch (error) {
+        console.error(`Error getting setting "${settingName}":`, error);
+        const config = SETTINGS_CONFIG[settingName];
+        return config ? config.default : true;
+      }
+    }
+    
+    // Save setting for current user
+    function saveSetting(settingName, value) {
+      try {
+        const userId = getUserId();
+        if (!userId || userId === 'guest') {
+          console.warn('Cannot save settings for guest user');
+          return false;
+        }
+        
+        const key = getSettingKey(settingName);
+        localStorage.setItem(key, value.toString());
+        return true;
+      } catch (error) {
+        console.error(`Error saving setting "${settingName}":`, error);
+        return false;
+      }
+    }
+    
+    // Migrate old settings format (backward compatibility)
+    function migrateOldSettings() {
+      try {
+        const userId = getUserId();
+        if (!userId || userId === 'guest') {
+          return;
+        }
+        
+        // Migrate all known settings
+        Object.keys(SETTINGS_CONFIG).forEach(settingName => {
+          const config = SETTINGS_CONFIG[settingName];
+          
+          // Check old format (without user ID prefix)
+          config.migrateFrom.forEach(oldKey => {
+            try {
+              const oldValue = localStorage.getItem(oldKey);
+              if (oldValue !== null) {
+                // Migrate to new format
+                const newKey = getSettingKey(settingName);
+                localStorage.setItem(newKey, oldValue);
+                // Remove old format
+                localStorage.removeItem(oldKey);
+                console.log(`Migrated setting: ${oldKey} -> ${newKey}`);
+              }
+            } catch (error) {
+              console.error(`Error migrating setting ${oldKey}:`, error);
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error during settings migration:', error);
+      }
+    }
+    
+    // Load all settings and apply to UI (automatically discovers new toggles)
+    function loadUserSettings() {
+      try {
+        const userId = getUserId();
+        if (!userId || userId === 'guest') {
+          // Guest users - use default settings
+          applyDefaultSettings();
+          return;
+        }
+        
+        // Auto-discover all toggle switches in the DOM
+        const toggles = document.querySelectorAll('.toggle-switch[id]');
+        
+        toggles.forEach(toggle => {
+          try {
+            const settingId = toggle.id;
+            const value = getSetting(settingId);
+            
+            // Apply to UI
+            if (value) {
+              toggle.classList.add('active');
+            } else {
+              toggle.classList.remove('active');
+            }
+          } catch (error) {
+            console.error(`Error loading setting for toggle "${toggle.id}":`, error);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading user settings:', error);
+        applyDefaultSettings();
+      }
+    }
+    
+    // Apply default settings to UI (fallback)
+    function applyDefaultSettings() {
+      try {
+        Object.keys(SETTINGS_CONFIG).forEach(settingId => {
+          const toggle = document.getElementById(settingId);
+          if (toggle) {
+            const config = SETTINGS_CONFIG[settingId];
+            if (config.default) {
+              toggle.classList.add('active');
+            } else {
+              toggle.classList.remove('active');
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error applying default settings:', error);
+      }
+    }
+    
+    // Setup toggle switches with automatic discovery
+    function setupToggleSwitches() {
+      try {
+        const toggles = document.querySelectorAll('.toggle-switch[id]');
+        
+        toggles.forEach(toggle => {
+          // Remove any existing listeners by cloning
+          const newToggle = toggle.cloneNode(true);
+          if (toggle.parentNode) {
+            toggle.parentNode.replaceChild(newToggle, toggle);
+          }
+          
+          newToggle.addEventListener('click', () => {
+            try {
+              const settingId = newToggle.id;
+              if (!settingId) {
+                console.warn('Toggle switch missing ID');
+                return;
+              }
+              
+              const isActive = newToggle.classList.contains('active');
+              newToggle.classList.toggle('active');
+              const newValue = !isActive;
+              
+              // Save setting
+              const saved = saveSetting(settingId, newValue);
+              if (saved) {
+                console.log(`Setting "${settingId}" saved: ${newValue}`);
+              }
+            } catch (error) {
+              console.error('Error toggling setting:', error);
+              // Revert UI change on error
+              newToggle.classList.toggle('active');
+            }
+          });
+        });
+        
+        console.log(`Setup ${toggles.length} toggle switch(es)`);
+      } catch (error) {
+        console.error('Error setting up toggle switches:', error);
+      }
+    }
+    
+    // Show change password modal - works for all users
+    window.showChangePasswordModal = function() {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        alert('Please log in to change your password.');
+        return;
+      }
+      
+      const modal = document.getElementById('changePasswordModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        // Clear form
+        document.getElementById('changePasswordForm').reset();
+        document.getElementById('passwordError').style.display = 'none';
+        // Focus on first input
+        setTimeout(() => document.getElementById('oldPassword').focus(), 100);
+      }
+    };
+    
+    // Close change password modal
+    window.closeChangePasswordModal = function() {
+      const modal = document.getElementById('changePasswordModal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.getElementById('changePasswordForm').reset();
+        document.getElementById('passwordError').style.display = 'none';
+      }
+    };
+    
+    // Handle password change form submission - works for all users
+    function handlePasswordChange(event) {
+      event.preventDefault();
+      
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        showPasswordError('Please log in to change your password.');
+        return;
+      }
+      
+      const oldPassword = document.getElementById('oldPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorDiv = document.getElementById('passwordError');
+      const submitBtn = document.getElementById('changePasswordSubmit');
+      
+      // Validation
+      if (!oldPassword) {
+        showPasswordError('Please enter your current password.');
+        return;
+      }
+      
+      if (!newPassword || newPassword.length < 6) {
+        showPasswordError('Password must be at least 6 characters long.');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        showPasswordError('Passwords do not match. Please try again.');
+        return;
+      }
+      
+      // Disable submit button
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Changing...';
+      errorDiv.style.display = 'none';
+      
+      // Change password via API - works for all users
+      fetch(`${API_BASE_URL}/api/users/${userId}/password`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+        },
+        body: JSON.stringify({ oldPassword, newPassword })
+      })
+      .then(response => {
+        return response.json().then(data => {
+          return { status: response.status, data: data };
+        });
+      })
+      .then(({ status, data }) => {
+        if (status === 200 && data.success) {
+          // Success - close modal and show success message
+          closeChangePasswordModal();
+          alert('Password changed successfully!');
+        } else {
+          // Show error message from backend (includes password reuse detection)
+          showPasswordError(data.error || 'Failed to change password. Please check your current password.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Change Password';
+        }
+      })
+      .catch(error => {
+        console.error('Error changing password:', error);
+        showPasswordError('An error occurred while changing your password. Please try again later.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Change Password';
+      });
+    }
+    
+    // Show password error message
+    function showPasswordError(message) {
+      const errorDiv = document.getElementById('passwordError');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+      const changePasswordModal = document.getElementById('changePasswordModal');
+      const signOutModal = document.getElementById('signOutModal');
+      
+      if (changePasswordModal && e.target === changePasswordModal) {
+        closeChangePasswordModal();
+      }
+      
+      if (signOutModal && e.target === signOutModal) {
+        closeSignOutModal();
+      }
+    });
+    
+    // Show sign out modal
+    window.showSignOutModal = function() {
+      const modal = document.getElementById('signOutModal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    };
+    
+    // Close sign out modal
+    window.closeSignOutModal = function() {
+      const modal = document.getElementById('signOutModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    };
+    
+    // Handle sign out confirmation
+    window.handleSignOut = function() {
+      try {
+        const signOutBtn = document.getElementById('signOutConfirmBtn');
+        if (signOutBtn) {
+          signOutBtn.disabled = true;
+          signOutBtn.textContent = 'Signing out...';
+        }
+        
+        const userId = getUserId();
+        
+        // Clear only current user's settings and auth data
+        if (userId && userId !== 'guest') {
+          // Clear user-specific settings (automatically from config)
+          Object.keys(SETTINGS_CONFIG).forEach(key => {
+            try {
+              localStorage.removeItem(getSettingKey(key));
+            } catch (error) {
+              console.error(`Error removing setting ${key}:`, error);
+            }
+          });
+        }
+        
+        // Clear auth data
+        const authKeys = [
+          'auth_token', 'user_id', 'user_name', 'username', 
+          'user_email', 'is_admin', 'admin_mode', 'user_data',
+          'profile_image_data', 'profile_image_url'
+        ];
+        
+        authKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+          } catch (error) {
+            console.error(`Error removing auth key ${key}:`, error);
+          }
+        });
+        
+        // Close modal
+        closeSignOutModal();
+        
+        // Redirect to home page
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error('Error during sign out:', error);
+        const signOutBtn = document.getElementById('signOutConfirmBtn');
+        if (signOutBtn) {
+          signOutBtn.disabled = false;
+          signOutBtn.textContent = 'Sign Out';
+        }
+        alert('An error occurred during sign out. Please try again.');
+      }
+    };
+    
+    // Close modal when clicking outside (update existing handler)
+    const existingClickHandler = document.querySelector('[data-click-handler]');
+    document.addEventListener('click', (e) => {
+      const changePasswordModal = document.getElementById('changePasswordModal');
+      const signOutModal = document.getElementById('signOutModal');
+      
+      if (changePasswordModal && e.target === changePasswordModal) {
+        closeChangePasswordModal();
+      }
+      
+      if (signOutModal && e.target === signOutModal) {
+        closeSignOutModal();
+      }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const changePasswordModal = document.getElementById('changePasswordModal');
+        const signOutModal = document.getElementById('signOutModal');
+        
+        if (changePasswordModal && changePasswordModal.style.display === 'flex') {
+          closeChangePasswordModal();
+        }
+        
+        if (signOutModal && signOutModal.style.display === 'flex') {
+          closeSignOutModal();
+        }
+      }
+    });
+    
+    // Initialize settings with error handling and backward compatibility
+    function initializeSettings() {
+      try {
+        console.log('Initializing settings system...');
+        
+        // Step 1: Migrate old settings
+        migrateOldSettings();
+        
+        // Step 2: Load settings
+        loadUserSettings();
+        
+        // Step 3: Setup toggle switches
+        setupToggleSwitches();
+        
+        console.log('Settings system initialized successfully');
+        
+        // Setup sign out button with error handling
+        const signOutBtn = document.getElementById('signOutBtn');
+        if (signOutBtn) {
+          signOutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSignOutModal();
+          });
+        }
+        
+        // Setup create button with error handling
+        const createBtn = document.getElementById('createBtn');
+        if (createBtn) {
+          createBtn.addEventListener('click', () => {
+            try {
+              window.location.href = 'artist-corner.html';
+            } catch (error) {
+              console.error('Error navigating to create page:', error);
+            }
+          });
+        }
+        
+      } catch (error) {
+        console.error('Error initializing settings:', error);
+      }
+    }
+    
+    // ============================================
+    // GLOBAL SETTINGS API (for use in other pages)
+    // ============================================
+    // Expose settings functions globally so other pages can use them
+    // Usage: window.SettingsAPI.getSetting('privateProfile')
+    window.SettingsAPI = {
+      getSetting: getSetting,
+      saveSetting: saveSetting,
+      getUserId: getUserId
+    };
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeSettings);
+    } else {
+      initializeSettings();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+# Exclude node_modules (major performance improvement)
+node_modules/
+**/node_modules/
+
+# Exclude large files and unnecessary directories
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.mp3
+*.mp4
+*.wav
+*.flac
+
+# Exclude documentation files (keep only essential ones)
+*.md
+!README.md
+
+# Exclude backend build artifacts
+backend/node_modules/
+backend/.wrangler/
+backend/dist/
+backend/uploads/
+backend/output/
+backend/data/*.json
+!backend/data/.gitkeep
+
+# Exclude test files
+test-*.html
+fix-*.html
+
+# Exclude SQL files (not needed for code completion)
+*.sql
+
+# Exclude deployment files
+*.sh
+deploy-*.zip
+
+# Exclude cache and temp files
+.cache/
+*.tmp
+*.temp
+*.log
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,2849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mastering Studio — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script>
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
+  </script>
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Audio City" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --cyan: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: rgba(255, 255, 255, 0.1);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.12), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.08), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* HEADER */
+    header {
+      position: sticky;
+      top: 0;
+      background: #000000 !important;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav-link {
+      padding: 8px 16px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover { color: var(--text); background: var(--glass); }
+    .nav-link.active { color: var(--accent); background: rgba(139, 92, 246, 0.15); }
+    
+    .donate-btn {
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .donate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px var(--accent-glow);
+    }
+    
+    .donate-btn:active {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
+
+    .nav-tools {
+      position: relative;
+    }
+
+    .tools-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+
+    .nav-tools:hover .tools-dropdown { display: block; }
+
+    .tool-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .tool-item:hover { background: rgba(139, 92, 246, 0.15); }
+    .tool-item.current { background: rgba(139, 92, 246, 0.2); color: var(--accent); }
+    .tool-item .icon { font-size: 18px; }
+    .tool-item .label { font-size: 14px; }
+
+    /* MAIN LAYOUT */
+    .mastering-container {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 240px 1fr 240px;
+      min-height: calc(100vh - 60px);
+      gap: 0;
+    }
+
+    /* LEFT SIDEBAR */
+    .sidebar-left {
+      background: rgba(20, 20, 35, 0.9);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .track-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: var(--glass);
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .track-info .icon { font-size: 24px; }
+    .track-info .details { flex: 1; min-width: 0; }
+    .track-info .name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-info .meta { font-size: 11px; color: var(--muted); }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .preset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+
+    .preset-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--glass);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+    }
+
+    .preset-btn:hover {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+
+    .preset-btn.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(6, 182, 212, 0.15));
+      border-color: var(--accent);
+    }
+
+    .preset-btn .name { display: flex; align-items: center; gap: 8px; }
+    .preset-btn .icon { font-size: 16px; }
+    .preset-btn .lufs { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+    .target-section { margin-bottom: 24px; }
+
+    .target-select {
+      width: 100%;
+      padding: 12px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .target-select option { background: var(--bg); }
+
+    .target-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .master-btn {
+      width: 100%;
+      max-width: 400px;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--success), #059669);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+      margin: 20px auto;
+    }
+
+    .master-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35); }
+    .master-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .format-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .note-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .note-text {
+      flex: 1;
+      color: var(--text);
+    }
+
+    .note-text strong {
+      color: var(--cyan);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .headroom-reminder {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .reminder-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .reminder-text {
+      flex: 1;
+      color: var(--text);
+    }
+
+    .reminder-text strong {
+      color: #f59e0b;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .engine-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 10px;
+      font-size: 12px;
+      margin-top: auto;
+    }
+
+    .engine-status.offline {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .engine-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .engine-dot.offline { background: var(--error); animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    /* CENTER PANEL */
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      background: rgba(15, 15, 25, 0.5);
+    }
+
+    .waveform-container {
+      flex: 0 0 auto;
+      background: linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      min-height: 300px;
+      max-height: 500px;
+      height: 400px;
+    }
+
+    .waveform-canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      display: none;
+      z-index: 5;
+    }
+
+    /* Real-time Visualizer */
+    .visualizer-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .visualizer-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 20, 0.85);
+      cursor: pointer;
+      transition: all 0.3s;
+      border-radius: 16px;
+    }
+
+    .upload-overlay:hover { background: rgba(10, 10, 20, 0.7); }
+    .upload-overlay.hidden { display: none; }
+
+    .upload-icon { font-size: 64px; margin-bottom: 16px; filter: grayscale(0.3); }
+    .upload-text { font-size: 16px; color: var(--muted); }
+    .upload-hint { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 8px; }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .meters-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 1400px) {
+      .meters-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .meters-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .skip-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .skip-btn:hover:not(:disabled) {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .skip-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .play-btn {
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .play-btn:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 8px 25px var(--accent-glow); }
+    .play-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .progress-container { flex: 1; }
+    
+    .time-display {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .ab-toggle {
+      display: flex;
+      gap: 0;
+      justify-content: center;
+      margin: 12px 0;
+      background: var(--glass);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .ab-btn {
+      flex: 1;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .ab-btn:hover { color: var(--text); }
+    
+    .ab-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      color: #fff;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    .status-bar {
+      padding: 14px 18px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .status-bar.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .status-bar.processing {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.25);
+    }
+
+    /* Info Panel */
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .info-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .info-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .info-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tips-content {
+      gap: 12px;
+    }
+
+    .tip-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .tip-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .tip-text {
+      color: var(--text);
+      flex: 1;
+    }
+
+    /* RIGHT SIDEBAR */
+    .sidebar-right {
+      background: rgba(20, 20, 35, 0.9);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .meter-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .meter-card:has(.volume-meter-container) {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 300px;
+      max-height: 350px;
+    }
+
+    .meter-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .meter-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meter-value.input { color: var(--muted); font-size: 20px; }
+    .meter-value.output { color: var(--success); }
+    .meter-value.warning { color: var(--warning); }
+
+    .meter-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .meter-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), var(--cyan));
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .meter-note {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* Vertical Volume Meter */
+    .volume-meter-container {
+      width: 100%;
+      min-height: 250px;
+      max-height: 300px;
+      height: 100%;
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: visible;
+    }
+
+    .volume-meter-label {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .volume-meter-bar {
+      width: 50px;
+      height: calc(100% - 40px);
+      min-height: 200px;
+      max-height: 250px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 25px;
+      position: relative;
+      overflow: visible;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .volume-meter-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      min-height: 2px;
+      background: linear-gradient(to top, var(--success) 0%, var(--success) 70%, var(--warning) 70%, var(--warning) 90%, var(--error) 90%, var(--error) 100%);
+      transition: height 0.05s linear;
+      border-radius: 18px;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .volume-meter-peak {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--text);
+      opacity: 0.8;
+      transition: bottom 0.1s linear;
+    }
+
+    /* Master Output Level Meter */
+    .master-meter-container {
+      width: 100%;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+    }
+
+    .master-meter-bar {
+      width: 60px;
+      height: 300px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 30px;
+      position: relative;
+      overflow: visible;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .master-meter-scale {
+      position: absolute;
+      left: -35px;
+      top: 0;
+      bottom: 0;
+      width: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .scale-mark {
+      position: absolute;
+      left: 0;
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .master-meter-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      min-height: 2px;
+      background: linear-gradient(to top, 
+        var(--error) 0%, 
+        var(--error) 5%,
+        var(--warning) 5%, 
+        var(--warning) 20%,
+        var(--success) 20%, 
+        var(--success) 100%);
+      transition: height 0.05s linear;
+      border-radius: 28px;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    .master-meter-peak {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--text);
+      opacity: 0.9;
+      transition: bottom 0.1s linear;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+    }
+
+    .master-meter-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .master-meter-peak-value {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .meter-split {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .meter-half {
+      flex: 1;
+      text-align: center;
+    }
+
+    .meter-half-label { font-size: 9px; color: var(--muted); text-transform: uppercase; }
+    .meter-half-value { font-size: 16px; font-weight: 600; margin-top: 4px; }
+
+    .donation-info {
+      padding: 16px;
+      margin: 20px 0;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .donation-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .donation-text {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .donation-text strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .donation-call {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+      font-style: italic;
+    }
+
+    .reviews-feedback {
+      padding: 14px;
+      margin: 16px 0;
+      background: rgba(20, 20, 35, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .reviews-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .reviews-contact {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .contact-label {
+      color: var(--muted);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .contact-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 10px;
+      transition: color 0.2s;
+      word-break: break-all;
+    }
+
+    .contact-link:hover {
+      color: var(--cyan);
+      text-decoration: underline;
+    }
+
+    .download-section { 
+      margin: 20px 0;
+    }
+
+    .download-ready {
+      text-align: center;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: rgba(16, 185, 129, 0.1);
+      border-radius: 12px;
+      display: none;
+    }
+
+    .download-ready.show { display: block; }
+    .download-ready .icon { font-size: 36px; margin-bottom: 6px; }
+    .download-ready .text { font-size: 12px; color: var(--success); font-weight: 600; }
+
+    .download-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s;
+      margin-bottom: 10px;
+    }
+
+    .download-btn.wav {
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: #fff;
+    }
+
+    .download-btn.mp3 {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .download-btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .download-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .download-btn.downloading { opacity: 0.7; cursor: wait; }
+    
+    .download-icon { font-size: 18px; }
+    .download-text { flex: 1; }
+    .download-progress {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .donate-btn-download {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
+    }
+
+    .donate-btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+    }
+
+    input[type="file"] { display: none; }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) {
+      .mastering-container {
+        grid-template-columns: 200px 1fr 200px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .mastering-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+      .sidebar-left, .sidebar-right {
+        border: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .sidebar-left { order: 1; }
+      .main-panel { order: 2; }
+      .sidebar-right { order: 3; border-top: 1px solid var(--border); }
+    }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .preset-list { display: grid; grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-content">
+    <a href="index.html" class="logo-brand">
+      <span class="brand-text">Audio City</span>
+    </a>
+    
+    <nav class="nav-links">
+      <a href="feed.html" class="nav-link">Feed</a>
+      <a href="discover.html" class="nav-link">Discover</a>
+      <a href="artists.html" class="nav-link">Artists</a>
+      <div class="nav-tools">
+        <a href="#" class="nav-link active">🛠️ Tools</a>
+        <div class="tools-dropdown">
+          <a href="mastering.html" class="tool-item current">
+            <span class="icon">🎛️</span>
+            <span class="label">Mastering Studio</span>
+          </a>
+          <!-- Cover Art Maker removed - now integrated in upload page -->
+            <span class="icon">🎨</span>
+            <span class="label">Cover Art Maker</span>
+          </a>
+        </div>
+      </div>
+      <a href="mastering.html" class="nav-link btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: white !important; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 700; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
+      <div class="usage-counter" id="usageCounter" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(139, 92, 246, 0.1); border-radius: 6px; font-size: 11px; color: var(--muted); border: 1px solid rgba(139, 92, 246, 0.2);">
+        <span style="color: var(--accent); font-weight: 600;" id="tracksCount">--</span>
+        <span>tracks mastered</span>
+      </div>
+      <button class="nav-link donate-btn-header" id="donateBtn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: 0 4px 14px var(--accent-glow); display: inline-flex !important; visibility: visible !important; opacity: 1 !important;">💜 Donate</button>
+      <a href="profile.html" class="nav-link">Profile</a>
+    </nav>
+    
+    <button class="donate-btn" id="donateBtnMobile" type="button" style="display: inline-flex !important; visibility: visible !important; opacity: 1 !important;">💜 Donate</button>
+  </div>
+</header>
+
+<div class="mastering-container">
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar-left">
+    <div class="track-info" id="trackInfo">
+      <span class="icon">🎵</span>
+      <div class="details">
+        <div class="name" id="trackName">No track loaded</div>
+        <div class="meta" id="trackMeta">Upload to begin</div>
+      </div>
+    </div>
+    
+    <div class="section-title">Genre Presets</div>
+    <div class="preset-list" id="presetList">
+      <button class="preset-btn active" data-preset="kidandali" data-lufs="-9">
+        <span class="name"><span class="icon">🇺🇬</span> Kidandali</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="kidandali_banger" data-lufs="-9">
+        <span class="name"><span class="icon">🔥</span> Banger</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="kidandali_2" data-lufs="-8.5">
+        <span class="name"><span class="icon">✨</span> Kidandali 2</span>
+        <span class="lufs">-8.5 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="nico_pan_afro_dance" data-lufs="-9">
+        <span class="name"><span class="icon">🎯</span> NICO PAN AFRO DANCE</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="nico_pan_ugandan_clean_restore" data-lufs="-9">
+        <span class="name"><span class="icon">✨</span> Nico Pan Ugandan Clean Restore</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="nico_pan_afro_dance_2" data-lufs="-9">
+        <span class="name"><span class="icon">🎯</span> NICO PAN AFRO DANCE 2</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="afrobeat" data-lufs="-10">
+        <span class="name"><span class="icon">🥁</span> Afrobeat</span>
+        <span class="lufs">-10 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="amapiano" data-lufs="-8">
+        <span class="name"><span class="icon">🎹</span> Amapiano</span>
+        <span class="lufs">-8 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="hiphop" data-lufs="-9">
+        <span class="name"><span class="icon">🎤</span> Hip-Hop</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="pop" data-lufs="-11">
+        <span class="name"><span class="icon">✨</span> Pop</span>
+        <span class="lufs">-11 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="edm" data-lufs="-7">
+        <span class="name"><span class="icon">🎛️</span> EDM/Club</span>
+        <span class="lufs">-7 LUFS</span>
+      </button>
+    </div>
+    
+    <div class="section-title" style="margin-top: 24px;">Latin & Caribbean</div>
+    <div class="preset-list">
+      <button class="preset-btn" data-preset="reggaeton" data-lufs="-8">
+        <span class="name"><span class="icon">🎵</span> Reggaeton</span>
+        <span class="lufs">-8 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="dancehall" data-lufs="-8.5">
+        <span class="name"><span class="icon">🎤</span> Dancehall</span>
+        <span class="lufs">-8.5 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="soca" data-lufs="-9">
+        <span class="name"><span class="icon">🥁</span> Soca</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="dembow" data-lufs="-8">
+        <span class="name"><span class="icon">🔥</span> Dembow</span>
+        <span class="lufs">-8 LUFS</span>
+      </button>
+    </div>
+    
+    <div class="section-title" style="margin-top: 24px;">African</div>
+    <div class="preset-list">
+      <button class="preset-btn" data-preset="soukous" data-lufs="-9.5">
+        <span class="name"><span class="icon">🎸</span> Soukous</span>
+        <span class="lufs">-9.5 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="highlife" data-lufs="-10">
+        <span class="name"><span class="icon">🎺</span> Highlife</span>
+        <span class="lufs">-10 LUFS</span>
+      </button>
+      <button class="preset-btn" data-preset="afrohouse" data-lufs="-9">
+        <span class="name"><span class="icon">🏠</span> Afrohouse</span>
+        <span class="lufs">-9 LUFS</span>
+      </button>
+    </div>
+
+    <div class="target-section">
+      <div class="section-title">Target Loudness</div>
+      <select class="target-select" id="targetSelect">
+        <option value="-14">Streaming -14 LUFS</option>
+        <option value="-11">Radio -11 LUFS</option>
+        <option value="-9" selected>Club / Loud -9 LUFS</option>
+        <option value="-7">Maximum -7 LUFS</option>
+      </select>
+      <div class="target-note">Club presets are louder for dance floors. Streaming platforms normalize to -14 LUFS.</div>
+    </div>
+
+    <div class="engine-status" id="engineStatus">
+      <span class="engine-dot" id="engineDot"></span>
+      <span id="engineText">Real LUFS Engine</span>
+    </div>
+  </aside>
+
+  <!-- CENTER - WAVEFORM -->
+  <main class="main-panel">
+    <div class="waveform-container" id="waveformContainer">
+      <canvas class="waveform-canvas" id="waveformCanvas"></canvas>
+      <div class="visualizer-container" id="visualizerContainer">
+        <canvas class="visualizer-canvas" id="visualizerCanvas"></canvas>
+      </div>
+      <div class="playhead" id="playhead"></div>
+      <div class="upload-overlay" id="uploadOverlay">
+        <input type="file" id="audioInput" name="audioInput" accept="audio/*,.wav,.mp3,.flac,.aiff,.ogg">
+        <div class="upload-icon">📤</div>
+        <div class="upload-text">Drop audio or click to upload</div>
+        <div class="upload-hint">WAV, MP3, FLAC, AIFF supported</div>
+      </div>
+    </div>
+
+    <div class="player-controls">
+      <button class="skip-btn" id="rewindBtn" disabled title="Rewind 10 seconds">⏪</button>
+      <button class="play-btn" id="playBtn" disabled>▶</button>
+      <button class="skip-btn" id="forwardBtn" disabled title="Forward 10 seconds">⏩</button>
+      <div class="progress-container">
+        <div class="time-display"><span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></div>
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- METER CARDS UNDER PLAYER CONTROLS -->
+    <div class="meters-container">
+      <div class="meter-card">
+        <div class="meter-label">Loudness</div>
+        <div class="meter-value" id="lufsDisplay">-- LUFS</div>
+        <div class="meter-split">
+          <div class="meter-half">
+            <div class="meter-half-label">Input</div>
+            <div class="meter-half-value input" id="inputLufs">--</div>
+          </div>
+          <div class="meter-half">
+            <div class="meter-half-label">Output</div>
+            <div class="meter-half-value output" id="outputLufs">--</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="meter-card">
+        <div class="meter-label">True Peak</div>
+        <div class="meter-value" id="peakDisplay">-- dB</div>
+        <div class="meter-bar"><div class="meter-bar-fill" id="peakBar" style="width: 0%"></div></div>
+        <div class="meter-note">Safe limit: -1.0 dBTP</div>
+      </div>
+
+      <div class="meter-card">
+        <div class="meter-label">Dynamic Range</div>
+        <div class="meter-value" id="drDisplay">-- DR</div>
+        <div class="meter-bar"><div class="meter-bar-fill" id="drBar" style="width: 50%"></div></div>
+        <div class="meter-note">Recommended: 6-10 DR</div>
+      </div>
+
+      <div class="meter-card">
+        <div class="meter-label">Gain Applied</div>
+        <div class="meter-value" id="gainDisplay">-- dB</div>
+        <div class="meter-note">Loudness boost/cut</div>
+      </div>
+    </div>
+
+    <button class="master-btn" id="masterBtn" disabled>
+      <span>🎛️</span> Master Track
+    </button>
+
+    <div class="ab-toggle">
+      <button class="ab-btn" id="beforeBtn">Before (Original)</button>
+      <button class="ab-btn active" id="afterBtn">After (Mastered)</button>
+    </div>
+
+    <div class="format-note">
+      <div class="note-icon">💡</div>
+      <div class="note-text">
+        <strong>For Best Results:</strong> Import WAV format (24-bit recommended). WAV and MP3 outputs use different processing - WAV is higher quality.
+      </div>
+    </div>
+
+    <div class="headroom-reminder">
+      <div class="reminder-icon">⚠️</div>
+      <div class="reminder-text">
+        <strong>Headroom Required:</strong> Your mix should have -6 to -5 dB headroom before mastering for best results. Avoid clipping or over-compressed mixes.
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <span>🎵</span>
+      <span id="statusText">Upload a track to begin mastering</span>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <div class="info-section">
+        <div class="info-title">📊 Track Information</div>
+        <div class="info-content" id="trackInfoContent">
+          <div class="info-item">
+            <span class="info-label">Duration:</span>
+            <span class="info-value" id="trackDuration">--</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Channels:</span>
+            <span class="info-value" id="trackChannels">--</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Sample Rate:</span>
+            <span class="info-value" id="trackSampleRate">--</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">File Size:</span>
+            <span class="info-value" id="trackFileSize">--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-title">💡 Mastering Tips</div>
+        <div class="info-content tips-content">
+          <div class="tip-item">
+            <span class="tip-icon">🎯</span>
+            <span class="tip-text">Select a preset that matches your genre for best results</span>
+          </div>
+          <div class="tip-item">
+            <span class="tip-icon">🔊</span>
+            <span class="tip-text">Aim for -9 to -11 LUFS for streaming platforms</span>
+          </div>
+          <div class="tip-item">
+            <span class="tip-icon">⚠️</span>
+            <span class="tip-text">Keep True Peak below -1.0 dBTP to avoid clipping</span>
+          </div>
+          <div class="tip-item">
+            <span class="tip-icon">🎧</span>
+            <span class="tip-text">Use A/B toggle to compare before and after mastering</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div class="info-title">⚙️ Current Settings</div>
+        <div class="info-content" id="currentSettingsContent">
+          <div class="info-item">
+            <span class="info-label">Preset:</span>
+            <span class="info-value" id="currentPreset">None selected</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Target LUFS:</span>
+            <span class="info-value" id="currentTargetLufs">--</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Mode:</span>
+            <span class="info-value" id="currentMode">After (Mastered)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT SIDEBAR - METERS -->
+  <aside class="sidebar-right">
+    <div class="meter-card">
+      <div class="volume-meter-container">
+        <div class="volume-meter-label">Volume</div>
+        <div class="volume-meter-bar">
+          <div class="volume-meter-fill" id="volumeMeterFill" style="height: 0%"></div>
+          <div class="volume-meter-peak" id="volumeMeterPeak" style="bottom: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="donation-info">
+      <div class="donation-title">Audio City Engine</div>
+      <div class="donation-text">
+        Developed by <strong>Nico Pan Beats</strong>, a Ugandan music producer solving real music-industry challenges.
+      </div>
+      <div class="donation-call">
+        If this tool helps you, please donate to help keep the site running.
+      </div>
+    </div>
+
+    <div class="meter-card">
+      <div class="meter-label">Master Output Level</div>
+      <div class="master-meter-container">
+        <div class="master-meter-bar">
+          <div class="master-meter-scale">
+            <div class="scale-mark" style="bottom: 0%">0</div>
+            <div class="scale-mark" style="bottom: 16.67%">-10</div>
+            <div class="scale-mark" style="bottom: 33.33%">-20</div>
+            <div class="scale-mark" style="bottom: 50%">-30</div>
+            <div class="scale-mark" style="bottom: 66.67%">-40</div>
+            <div class="scale-mark" style="bottom: 83.33%">-50</div>
+            <div class="scale-mark" style="bottom: 100%">-60</div>
+          </div>
+          <div class="master-meter-fill" id="masterMeterFill" style="height: 0%"></div>
+          <div class="master-meter-peak" id="masterMeterPeak" style="bottom: 0%"></div>
+        </div>
+        <div class="master-meter-value" id="masterMeterValue">-- dBFS</div>
+        <div class="master-meter-peak-value" id="masterMeterPeakValue">Peak: -- dBFS</div>
+      </div>
+    </div>
+
+    <div class="download-section">
+      <div class="download-ready" id="downloadReady">
+        <div class="icon">✅</div>
+        <div class="text">DOWNLOAD READY!</div>
+      </div>
+      <button class="download-btn wav" id="downloadWav" disabled>
+        <span class="download-icon">📥</span>
+        <span class="download-text">WAV (24-bit)</span>
+        <span class="download-progress" id="wavProgress" style="display: none;">0%</span>
+      </button>
+      <button class="download-btn mp3" id="downloadMp3" disabled>
+        <span class="download-icon">🎧</span>
+        <span class="download-text">MP3 (320kbps)</span>
+        <span class="download-progress" id="mp3Progress" style="display: none;">0%</span>
+      </button>
+      <button class="donate-btn donate-btn-download" id="donateBtnDownload" type="button">
+        <span>💜</span>
+        <span style="flex: 1; text-align: center; line-height: 1.3;">Support us, donate to keep mastering studio running</span>
+      </button>
+    </div>
+
+    <div class="reviews-feedback">
+      <div class="reviews-title">Reviews & Feedback</div>
+      <div class="reviews-contact">
+        <div class="contact-item">
+          <span class="contact-label">WhatsApp / Call:</span>
+          <a href="tel:+256704861228" class="contact-link">+256 704 861 228</a>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">Email:</span>
+          <a href="mailto:chilafrican@gmail.com" class="contact-link">chilafrican@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// API configuration - use direct VM connection (worker can't connect to HTTP backends)
+// Determine API URL based on hostname
+// Since backend is on VM, always use VM URL unless explicitly running locally
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_PRIMARY = isLocalhost 
+  ? 'http://168.119.241.59:3002/api'  // Use VM even on localhost since backend is on VM
+  : 'http://168.119.241.59:3002/api';
+// Fallback to localhost only if VM is down (for local development)
+const API_FALLBACK = 'http://localhost:3002/api';
+let API = API_PRIMARY;
+const MOBILE_MONEY_NUMBER = '+256700000000';
+
+// Julypay API Configuration
+const JULYPAY_API_KEY = 'jp_43Rhfj10DFLHdpUTX4LSN1o0.KqIomUDBY7j15rO1QUJSG6Zy6MfjlTuKTrJSCrwb';
+
+// Show donation modal
+function showDonateModal() {
+  const modal = document.createElement('div');
+  modal.id = 'donateModal';
+  modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+  modal.innerHTML = `
+    <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 700; color: var(--accent);">💜 Donate to Audio City</h2>
+        <button class="close-donate-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+      </div>
+      <p style="color: var(--muted); margin-bottom: 24px; line-height: 1.6;">
+        Help us keep Audio City running! Click the button below to make a secure donation via Julypay. You'll be redirected to a secure payment page where you can enter your amount and mobile money details.
+      </p>
+      <div style="margin-bottom: 24px; padding: 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <span style="font-size: 24px;">🔒</span>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Secure Payment</div>
+            <div style="font-size: 12px; color: var(--muted);">All transactions are encrypted and secure</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">📱</span>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">MTN & Airtel Uganda</div>
+            <div style="font-size: 12px; color: var(--muted);">Supports both mobile money networks</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <a href="https://app.julypay.net/pay/user/nico-d7oz" target="_blank" rel="noopener noreferrer" id="donateLinkBtn" style="flex: 1; padding: 16px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>💜</span>
+          <span>Donate via Julypay</span>
+          <span style="font-size: 14px;">↗</span>
+        </a>
+        <button type="button" class="close-donate-modal" style="padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Close modal handlers
+  modal.querySelectorAll('.close-donate-modal').forEach(btn => {
+    btn.addEventListener('click', () => modal.remove());
+  });
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  // Track when user clicks donate link
+  const donateLinkBtn = modal.querySelector('#donateLinkBtn');
+  if (donateLinkBtn) {
+    donateLinkBtn.addEventListener('click', () => {
+      // Store donation intent locally
+      const donationIntent = {
+        timestamp: new Date().toISOString(),
+        source: 'mastering.html'
+      };
+      const donations = JSON.parse(localStorage.getItem('audio_city_donations') || '[]');
+      donations.push(donationIntent);
+      localStorage.setItem('audio_city_donations', JSON.stringify(donations));
+      
+      // Close modal after a short delay to show the link was clicked
+      setTimeout(() => {
+        modal.remove();
+      }, 500);
+    });
+  }
+}
+
+function wireDonateButtons() {
+  // Wire all donate buttons (both .donate-btn and .donate-btn-header)
+  document.querySelectorAll('.donate-btn, .donate-btn-header, #donateBtn, #donateBtnMobile').forEach(btn => {
+    // Remove any existing listeners by cloning
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    
+    newBtn.addEventListener('click', () => {
+      showDonateModal();
+    });
+    
+    // Ensure button is always visible
+    newBtn.style.display = 'inline-flex';
+    newBtn.style.visibility = 'visible';
+    newBtn.style.opacity = '1';
+  });
+}
+
+// Load usage stats
+async function loadUsageStats() {
+  try {
+    const response = await fetch(`${API}/stats`);
+    if (response.ok) {
+      const stats = await response.json();
+      const tracksCountEl = document.getElementById('tracksCount');
+      if (tracksCountEl) {
+        // Ensure we have a valid number
+        const count = parseInt(stats.tracksMastered || 0, 10);
+        // Format number with commas
+        tracksCountEl.textContent = count.toLocaleString();
+        console.log('Usage stats updated:', count, 'tracks mastered');
+      }
+    } else {
+      console.warn('Failed to load usage stats:', response.status, response.statusText);
+      // Don't reset to 0 on error, keep current value
+    }
+  } catch (err) {
+    console.error('Error loading usage stats:', err);
+    // Don't reset to 0 on error, keep current value to avoid flickering
+    // Only set to 0 if element shows '--' (initial state)
+    const tracksCountEl = document.getElementById('tracksCount');
+    if (tracksCountEl && tracksCountEl.textContent === '--') {
+      tracksCountEl.textContent = '0';
+    }
+  }
+}
+
+// Backend checking state
+let backendCheckInterval = null;
+let backendCheckFailures = 0;
+const MAX_BACKEND_CHECK_FAILURES = 3;
+
+// State
+let currentFile = null;
+let audioBuffer = null;
+let masteredBuffer = null;
+let audioContext = null;
+let sourceNode = null;
+let isPlaying = false;
+let playbackMode = 'after'; // 'before' or 'after'
+let selectedPreset = 'kidandali';
+let downloadUrls = { wav: null, mp3: null };
+let masterResult = null;
+let startTime = 0;
+let pausedAt = 0;
+let animationId = null;
+let analyserNode = null;
+let dataArray = null;
+let visualizerAnimationId = null;
+let volumeMeterAnimationId = null;
+let masterMeterAnimationId = null;
+let masterPeakHold = -Infinity;
+let masterPeakHoldTime = 0;
+let masterMeterCurrentLevel = -60; // Current displayed level (dBFS) for ballistics
+
+// Elements
+const trackName = document.getElementById('trackName');
+const trackMeta = document.getElementById('trackMeta');
+const presetList = document.getElementById('presetList');
+const targetSelect = document.getElementById('targetSelect');
+const masterBtn = document.getElementById('masterBtn');
+const engineStatus = document.getElementById('engineStatus');
+const engineDot = document.getElementById('engineDot');
+const engineText = document.getElementById('engineText');
+const audioInput = document.getElementById('audioInput');
+const uploadOverlay = document.getElementById('uploadOverlay');
+const waveformCanvas = document.getElementById('waveformCanvas');
+const waveformContainer = document.getElementById('waveformContainer');
+const visualizerCanvas = document.getElementById('visualizerCanvas');
+const visualizerContainer = document.getElementById('visualizerContainer');
+const volumeMeterFill = document.getElementById('volumeMeterFill');
+const volumeMeterPeak = document.getElementById('volumeMeterPeak');
+const masterMeterFill = document.getElementById('masterMeterFill');
+const masterMeterPeak = document.getElementById('masterMeterPeak');
+const masterMeterValue = document.getElementById('masterMeterValue');
+const masterMeterPeakValue = document.getElementById('masterMeterPeakValue');
+const playhead = document.getElementById('playhead');
+const playBtn = document.getElementById('playBtn');
+const rewindBtn = document.getElementById('rewindBtn');
+const forwardBtn = document.getElementById('forwardBtn');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const currentTimeEl = document.getElementById('currentTime');
+const totalTimeEl = document.getElementById('totalTime');
+const beforeBtn = document.getElementById('beforeBtn');
+const afterBtn = document.getElementById('afterBtn');
+const statusBar = document.getElementById('statusBar');
+const statusText = document.getElementById('statusText');
+const lufsDisplay = document.getElementById('lufsDisplay');
+const inputLufs = document.getElementById('inputLufs');
+const outputLufs = document.getElementById('outputLufs');
+const peakDisplay = document.getElementById('peakDisplay');
+const peakBar = document.getElementById('peakBar');
+const drDisplay = document.getElementById('drDisplay');
+const drBar = document.getElementById('drBar');
+const gainDisplay = document.getElementById('gainDisplay');
+const downloadReady = document.getElementById('downloadReady');
+const downloadWav = document.getElementById('downloadWav');
+const downloadMp3 = document.getElementById('downloadMp3');
+
+// Format time
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// Check backend
+async function checkBackend() {
+  // Stop checking if we've failed too many times
+  if (backendCheckFailures >= MAX_BACKEND_CHECK_FAILURES) {
+    if (backendCheckInterval) {
+      clearInterval(backendCheckInterval);
+      backendCheckInterval = null;
+    }
+    return false;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    let res;
+    let responseText;
+    let currentAPI = API;
+    
+    try {
+      res = await fetch(`${currentAPI}/health`, { 
+        signal: controller.signal,
+        method: 'GET',
+        mode: 'cors'
+      });
+      if (!res.ok) throw new Error('Backend not available');
+      responseText = await res.text();
+      
+      // Check if response is HTML (error page)
+      if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+        throw new Error('Received HTML instead of JSON');
+      }
+    } catch (primaryError) {
+      // Try fallback if primary fails
+      if (currentAPI !== API_FALLBACK) {
+        try {
+          currentAPI = API_FALLBACK;
+          console.log('Primary API failed, trying fallback:', currentAPI);
+          res = await fetch(`${currentAPI}/health`, { 
+            signal: controller.signal,
+            method: 'GET',
+            mode: 'cors'
+          });
+          if (!res.ok) throw new Error('Backend not available');
+          responseText = await res.text();
+          
+          if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+            throw new Error('Received HTML instead of JSON');
+          }
+          API = currentAPI; // Update API to working endpoint
+        } catch (fallbackError) {
+          throw new Error('Backend not available');
+        }
+      } else {
+        throw primaryError;
+      }
+    }
+    
+    clearTimeout(timeoutId);
+    
+    // Parse JSON response
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      // If parsing fails, log but don't show error to user
+      console.warn('Health check: Invalid JSON response', responseText.substring(0, 100));
+      throw new Error('Invalid JSON response from backend');
+    }
+          // Check for ffmpeg field or if status is ok (backend is responding)
+          if (data.ffmpeg === true || (data.status === 'ok' && data.ffmpeg !== false)) {
+            engineStatus.classList.remove('offline');
+            engineDot.classList.remove('offline');
+            engineText.textContent = 'Real LUFS Engine';
+            backendCheckFailures = 0; // Reset failure counter on success
+            API = currentAPI; // Update global API to the working endpoint
+            return true;
+          } else if (data.status === 'ok') {
+            // Backend is running but FFmpeg check failed or not included
+            engineStatus.classList.remove('offline');
+            engineDot.classList.remove('offline');
+            engineText.textContent = 'Backend Online (FFmpeg check pending)';
+            backendCheckFailures = 0;
+            API = currentAPI; // Update global API to the working endpoint
+            return true;
+          }
+  } catch (err) {
+    // Increment failure counter
+    backendCheckFailures++;
+    // Silently handle - backend is simply not available
+    // Don't log to console to avoid showing errors to user
+    if (backendCheckFailures < MAX_BACKEND_CHECK_FAILURES) {
+      console.debug('Backend check failed:', err.message);
+    }
+  }
+  
+  engineStatus.classList.add('offline');
+  engineDot.classList.add('offline');
+  engineText.textContent = 'Backend Offline';
+  return false;
+}
+
+// Draw waveform
+function drawWaveform(buffer, color1 = '#8b5cf6', color2 = '#06b6d4') {
+  const canvas = waveformCanvas;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  
+  canvas.width = canvas.offsetWidth * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  ctx.scale(dpr, dpr);
+  
+  const width = canvas.offsetWidth;
+  const height = canvas.offsetHeight;
+  const data = buffer.getChannelData(0);
+  const step = Math.ceil(data.length / width);
+  
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, color1);
+  gradient.addColorStop(0.5, color2);
+  gradient.addColorStop(1, color1);
+  
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = gradient;
+  
+  const centerY = height / 2;
+  
+  for (let i = 0; i < width; i++) {
+    let min = 1.0, max = -1.0;
+    for (let j = 0; j < step; j++) {
+      const val = data[(i * step) + j] || 0;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const barHeight = Math.max(2, (max - min) * centerY * 0.85);
+    ctx.fillRect(i, centerY - barHeight, 1, barHeight * 2);
+  }
+}
+
+// File handling
+uploadOverlay.addEventListener('click', () => audioInput.click());
+uploadOverlay.addEventListener('dragover', e => { e.preventDefault(); uploadOverlay.style.background = 'rgba(139, 92, 246, 0.2)'; });
+uploadOverlay.addEventListener('dragleave', () => { uploadOverlay.style.background = ''; });
+uploadOverlay.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadOverlay.style.background = '';
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+audioInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+async function handleFile(file) {
+  currentFile = file;
+  trackName.textContent = file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name;
+  statusText.textContent = 'Loading audio...';
+  statusBar.className = 'status-bar processing';
+  
+  uploadOverlay.classList.add('hidden');
+  masterBtn.disabled = false;
+  playBtn.disabled = false;
+  rewindBtn.disabled = false;
+  forwardBtn.disabled = false;
+  downloadReady.classList.remove('show');
+  downloadWav.disabled = true;
+  downloadMp3.disabled = true;
+  masterResult = null;
+  masteredBuffer = null; // Reset mastered buffer for new file
+  
+  // Decode audio
+  audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+  const arrayBuffer = await file.arrayBuffer();
+  audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  
+  // Update UI
+  const duration = audioBuffer.duration;
+  const channels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  trackMeta.textContent = `${formatTime(duration)} • ${channels}ch • ${(sampleRate/1000).toFixed(1)}kHz`;
+  totalTimeEl.textContent = formatTime(duration);
+  
+  // Update info panel
+  const trackDurationEl = document.getElementById('trackDuration');
+  const trackChannelsEl = document.getElementById('trackChannels');
+  const trackSampleRateEl = document.getElementById('trackSampleRate');
+  const trackFileSizeEl = document.getElementById('trackFileSize');
+  
+  if (trackDurationEl) trackDurationEl.textContent = formatTime(duration);
+  if (trackChannelsEl) trackChannelsEl.textContent = `${channels} ${channels === 1 ? 'Mono' : channels === 2 ? 'Stereo' : 'Multi'}`;
+  if (trackSampleRateEl) trackSampleRateEl.textContent = `${(sampleRate/1000).toFixed(1)} kHz`;
+  if (trackFileSizeEl) {
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    trackFileSizeEl.textContent = `${fileSizeMB} MB`;
+  }
+  
+  drawWaveform(audioBuffer);
+  statusBar.className = 'status-bar';
+  statusText.textContent = 'Ready to master. Select a preset and click Master Track.';
+  
+  // Reset playback
+  pausedAt = 0;
+  progressFill.style.width = '0%';
+  currentTimeEl.textContent = '0:00';
+  
+  // Stop any running visualizations
+  stopVisualizer();
+  stopVolumeMeter();
+  stopMasterMeter();
+}
+
+// Preset selection (handle all preset lists)
+document.querySelectorAll('.preset-list').forEach(list => {
+  list.addEventListener('click', e => {
+    const btn = e.target.closest('.preset-btn');
+    if (!btn) return;
+    
+    // Remove active from all presets
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPreset = btn.dataset.preset;
+    
+    // Update target
+    const lufs = btn.dataset.lufs;
+    targetSelect.value = lufs;
+    
+    // Update info panel
+    const presetName = btn.querySelector('.name').textContent.trim();
+    const currentPresetEl = document.getElementById('currentPreset');
+    const currentTargetLufsEl = document.getElementById('currentTargetLufs');
+    if (currentPresetEl) currentPresetEl.textContent = presetName;
+    if (currentTargetLufsEl) currentTargetLufsEl.textContent = `${lufs} LUFS`;
+  });
+});
+
+// Playback
+function updatePlayhead() {
+  if (!isPlaying) return;
+  
+  // Use correct buffer based on playback mode
+  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  if (!bufferToUse) return;
+  
+  const elapsed = audioContext.currentTime - startTime + pausedAt;
+  const duration = bufferToUse.duration;
+  const progress = Math.min(elapsed / duration, 1);
+  
+  progressFill.style.width = `${progress * 100}%`;
+  currentTimeEl.textContent = formatTime(elapsed);
+  
+  // Playhead position
+  const containerWidth = waveformContainer.offsetWidth;
+  playhead.style.left = `${progress * containerWidth}px`;
+  playhead.style.display = 'block';
+  
+  // Update visualizer canvas size if needed
+  if (visualizerContainer && visualizerCanvas) {
+    const rect = visualizerContainer.getBoundingClientRect();
+    if (visualizerCanvas.width !== rect.width || visualizerCanvas.height !== rect.height) {
+      visualizerCanvas.width = rect.width;
+      visualizerCanvas.height = rect.height;
+    }
+  }
+  
+  if (elapsed >= duration) {
+    stopPlayback();
+    return;
+  }
+  
+  animationId = requestAnimationFrame(updatePlayhead);
+}
+
+function startPlayback() {
+  // Use correct buffer based on playback mode
+  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  if (!bufferToUse) return;
+  
+  sourceNode = audioContext.createBufferSource();
+  sourceNode.buffer = bufferToUse;
+  
+  // Create analyser for real-time visualization
+  analyserNode = audioContext.createAnalyser();
+  analyserNode.fftSize = 2048;
+  analyserNode.smoothingTimeConstant = 0.8;
+  const bufferLength = analyserNode.frequencyBinCount;
+  dataArray = new Uint8Array(bufferLength);
+  
+  // Connect: source -> analyser -> destination
+  sourceNode.connect(analyserNode);
+  analyserNode.connect(audioContext.destination);
+  
+  // Setup visualizer canvas
+  if (visualizerContainer) {
+    const rect = visualizerContainer.getBoundingClientRect();
+    visualizerCanvas.width = rect.width;
+    visualizerCanvas.height = rect.height;
+  }
+  
+  startTime = audioContext.currentTime;
+  sourceNode.start(0, pausedAt);
+  isPlaying = true;
+  playBtn.textContent = '⏸';
+  
+  sourceNode.onended = () => {
+    if (isPlaying) stopPlayback();
+  };
+  
+  updatePlayhead();
+  startVisualizer();
+  startVolumeMeter();
+  startMasterMeter();
+}
+
+function stopPlayback() {
+  if (sourceNode) {
+    sourceNode.onended = null;
+    sourceNode.stop();
+  }
+  
+  if (isPlaying) {
+    pausedAt += audioContext.currentTime - startTime;
+  }
+  
+  isPlaying = false;
+  playBtn.textContent = '▶';
+  cancelAnimationFrame(animationId);
+  stopVisualizer();
+  stopVolumeMeter();
+  stopMasterMeter();
+}
+
+// Real-time Visualizer
+function startVisualizer() {
+  if (!analyserNode || !visualizerCanvas) return;
+  
+  const canvas = visualizerCanvas;
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  
+  function draw() {
+    if (!isPlaying || !analyserNode) {
+      stopVisualizer();
+      return;
+    }
+    
+    analyserNode.getByteFrequencyData(dataArray);
+    
+    ctx.fillStyle = 'rgba(10, 10, 20, 0.3)';
+    ctx.fillRect(0, 0, width, height);
+    
+    const barCount = 128;
+    const barWidth = width / barCount;
+    const barGap = 2;
+    
+    for (let i = 0; i < barCount; i++) {
+      const dataIndex = Math.floor((i / barCount) * dataArray.length);
+      const barHeight = (dataArray[dataIndex] / 255) * height * 0.8;
+      
+      const x = i * (barWidth + barGap);
+      const gradient = ctx.createLinearGradient(x, height, x, height - barHeight);
+      gradient.addColorStop(0, '#8b5cf6');
+      gradient.addColorStop(0.5, '#06b6d4');
+      gradient.addColorStop(1, '#a78bfa');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x, height - barHeight, barWidth - barGap, barHeight);
+    }
+    
+    visualizerAnimationId = requestAnimationFrame(draw);
+  }
+  
+  draw();
+}
+
+function stopVisualizer() {
+  if (visualizerAnimationId) {
+    cancelAnimationFrame(visualizerAnimationId);
+    visualizerAnimationId = null;
+  }
+  
+  if (visualizerCanvas) {
+    const ctx = visualizerCanvas.getContext('2d');
+    ctx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+  }
+}
+
+// Real-time Volume Meter
+let peakHold = 0;
+let peakHoldTime = 0;
+
+function startVolumeMeter() {
+  if (!analyserNode) return;
+  
+  function update() {
+    if (!isPlaying || !analyserNode) {
+      stopVolumeMeter();
+      return;
+    }
+    
+    analyserNode.getByteTimeDomainData(dataArray);
+    
+    // Calculate RMS (Root Mean Square) for volume
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const normalized = (dataArray[i] - 128) / 128;
+      sum += normalized * normalized;
+    }
+    const rms = Math.sqrt(sum / dataArray.length);
+    const volume = Math.min(rms * 2, 1); // Scale to 0-1
+    
+    // Convert to dB
+    const db = volume > 0 ? 20 * Math.log10(volume) : -Infinity;
+    const dbNormalized = Math.max((db + 60) / 60, 0); // -60dB to 0dB mapped to 0-1
+    
+    // Update volume meter fill
+    const heightPercent = Math.min(dbNormalized * 100, 100);
+    volumeMeterFill.style.height = `${heightPercent}%`;
+    
+    // Color coding
+    if (heightPercent < 70) {
+      volumeMeterFill.style.background = 'linear-gradient(to top, var(--success) 0%, var(--success) 100%)';
+    } else if (heightPercent < 90) {
+      volumeMeterFill.style.background = 'linear-gradient(to top, var(--success) 0%, var(--success) 70%, var(--warning) 70%, var(--warning) 100%)';
+    } else {
+      volumeMeterFill.style.background = 'linear-gradient(to top, var(--success) 0%, var(--success) 70%, var(--warning) 70%, var(--warning) 90%, var(--error) 90%, var(--error) 100%)';
+    }
+    
+    // Peak hold
+    if (heightPercent > peakHold) {
+      peakHold = heightPercent;
+      peakHoldTime = Date.now();
+    } else if (Date.now() - peakHoldTime > 1000) {
+      peakHold = Math.max(peakHold - 1, heightPercent);
+    }
+    
+    volumeMeterPeak.style.bottom = `${peakHold}%`;
+    
+    volumeMeterAnimationId = requestAnimationFrame(update);
+  }
+  
+  update();
+}
+
+function stopVolumeMeter() {
+  if (volumeMeterAnimationId) {
+    cancelAnimationFrame(volumeMeterAnimationId);
+    volumeMeterAnimationId = null;
+  }
+  
+  volumeMeterFill.style.height = '0%';
+  volumeMeterPeak.style.bottom = '0%';
+  peakHold = 0;
+}
+
+// Master Output Level Meter with DAW-style ballistics
+function startMasterMeter() {
+  if (!analyserNode) return;
+  
+  // Ballistics constants (DAW-style)
+  const ATTACK_TIME = 0.001; // 1ms attack (very fast)
+  const RELEASE_TIME = 0.6; // 600ms release (slow decay)
+  const SAMPLE_RATE = 60; // Animation frame rate (60fps)
+  const ATTACK_COEFF = Math.exp(-1 / (ATTACK_TIME * SAMPLE_RATE));
+  const RELEASE_COEFF = Math.exp(-1 / (RELEASE_TIME * SAMPLE_RATE));
+  
+  // Reset current level
+  masterMeterCurrentLevel = -60;
+  
+  function update() {
+    if (!isPlaying || !analyserNode) {
+      stopMasterMeter();
+      return;
+    }
+    
+    analyserNode.getByteTimeDomainData(dataArray);
+    
+    // Calculate peak level (dBFS)
+    let max = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const normalized = Math.abs((dataArray[i] - 128) / 128);
+      if (normalized > max) max = normalized;
+    }
+    
+    // Convert to dBFS (0 = full scale, -60 = -60dBFS)
+    const dbfs = max > 0 ? 20 * Math.log10(max) : -Infinity;
+    const clampedDbfs = Math.max(dbfs, -60); // Clamp to -60 dBFS minimum
+    
+    // Apply ballistics: fast attack, slow release
+    if (clampedDbfs > masterMeterCurrentLevel) {
+      // Fast attack: quickly rise to new level
+      masterMeterCurrentLevel = clampedDbfs + (masterMeterCurrentLevel - clampedDbfs) * ATTACK_COEFF;
+    } else {
+      // Slow release: slowly decay
+      masterMeterCurrentLevel = clampedDbfs + (masterMeterCurrentLevel - clampedDbfs) * RELEASE_COEFF;
+    }
+    
+    // Ensure we don't go below the actual signal level
+    masterMeterCurrentLevel = Math.max(masterMeterCurrentLevel, clampedDbfs);
+    
+    // Convert displayed level to percentage (0 dBFS = 0%, -60 dBFS = 100%)
+    // Invert so 0 dBFS is at bottom (0%) and -60 dBFS is at top (100%)
+    const heightPercent = Math.min(100, Math.max(0, ((masterMeterCurrentLevel + 60) / 60) * 100));
+    
+    // Update meter fill
+    masterMeterFill.style.height = `${heightPercent}%`;
+    
+    // Color coding based on displayed level
+    if (masterMeterCurrentLevel >= -1) {
+      // Clipping (0 to -1 dBFS) - Red
+      masterMeterFill.style.background = 'linear-gradient(to top, var(--error) 0%, var(--error) 100%)';
+      masterMeterValue.style.color = 'var(--error)';
+    } else if (masterMeterCurrentLevel >= -6) {
+      // Hot (-1 to -6 dBFS) - Yellow/Orange
+      masterMeterFill.style.background = 'linear-gradient(to top, var(--error) 0%, var(--error) 20%, var(--warning) 20%, var(--warning) 100%)';
+      masterMeterValue.style.color = 'var(--warning)';
+    } else if (masterMeterCurrentLevel >= -20) {
+      // Good (-6 to -20 dBFS) - Yellow to Green
+      masterMeterFill.style.background = 'linear-gradient(to top, var(--error) 0%, var(--error) 5%, var(--warning) 5%, var(--warning) 20%, var(--success) 20%, var(--success) 100%)';
+      masterMeterValue.style.color = 'var(--success)';
+    } else {
+      // Low (-20 to -60 dBFS) - Green
+      masterMeterFill.style.background = 'linear-gradient(to top, var(--error) 0%, var(--error) 5%, var(--warning) 5%, var(--warning) 20%, var(--success) 20%, var(--success) 100%)';
+      masterMeterValue.style.color = 'var(--success)';
+    }
+    
+    // Update peak hold (separate from meter ballistics)
+    if (clampedDbfs > masterPeakHold) {
+      masterPeakHold = clampedDbfs;
+      masterPeakHoldTime = Date.now();
+    } else if (Date.now() - masterPeakHoldTime > 2000) {
+      // Reset peak hold after 2 seconds
+      masterPeakHold = Math.max(masterPeakHold - 0.1, clampedDbfs);
+    }
+    
+    const peakHeightPercent = Math.min(100, Math.max(0, ((masterPeakHold + 60) / 60) * 100));
+    masterMeterPeak.style.bottom = `${peakHeightPercent}%`;
+    
+    // Update display values (show smoothed level)
+    masterMeterValue.textContent = `${masterMeterCurrentLevel.toFixed(1)} dBFS`;
+    masterMeterPeakValue.textContent = `Peak: ${masterPeakHold.toFixed(1)} dBFS`;
+    
+    masterMeterAnimationId = requestAnimationFrame(update);
+  }
+  
+  update();
+}
+
+function stopMasterMeter() {
+  if (masterMeterAnimationId) {
+    cancelAnimationFrame(masterMeterAnimationId);
+    masterMeterAnimationId = null;
+  }
+  
+  masterMeterFill.style.height = '0%';
+  masterMeterPeak.style.bottom = '0%';
+  masterMeterValue.textContent = '-- dBFS';
+  masterMeterPeakValue.textContent = 'Peak: -- dBFS';
+  masterMeterValue.style.color = 'var(--text)';
+  masterPeakHold = -Infinity;
+  masterMeterCurrentLevel = -60; // Reset current level
+}
+
+playBtn.addEventListener('click', () => {
+  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  if (!bufferToUse) return;
+  
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    if (pausedAt >= bufferToUse.duration) pausedAt = 0;
+    startPlayback();
+  }
+});
+
+// Skip backward 10 seconds
+rewindBtn.addEventListener('click', () => {
+  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  if (!bufferToUse) return;
+  
+  const wasPlaying = isPlaying;
+  if (wasPlaying) stopPlayback();
+  
+  pausedAt = Math.max(0, pausedAt - 10);
+  progressFill.style.width = `${(pausedAt / bufferToUse.duration) * 100}%`;
+  currentTimeEl.textContent = formatTime(pausedAt);
+  
+  if (wasPlaying) startPlayback();
+});
+
+// Skip forward 10 seconds
+forwardBtn.addEventListener('click', () => {
+  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  if (!bufferToUse) return;
+  
+  const wasPlaying = isPlaying;
+  if (wasPlaying) stopPlayback();
+  
+  pausedAt = Math.min(bufferToUse.duration, pausedAt + 10);
+  progressFill.style.width = `${(pausedAt / bufferToUse.duration) * 100}%`;
+  currentTimeEl.textContent = formatTime(pausedAt);
+  
+  if (wasPlaying) startPlayback();
+});
+
+// Progress bar click
+progressBar.addEventListener('click', e => {
+  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  if (!bufferToUse) return;
+  
+  const rect = progressBar.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const percent = x / rect.width;
+  
+  pausedAt = percent * bufferToUse.duration;
+  progressFill.style.width = `${percent * 100}%`;
+  currentTimeEl.textContent = formatTime(pausedAt);
+  
+  if (isPlaying) {
+    stopPlayback();
+    startPlayback();
+  }
+});
+
+// A/B Toggle
+beforeBtn.addEventListener('click', () => {
+  playbackMode = 'before';
+  beforeBtn.classList.add('active');
+  afterBtn.classList.remove('active');
+  const currentModeEl = document.getElementById('currentMode');
+  if (currentModeEl) currentModeEl.textContent = 'Before (Original)';
+  
+  // Show original waveform
+  if (audioBuffer) drawWaveform(audioBuffer, '#6b7280', '#9ca3af');
+  
+  // If playing, switch to original buffer seamlessly
+  if (isPlaying) {
+    const currentProgress = pausedAt + (audioContext.currentTime - startTime);
+    stopPlayback();
+    pausedAt = currentProgress;
+    startPlayback();
+  }
+});
+
+afterBtn.addEventListener('click', () => {
+  playbackMode = 'after';
+  afterBtn.classList.add('active');
+  beforeBtn.classList.remove('active');
+  const currentModeEl = document.getElementById('currentMode');
+  if (currentModeEl) currentModeEl.textContent = 'After (Mastered)';
+  
+  // Show mastered waveform if available, otherwise original
+  if (masteredBuffer) {
+    drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+  } else if (audioBuffer) {
+    drawWaveform(audioBuffer, '#8b5cf6', '#06b6d4');
+  }
+  
+  // If playing, switch to mastered buffer seamlessly
+  if (isPlaying) {
+    const currentProgress = pausedAt + (audioContext.currentTime - startTime);
+    stopPlayback();
+    pausedAt = currentProgress;
+    startPlayback();
+  }
+});
+
+// Master
+masterBtn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  
+  const backendOk = await checkBackend();
+  if (!backendOk) {
+    statusBar.className = 'status-bar error';
+    statusText.textContent = '❌ Backend offline. Please ensure the backend is running and accessible.';
+    return;
+  }
+  
+  // Ensure API is set to VM (backend is always on VM, not localhost)
+  // Even if checkBackend succeeded on localhost, we need to use VM for the actual request
+  if (API.includes('localhost:3002')) {
+    console.log('Switching from localhost to VM for mastering request');
+    API = 'http://168.119.241.59:3002/api';
+  }
+  
+  // Optional: Show confirmation (reminder is already visible)
+  // User can proceed directly since reminder is always visible
+  
+  // Stop playback
+  if (isPlaying) stopPlayback();
+  pausedAt = 0;
+  
+  masterBtn.disabled = true;
+  masterBtn.innerHTML = '<span>⏳</span> Mastering...';
+  statusBar.className = 'status-bar processing';
+  statusText.textContent = 'Processing with real FFmpeg loudnorm...';
+  downloadReady.classList.remove('show');
+  
+  try {
+    const formData = new FormData();
+    formData.append('audio', currentFile);
+    formData.append('preset', selectedPreset);
+    
+    // Log the API URL being used for debugging
+    console.log('Mastering request to:', `${API}/quick-master`);
+    
+    // Start progress polling
+    let progressId = null;
+    let progressInterval = null;
+    
+    const pollProgress = async (id) => {
+      try {
+        const progressRes = await fetch(`${API}/mastering-progress/${id}`);
+        if (progressRes.ok) {
+          const progress = await progressRes.json();
+          if (progress.status === 'processing') {
+            statusText.textContent = `${progress.message} (${progress.progress}%)`;
+            // Update progress bar if it exists
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+              progressBar.style.width = `${progress.progress}%`;
+            }
+            return progress;
+          } else if (progress.status === 'complete') {
+            clearInterval(progressInterval);
+            progressInterval = null;
+            statusText.textContent = '✅ Mastering complete!';
+            // Refresh stats when complete status is detected (with small delay to ensure backend saved)
+            setTimeout(() => {
+              loadUsageStats();
+            }, 500);
+            return progress;
+          } else if (progress.status === 'error') {
+            clearInterval(progressInterval);
+            progressInterval = null;
+            throw new Error(progress.message);
+          }
+        }
+      } catch (err) {
+        console.warn('Progress poll error:', err);
+        if (err.message && err.message.includes('Error:')) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+          throw err;
+        }
+      }
+      return null;
+    };
+    
+    // Add timeout to prevent hanging (5 minutes for large files)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minutes
+    
+    let res;
+    try {
+      res = await fetch(`${API}/quick-master`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (progressInterval) clearInterval(progressInterval);
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Mastering request timed out. The file may be too large or the server is taking too long.');
+      }
+      throw fetchError;
+    }
+    
+    // Check if response is OK
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Backend error response:', res.status, errorText);
+      throw new Error(`Backend error: ${res.status} ${res.statusText}. ${errorText.substring(0, 200)}`);
+    }
+    
+    // Check content type before parsing
+    const contentType = res.headers.get('content-type') || '';
+    console.log('Response content-type:', contentType);
+    let data;
+    if (contentType.includes('application/json')) {
+      data = await res.json();
+      console.log('Mastering response received:', data);
+    } else {
+      // If not JSON, try to parse anyway but handle errors
+      const text = await res.text();
+      console.log('Non-JSON response received:', text.substring(0, 200));
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        throw new Error('Backend returned HTML instead of JSON. Backend may be offline or misconfigured.');
+      }
+      try {
+        data = JSON.parse(text);
+        console.log('Parsed JSON from text:', data);
+      } catch (parseError) {
+        throw new Error(`Invalid response from backend: ${text.substring(0, 100)}`);
+      }
+    }
+    
+    if (!data.success) {
+      console.error('Mastering failed:', data.error);
+      if (progressInterval) clearInterval(progressInterval);
+      throw new Error(data.error || 'Mastering failed');
+    }
+    
+    // Start polling for progress if progressId is provided
+    if (data.progressId) {
+      progressId = data.progressId;
+      progressInterval = setInterval(async () => {
+        const progress = await pollProgress(progressId);
+        if (progress && progress.status === 'complete') {
+          // Fetch the final result
+          try {
+            const resultRes = await fetch(`${API}/mastering-result/${progressId}`);
+            if (resultRes.ok) {
+              const result = await resultRes.json();
+              if (result.success) {
+                masterResult = result;
+                // Use API base URL for downloads (remove /api suffix for static file serving)
+                const baseUrl = API.replace('/api', '');
+                downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
+                downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
+                
+                // Update meters
+                inputLufs.textContent = `${result.input.lufs.toFixed(1)}`;
+                outputLufs.textContent = `${result.output.lufs.toFixed(1)}`;
+                lufsDisplay.textContent = `${result.output.lufs.toFixed(1)} LUFS`;
+                
+                peakDisplay.textContent = `${result.output.truePeak.toFixed(1)} dB`;
+                const peakPercent = Math.min(100, Math.max(0, (result.output.truePeak + 10) * 10));
+                peakBar.style.width = `${peakPercent}%`;
+                
+                const dr = Math.abs(result.output.lufs - result.input.lufs);
+                drDisplay.textContent = `${dr.toFixed(0)} DR`;
+                drBar.style.width = `${Math.min(100, dr * 10)}%`;
+                
+                gainDisplay.textContent = `${result.gain > 0 ? '+' : ''}${result.gain.toFixed(1)} dB`;
+                
+                // Load mastered audio for playback
+                try {
+                  const masteredUrl = downloadUrls.wav;
+                  const masteredResponse = await fetch(masteredUrl);
+                  const masteredArrayBuffer = await masteredResponse.arrayBuffer();
+                  masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer);
+                  
+                  // Update waveform to show mastered version
+                  if (playbackMode === 'after') {
+                    drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+                  }
+                } catch (err) {
+                  console.warn('Could not load mastered audio for preview:', err);
+                }
+                
+                statusBar.className = 'status-bar';
+                statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+                
+                // Refresh usage stats after mastering completes (with small delay to ensure backend saved)
+                setTimeout(() => {
+                  loadUsageStats();
+                }, 500);
+                
+                downloadReady.classList.add('show');
+                downloadWav.disabled = false;
+                downloadMp3.disabled = false;
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching result:', err);
+          }
+        }
+      }, 500); // Poll every 500ms
+    } else {
+      // Old format - direct response (backward compatibility)
+      masterResult = data;
+      // Use API base URL for downloads (remove /api suffix for static file serving)
+      const baseUrl = API.replace('/api', '');
+      downloadUrls.wav = `${baseUrl}${data.downloads.wav}`;
+      downloadUrls.mp3 = `${baseUrl}${data.downloads.mp3}`;
+      
+      // Update meters
+      inputLufs.textContent = `${data.input.lufs.toFixed(1)}`;
+      outputLufs.textContent = `${data.output.lufs.toFixed(1)}`;
+      lufsDisplay.textContent = `${data.output.lufs.toFixed(1)} LUFS`;
+      
+      peakDisplay.textContent = `${data.output.truePeak.toFixed(1)} dB`;
+      const peakPercent = Math.min(100, Math.max(0, (data.output.truePeak + 10) * 10));
+      peakBar.style.width = `${peakPercent}%`;
+      
+      const dr = Math.abs(data.output.lufs - data.input.lufs);
+      drDisplay.textContent = `${dr.toFixed(0)} DR`;
+      drBar.style.width = `${Math.min(100, dr * 10)}%`;
+      
+      gainDisplay.textContent = `${data.gain > 0 ? '+' : ''}${data.gain.toFixed(1)} dB`;
+      
+      // Load mastered audio for playback
+      try {
+        const masteredUrl = downloadUrls.wav;
+        const masteredResponse = await fetch(masteredUrl);
+        const masteredArrayBuffer = await masteredResponse.arrayBuffer();
+        masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer);
+        
+        // Update waveform to show mastered version
+        if (playbackMode === 'after') {
+          drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+        }
+      } catch (err) {
+        console.warn('Could not load mastered audio for preview:', err);
+      }
+      
+      statusBar.className = 'status-bar';
+      statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+      
+      downloadReady.classList.add('show');
+      downloadWav.disabled = false;
+      downloadMp3.disabled = false;
+    }
+    
+  } catch (err) {
+    console.error('Mastering error:', err);
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+    statusBar.className = 'status-bar error';
+    statusText.textContent = `❌ ${err.message}`;
+    masterBtn.disabled = false;
+    masterBtn.innerHTML = '<span>🎛️</span> Master';
+  } finally {
+    // Ensure button is always re-enabled
+    masterBtn.disabled = false;
+    if (masterBtn.innerHTML.includes('⏳')) {
+      masterBtn.innerHTML = '<span>🎛️</span> Master';
+    }
+  }
+  masterBtn.innerHTML = '<span>🎛️</span> Master Track';
+});
+
+// Download with progress
+async function downloadFile(url, filename, progressEl, button) {
+  try {
+    button.disabled = true;
+    button.classList.add('downloading');
+    progressEl.style.display = 'inline';
+    progressEl.textContent = '0%';
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Download failed');
+    
+    const contentLength = response.headers.get('content-length');
+    const total = contentLength ? parseInt(contentLength, 10) : 0;
+    
+    const reader = response.body.getReader();
+    const chunks = [];
+    let received = 0;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      chunks.push(value);
+      received += value.length;
+      
+      if (total > 0) {
+        const percent = Math.round((received / total) * 100);
+        progressEl.textContent = `${percent}%`;
+      } else {
+        progressEl.textContent = '...';
+      }
+    }
+    
+    // Combine chunks into blob
+    const blob = new Blob(chunks);
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Trigger download
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Cleanup
+    URL.revokeObjectURL(blobUrl);
+    
+    progressEl.textContent = '✅';
+    setTimeout(() => {
+      progressEl.style.display = 'none';
+      button.classList.remove('downloading');
+      button.disabled = false;
+    }, 1000);
+    
+  } catch (err) {
+    progressEl.textContent = '❌';
+    button.classList.remove('downloading');
+    button.disabled = false;
+    alert('Download failed: ' + err.message);
+  }
+}
+
+// Downloads
+downloadWav.addEventListener('click', () => {
+  if (downloadUrls.wav && currentFile) {
+    const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.wav');
+    const progressEl = document.getElementById('wavProgress');
+    downloadFile(downloadUrls.wav, filename, progressEl, downloadWav);
+  }
+});
+
+downloadMp3.addEventListener('click', () => {
+  if (downloadUrls.mp3 && currentFile) {
+    const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.mp3');
+    const progressEl = document.getElementById('mp3Progress');
+    downloadFile(downloadUrls.mp3, filename, progressEl, downloadMp3);
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea')) return;
+  
+  if (e.code === 'Space') {
+    e.preventDefault();
+    playBtn.click();
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    rewindBtn.click();
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    forwardBtn.click();
+  }
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  if (playbackMode === 'before' && audioBuffer) {
+    drawWaveform(audioBuffer, '#6b7280', '#9ca3af');
+  } else if (playbackMode === 'after') {
+    if (masteredBuffer) {
+      drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+    } else if (audioBuffer) {
+      drawWaveform(audioBuffer, '#8b5cf6', '#06b6d4');
+    }
+  }
+});
+
+// Wire donate button after DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wireDonateButtons);
+} else {
+  wireDonateButtons();
+}
+
+// Init - check backend once, then poll only if it succeeds
+checkBackend().then((isAvailable) => {
+  if (isAvailable) {
+    // Only continue polling if backend is available
+    backendCheckInterval = setInterval(checkBackend, 30000); // Check every 30s if available
+    
+    // Load usage stats after backend is confirmed available
+    loadUsageStats();
+    // Refresh stats every 30 seconds
+    setInterval(loadUsageStats, 30000);
+  } else {
+    // Still try to load stats even if backend check fails (might be a different issue)
+    loadUsageStats();
+  }
+  // If backend is not available, stop checking to avoid console spam
+});
+</script>
+
+  <!-- Footer -->
+  <footer style="background: var(--bg-deep); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
+          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
+          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
+        </p>
+        <div style="display: flex; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
+          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
+          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
+          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
+          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

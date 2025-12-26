@@ -1,0 +1,21 @@
+# Exclude these from Cloudflare Pages upload
+node_modules/
+backend/
+.git/
+.env
+.env.*
+*.log
+logs/
+uploads/
+output/
+data/
+voice-tags/
+*.tar.gz
+*.zip
+.DS_Store
+*.swp
+*.swo
+*~
+.cursor/
+.vscode/
+.idea/

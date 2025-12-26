@@ -1,0 +1,2780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Feed — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script>
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
+  </script>
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Audio City" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.05);
+      --shadow: rgba(0, 0, 0, 0.4);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px; /* Space for mini player */
+    }
+    
+    /* Glassmorphism background */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Header - Glassmorphism */
+    header {
+      position: sticky;
+      top: 0;
+      background: #000000 !important;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      display: block;
+      margin-left: 8px;
+    }
+    
+    .nav-main {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      font-weight: 500;
+      font-size: 15px;
+      position: relative;
+    }
+    
+    .nav-item:hover {
+      background: var(--glass);
+      color: var(--accent);
+    }
+    
+    .nav-item.active {
+      color: var(--accent);
+      background: var(--glass);
+    }
+    
+    .nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+    
+    #inboxNavLink {
+      display: none !important; /* Hidden by default, shown only when logged in */
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
+    #inboxNavLink.show {
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    
+    .nav-dropdown {
+      position: relative;
+    }
+    
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+    
+    .nav-dropdown:hover .dropdown-menu {
+      display: block;
+    }
+    
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .dropdown-item:hover {
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+    
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .donate-btn {
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      display: inline-flex !important;
+      align-items: center;
+      gap: 8px;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .donate-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px var(--accent-glow);
+    }
+    
+    .donate-btn:active {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
+    
+    .btn-mastering {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+      color: white !important;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      display: inline-block !important;
+      visibility: visible !important;
+    }
+    
+    .btn-mastering:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2));
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    
+    .create-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .create-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    
+    .profile-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .profile-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+    
+    .profile-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Main Container */
+    .feed-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Feed Header with Filters */
+    .feed-header {
+      margin-bottom: 32px;
+    }
+    
+    .feed-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+    
+    .filter-tab {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    .filter-tab:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .filter-tab.active {
+      color: var(--accent);
+      background: rgba(139, 92, 246, 0.15);
+    }
+    
+    /* Feed Posts */
+    .feed-posts {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    /* Post Cards - Glassmorphism */
+    .post-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--shadow);
+      border-color: var(--accent);
+    }
+    
+    .post-card.large {
+      padding: 28px;
+    }
+    
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .post-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid var(--border);
+    }
+    
+    .post-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .verified-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      border: 2px solid var(--bg-card);
+    }
+    
+    .post-user-info {
+      flex: 1;
+    }
+    
+    .post-user-name {
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .post-user-handle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    
+    .post-time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      opacity: 0.7;
+    }
+    
+    .delete-btn:hover {
+      color: var(--error);
+      opacity: 1;
+      background: rgba(239, 68, 68, 0.1);
+    }
+    
+    .delete-btn.admin-delete {
+      color: var(--error);
+      opacity: 1;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-weight: 600;
+    }
+    
+    .delete-btn.admin-delete:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: var(--error);
+      transform: scale(1.1);
+    }
+    
+    .post-content {
+      margin-bottom: 16px;
+    }
+    
+    .post-text {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    
+    /* Music Player Card */
+    .music-player-card {
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+    
+    .music-player-card:hover {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: var(--accent);
+    }
+
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      width: fit-content;
+    }
+
+    .disc {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      overflow: hidden;
+      animation: spin 6s linear infinite;
+      animation-play-state: paused;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .player.playing .disc {
+      animation-play-state: running;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* SoundCloud-style inline play button overlay */
+    .cover-play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0);
+      transition: background 0.2s ease, opacity 0.2s ease;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      border-radius: 50%;
+    }
+    
+    .music-cover:hover .cover-play-overlay,
+    .music-cover:active .cover-play-overlay,
+    .music-cover.playing .cover-play-overlay {
+      opacity: 1 !important;
+      background: rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
+    }
+    
+    /* Show overlay on mobile tap - make it always visible on touch devices */
+    @media (hover: none) {
+      .cover-play-overlay {
+        opacity: 0.8 !important;
+        pointer-events: auto;
+      }
+    }
+    
+    /* Ensure overlay is visible when track is playing */
+    .music-cover.playing .cover-play-overlay {
+      opacity: 1 !important;
+      pointer-events: auto;
+    }
+    
+    .cover-play-button {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      transform: scale(0.9);
+      position: relative;
+    }
+    
+    .music-cover:hover .cover-play-button,
+    .music-cover:active .cover-play-button {
+      transform: scale(1);
+      background: rgba(0, 0, 0, 0.7);
+    }
+    
+    .cover-play-button:active {
+      transform: scale(0.95);
+    }
+    
+    .cover-play-icon {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .play-triangle {
+      width: 0;
+      height: 0;
+      border-left: 18px solid white;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      margin-left: 4px;
+      transition: opacity 0.2s ease;
+      display: block !important; /* Default: always visible */
+    }
+    
+    .pause-bars {
+      position: absolute;
+      display: none !important; /* Default: always hidden */
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .pause-bar {
+      width: 4px;
+      height: 18px;
+      background: white;
+      border-radius: 1px;
+      display: block;
+    }
+    
+    /* When playing: hide play triangle, show pause bars */
+    .cover-play-button.playing .play-triangle,
+    .music-cover.playing .cover-play-button .play-triangle {
+      display: none !important;
+    }
+    
+    .cover-play-button.playing .pause-bars,
+    .music-cover.playing .cover-play-button .pause-bars {
+      display: flex !important;
+    }
+    
+    /* When NOT playing: show play triangle, hide pause bars */
+    .cover-play-button:not(.playing) .play-triangle {
+      display: block !important;
+    }
+    
+    .cover-play-button:not(.playing) .pause-bars {
+      display: none !important;
+    }
+    
+    .music-cover:not(.playing) .cover-play-button .play-triangle {
+      display: block !important;
+    }
+    
+    .music-cover:not(.playing) .cover-play-button .pause-bars {
+      display: none !important;
+    }
+    
+    .cover-waveform-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      border-radius: 0 0 50% 50%;
+    }
+    
+    .music-cover.playing .cover-waveform-progress {
+      opacity: 1;
+    }
+    
+    .cover-waveform-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .music-cover {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    
+    .music-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .music-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .music-title {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .music-artist {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    
+    .music-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .play-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .play-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    
+    .post-actions {
+      display: flex;
+      gap: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+    
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 10px;
+      transition: all 0.3s;
+    }
+    
+    .action-btn:hover {
+      color: var(--accent);
+      background: var(--glass);
+    }
+    
+    .action-btn.liked {
+      color: #ff3b5c;
+    }
+    
+    /* Small Activity Cards */
+    .post-card.small {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .post-card.small .post-avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+    
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .activity-icon.like {
+      background: rgba(255, 59, 92, 0.2);
+      color: #ff3b5c;
+    }
+    
+    .activity-icon.comment {
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+    }
+    
+    .activity-icon.follow {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success);
+    }
+    
+    .activity-icon.repost {
+      background: rgba(139, 92, 246, 0.2);
+      color: var(--accent);
+    }
+    
+    /* Featured Card */
+    .post-card.featured {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.15));
+      border: 2px solid var(--accent);
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+    
+    /* Ad Card */
+    .post-card.ad {
+      background: linear-gradient(135deg, rgba(255, 180, 50, 0.15), rgba(255, 107, 53, 0.1));
+      border: 2px solid rgba(255, 180, 50, 0.5);
+      padding: 28px;
+    }
+    
+    .post-card.ad.featured {
+      background: linear-gradient(135deg, rgba(255, 180, 50, 0.25), rgba(255, 107, 53, 0.15));
+      border: 2px solid rgba(255, 180, 50, 0.8);
+      box-shadow: 0 8px 32px rgba(255, 180, 50, 0.3);
+    }
+    
+    .ad-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(255, 180, 50, 0.3);
+      color: #ffb432;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    
+    .ad-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .ad-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--glass);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    
+    .ad-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .ad-cta {
+      margin-top: 16px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #ffb432, #ff6b35);
+      border: none;
+      color: white;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px rgba(255, 180, 50, 0.4);
+      width: 100%;
+    }
+    
+    .ad-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(255, 180, 50, 0.5);
+    }
+    
+    .featured-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Mini Player - Sticky Bottom */
+    .mini-player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: rgba(20, 20, 32, 0.95);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-top: 1px solid var(--border);
+      display: none;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      z-index: 200;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+    }
+    
+    .mini-player.active {
+      display: flex;
+    }
+    
+    .mini-player-cover {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: border-radius 0.3s;
+    }
+
+    .mini-player-cover.playing {
+      animation: rotate 3s linear infinite;
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    .mini-player-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .mini-player-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .mini-player-title {
+      font-weight: 600;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    
+    .mini-player-artist {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .mini-player-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .mini-play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    .mini-play-btn:hover {
+      transform: scale(1.1);
+    }
+    
+    /* Loading & Empty States */
+    .loading, .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .feed-container {
+        padding: 16px;
+      }
+      
+      .nav-main {
+        display: none;
+      }
+      
+      .feed-filters {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .filter-tab {
+        white-space: nowrap;
+      }
+      
+      .music-player-card {
+        flex-direction: column;
+      text-align: center;
+      }
+      
+      .mini-player {
+        padding: 0 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Design Version Check: v2.0 - Glassmorphism with Purple Accents - DESKTOP VERSION -->
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="index.html" class="logo-brand">
+          <div class="brand-text">AUDIO CITY</div>
+        </a>
+      <nav class="nav-main">
+        <a href="discover.html" class="nav-item">Home</a>
+        <a href="feed.html" class="nav-item active">Feed</a>
+        <a href="artists.html" class="nav-item">Artists</a>
+        <div class="nav-dropdown">
+          <a href="#" class="nav-item">🛠️ Tools</a>
+          <div class="dropdown-menu">
+            <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
+      </div>
+        </div>
+        <a href="inbox.html" class="nav-item" id="inboxNavLink" style="display: none !important;">Inbox</a>
+      </nav>
+      <div class="nav-right">
+        <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
+        <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
+        <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <button class="create-btn" id="createBtn" title="Create" style="display: none;">+</button>
+        <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative;">
+          <a href="profile.html" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer;">
+            <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px; pointer-events: none;">👤</div>
+          </a>
+          <button class="profile-menu-toggle" style="position: absolute; top: -4px; right: -4px; width: 24px; height: 24px; background: var(--accent); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.3); color: white; font-size: 14px; line-height: 1; padding: 0;" onclick="event.stopPropagation(); event.preventDefault(); toggleProfileMenu(event);" title="Open menu">⋯</button>
+          <div class="dropdown-menu" id="profileMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000;">
+            <a href="profile.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">👤 Profile</a>
+            <a href="profile.html#edit" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">✏️ Edit Profile</a>
+            <a href="settings.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">⚙️ Settings</a>
+            <div class="dropdown-item" onclick="signOut()" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #ef4444; cursor: pointer; border-radius: 8px; font-size: 14px; transition: all 0.2s; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px;">🚪 Sign out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <div class="feed-container">
+    <div class="feed-header">
+      <div class="feed-filters">
+        <button class="filter-tab active" data-filter="hot">🔥 Hot 100</button>
+        <button class="filter-tab" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="following">Following</button>
+        <button class="filter-tab" data-filter="music">Music Only</button>
+        <button class="filter-tab" data-filter="community">Community</button>
+        <button class="filter-tab" data-filter="ads">Ads</button>
+        <button class="filter-tab" data-filter="nearby">Near You</button>
+        </div>
+      </div>
+      
+    <div class="feed-posts" id="feedPosts" style="display: none;"></div>
+      </div>
+      
+  <!-- Mini Player -->
+  <div class="mini-player" id="miniPlayer">
+    <div class="mini-player-cover">
+      <img id="miniPlayerCover" src="" alt="Track" onerror="this.style.display='none';" />
+          </div>
+    <div class="mini-player-info">
+      <div class="mini-player-title" id="miniPlayerTitle">No track playing</div>
+      <div class="mini-player-artist" id="miniPlayerArtist">—</div>
+        </div>
+    <div class="mini-player-controls">
+      <button class="mini-play-btn" id="miniPlayBtn">▶</button>
+    </div>
+  </div>
+  
+  <!-- Global Audio Player (PUBLIC - no auth required) -->
+  <audio id="globalPlayer"></audio>
+  
+  <script>
+    // Feed is PUBLIC - works for ALL users (logged in or not)
+    // No authentication required to view the feed
+    // Users can browse tracks, play music, and view posts without logging in
+    // Use local API for development, production API for deployed site
+    if (typeof API_BASE_URL === 'undefined') {
+      var API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3002'
+        : 'https://audio-city-api.chilafrican.workers.dev';
+    }
+    
+    // Normalize image URLs (allows data URIs for base64 images)
+    function normalizeImageUrl(url) {
+      if (!url) return null;
+      
+      // Data URIs are acceptable for images
+      if (url.startsWith('data:')) {
+        return url; // Return data URI as-is for images
+      }
+      
+      // Use the same normalization logic as audio URLs
+      return normalizeAudioUrl(url);
+    }
+    
+    // Normalize audio URLs to use correct API base URL
+    function normalizeAudioUrl(url) {
+      if (!url) return null;
+      
+      // Handle data URIs (base64 encoded images/audio)
+      // Data URIs are too large for audio files and cause 431 errors
+      if (url.startsWith('data:')) {
+        console.warn('Data URI detected (not suitable for audio):', url.substring(0, 50) + '...');
+        // For audio URLs, data URIs are not practical - return null
+        return null; // Reject data URIs for audio
+      }
+      
+      // If already absolute URL with correct base, return as is
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Replace incorrect ports/hosts with correct API_BASE_URL
+        if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) {
+          return url.replace(/https?:\/\/[^\/]+/, API_BASE_URL);
+        }
+        return url;
+      }
+      
+      // If relative URL starting with /uploads/, prepend API_BASE_URL
+      if (url.startsWith('/uploads/')) {
+        return `${API_BASE_URL}${url}`;
+      }
+      
+      // If relative URL without leading slash, add it
+      if (!url.startsWith('/') && url.startsWith('uploads/')) {
+        return `${API_BASE_URL}/${url}`;
+      }
+      
+      // If it's already a full path, prepend API_BASE_URL
+      return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
+    }
+    // Update header profile picture
+    async function updateHeaderProfilePicture() {
+      const userId = localStorage.getItem('user_id');
+      const headerImg = document.getElementById('headerProfileImg');
+      const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+      
+      if (!headerImg || !headerPlaceholder) return;
+      
+      let avatar = null;
+      
+      // Try to fetch from backend API first
+      if (userId && typeof API_BASE_URL !== 'undefined') {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+          if (response.ok) {
+            const userData = await response.json();
+            avatar = userData?.profile_image || userData?.avatar_url;
+            
+            // If avatar URL is relative, make it absolute
+            if (avatar && avatar.startsWith('/uploads/')) {
+              avatar = `${API_BASE_URL}${avatar}`;
+            }
+          }
+      } catch (error) {
+          console.error('Failed to load profile picture from API:', error);
+        }
+      }
+      
+      // Fallback to localStorage if API didn't return an avatar
+      if (!avatar) {
+        avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+      }
+      
+      // Update header image
+      if (avatar) {
+        headerImg.src = avatar;
+        headerImg.style.display = 'block';
+        headerPlaceholder.style.display = 'none';
+            } else {
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+      }
+    }
+    
+    // Update authentication UI
+    function updateAuthUI() {
+            const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const signInBtn = document.getElementById('signInBtn');
+      const signUpBtn = document.getElementById('signUpBtn');
+      const profileBtn = document.getElementById('profileBtn');
+      const createBtn = document.getElementById('createBtn');
+      const inboxNavLink = document.getElementById('inboxNavLink');
+      
+      if (authToken && userId) {
+        // User is logged in - hide sign in/up, show profile button, create button, and inbox
+        if (signInBtn) {
+          signInBtn.style.setProperty('display', 'none', 'important');
+          signInBtn.style.setProperty('visibility', 'hidden', 'important');
+        }
+        if (signUpBtn) {
+          signUpBtn.style.setProperty('display', 'none', 'important');
+          signUpBtn.style.setProperty('visibility', 'hidden', 'important');
+        }
+        if (profileBtn) {
+          profileBtn.style.setProperty('display', 'flex', 'important');
+          profileBtn.style.setProperty('visibility', 'visible', 'important');
+          profileBtn.classList.add('show');
+        }
+        if (createBtn) {
+          createBtn.style.setProperty('display', 'flex', 'important');
+          createBtn.style.setProperty('visibility', 'visible', 'important');
+          createBtn.classList.add('show');
+        }
+        if (inboxNavLink) {
+          inboxNavLink.style.setProperty('display', 'inline-block', 'important');
+          inboxNavLink.style.setProperty('visibility', 'visible', 'important');
+          inboxNavLink.classList.add('show');
+        }
+        // Update profile picture
+        updateHeaderProfilePicture();
+      } else {
+        // User is not logged in - show sign in/up, hide profile button, create button, and inbox
+        if (signInBtn) {
+          signInBtn.style.setProperty('display', 'inline-block', 'important');
+          signInBtn.style.setProperty('visibility', 'visible', 'important');
+        }
+        if (signUpBtn) {
+          signUpBtn.style.setProperty('display', 'inline-block', 'important');
+          signUpBtn.style.setProperty('visibility', 'visible', 'important');
+        }
+        if (profileBtn) {
+          profileBtn.style.setProperty('display', 'none', 'important');
+          profileBtn.style.setProperty('visibility', 'hidden', 'important');
+          profileBtn.classList.remove('show');
+        }
+        if (createBtn) {
+          createBtn.style.setProperty('display', 'none', 'important');
+          createBtn.style.setProperty('visibility', 'hidden', 'important');
+          createBtn.classList.remove('show');
+        }
+        if (inboxNavLink) {
+          inboxNavLink.style.setProperty('display', 'none', 'important');
+          inboxNavLink.style.setProperty('visibility', 'hidden', 'important');
+          inboxNavLink.classList.remove('show');
+        }
+      }
+    }
+    if (typeof currentFilter === 'undefined') {
+      var currentFilter = 'hot';
+    }
+    if (typeof feedData === 'undefined') {
+      var feedData = [];
+    }
+    if (typeof currentTrack === 'undefined') {
+      var currentTrack = null;
+    }
+    if (typeof currentButton === 'undefined') {
+      var currentButton = null;
+    }
+    
+    // Global Audio Player (PUBLIC - works for ALL users, no auth required)
+    let globalPlayer = document.getElementById('globalPlayer');
+    if (!globalPlayer) {
+      console.warn('globalPlayer not found, creating one...');
+      globalPlayer = document.createElement('audio');
+      globalPlayer.id = 'globalPlayer';
+      document.body.appendChild(globalPlayer);
+    }
+    
+    let isPlaying = false;
+    
+    // Initialize authentication UI
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateAuthUI);
+      } else {
+      updateAuthUI();
+    }
+    
+    // Update auth UI periodically
+    setInterval(updateAuthUI, 1000);
+    
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilter = tab.dataset.filter;
+        renderFeed();
+        
+        // Scroll to top of feed
+        document.getElementById('feedPosts').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+    
+    // Donate button
+    const donateBtn = document.getElementById('donateBtn');
+    if (donateBtn) {
+      donateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Donate button clicked');
+        try {
+          showDonateModal();
+        } catch (error) {
+          console.error('Error opening donate modal:', error);
+          alert('Error opening donation form. Please check console for details.');
+        }
+      });
+    } else {
+      console.error('Donate button not found!');
+    }
+    
+    // Create button
+    const createBtn = document.getElementById('createBtn');
+    createBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showCreateModal();
+    });
+    // Keyboard support
+    createBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        showCreateModal();
+      }
+    });
+    
+    // Sign out function - make it global
+    window.signOut = function() {
+      if (confirm('Are you sure you want to sign out?')) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('is_admin');
+        localStorage.removeItem('admin_mode');
+        localStorage.removeItem('profile_image_url');
+        localStorage.removeItem('bio');
+        localStorage.removeItem('location');
+        window.location.href = 'index.html';
+      }
+    };
+    
+    // Toggle profile menu - make it global
+    window.toggleProfileMenu = function(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('profileMenu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+      }
+    };
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const profileMenu = document.getElementById('profileMenu');
+      const profileBtn = document.getElementById('profileBtn');
+      if (profileMenu && profileBtn && !profileBtn.contains(e.target)) {
+        profileMenu.style.display = 'none';
+      }
+    });
+    
+    // Navigation links - update active state
+    document.querySelectorAll('.nav-item').forEach(link => {
+      link.addEventListener('click', (e) => {
+        // Remove active from all nav items
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        // Add active to clicked item
+        link.classList.add('active');
+      });
+    });
+    
+    // Logo brand - ensure it works
+    const logoBrand = document.querySelector('.logo-brand');
+    if (logoBrand) {
+      logoBrand.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = 'index.html';
+      });
+    }
+    
+    // Load feed data
+    async function loadFeed() {
+      try {
+        console.log('Loading feed for all users (no authentication required)...');
+        
+        // Load tracks (music posts) - ordered by popularity for Hot 100
+        // PUBLIC ENDPOINT - works for all users (logged in or not)
+        let orderParam = 'order=created_at.desc';
+        if (currentFilter === 'hot') {
+          // Order by views and likes for hot/trending ranking
+          orderParam = 'order=views_count.desc,likes_count.desc';
+        }
+        
+        const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?${orderParam}&limit=100`);
+        
+        if (!tracksResponse.ok) {
+          console.error('Failed to fetch tracks:', tracksResponse.status, tracksResponse.statusText);
+          throw new Error(`Failed to load tracks: ${tracksResponse.status}`);
+        }
+        
+        const tracks = await tracksResponse.json();
+        console.log(`Loaded ${tracks.length} tracks for feed`);
+        
+        // For Hot 100, sort by engagement score (views + likes + recency factor)
+        if (currentFilter === 'hot' && tracks.length > 0) {
+          const now = Date.now();
+          tracks.sort((a, b) => {
+            const aViews = a.views_count || 0;
+            const aLikes = a.likes_count || 0;
+            const aAge = now - new Date(a.created_at).getTime();
+            const aRecency = Math.max(0, (30 * 24 * 60 * 60 * 1000 - aAge) / (30 * 24 * 60 * 60 * 1000)); // Favor tracks less than 30 days old
+            const aScore = aViews + (aLikes * 10) + (aViews * aRecency * 0.5);
+            
+            const bViews = b.views_count || 0;
+            const bLikes = b.likes_count || 0;
+            const bAge = now - new Date(b.created_at).getTime();
+            const bRecency = Math.max(0, (30 * 24 * 60 * 60 * 1000 - bAge) / (30 * 24 * 60 * 60 * 1000));
+            const bScore = bViews + (bLikes * 10) + (bViews * bRecency * 0.5);
+            
+            return bScore - aScore; // Descending order
+          });
+          // Limit to top 100
+          tracks.splice(100);
+        }
+        
+        // Load trending artists for announcements
+        const artistsResponse = await fetch(`${API_BASE_URL}/api/feed/trending-artists`);
+        const artists = artistsResponse.ok ? await artistsResponse.json() : [];
+        
+        // Transform tracks into feed posts with ranking
+        const musicPosts = tracks.map((track, index) => {
+          // Normalize audio and cover URLs
+          const normalizedAudioUrl = normalizeAudioUrl(track.audio_url);
+          const normalizedCoverUrl = track.cover_art_url ? normalizeImageUrl(track.cover_art_url) : null;
+          
+          return {
+            type: 'music',
+            id: track.id,
+            rank: currentFilter === 'hot' ? index + 1 : null, // Add ranking number for Hot 100
+            userId: track.artist_id,
+            userName: track.artist_name || 'Unknown Creator',
+            userHandle: track.artist_username || 'creator',
+            userAvatar: track.artist_profile_image ? normalizeImageUrl(track.artist_profile_image) : null,
+            isVerified: track.artist_is_verified || false,
+            timestamp: new Date(track.created_at).getTime(),
+            text: `Uploaded a new track`,
+            music: {
+              title: track.title || track.song_title || 'Untitled',
+              artist: track.artist_name || 'Unknown Creator',
+              cover: normalizedCoverUrl,
+              audioUrl: normalizedAudioUrl,
+              genre: track.genre || 'General',
+              views: track.views_count || 0
+            },
+            stats: {
+              likes: track.likes_count || 0,
+              comments: 0,
+              reposts: 0
+            }
+          };
+        });
+        
+        // Generate activity posts
+        const activityPosts = generateActivityPosts(tracks, artists);
+        
+        // Generate text posts
+        const textPosts = generateTextPosts();
+        
+        // Generate featured announcements
+        const featuredPosts = generateFeaturedPosts(artists);
+        
+        // Generate ad posts
+        const adPosts = generateAdPosts();
+        
+        // Combine all posts - featured ads first, then sort by timestamp
+        const allPosts = [
+          ...musicPosts,
+          ...activityPosts,
+          ...textPosts,
+          ...featuredPosts,
+          ...adPosts
+        ];
+        
+        // Sort: featured ads at top, then by timestamp
+        feedData = allPosts.sort((a, b) => {
+          if (a.type === 'ad' && a.isFeatured && b.type !== 'ad') return -1;
+          if (b.type === 'ad' && b.isFeatured && a.type !== 'ad') return 1;
+          return b.timestamp - a.timestamp;
+        });
+        
+        renderFeed();
+        console.log('✅ Feed loaded successfully for all users');
+      } catch (error) {
+        console.error('❌ Error loading feed:', error);
+        const container = document.getElementById('feedPosts');
+        if (container) {
+          container.innerHTML = `<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error loading feed</p><p style="font-size: 14px;">${error.message}</p><p style="font-size: 12px; margin-top: 8px; color: var(--muted);">The feed is available to all users. Please check your connection and try again.</p></div>`;
+          container.style.display = 'block';
+        }
+      }
+    }
+    
+    // Generate activity posts
+    function generateActivityPosts(tracks, artists) {
+      const activities = [];
+      const activityTypes = [
+        { type: 'like', icon: '❤️', class: 'like' },
+        { type: 'comment', icon: '💬', class: 'comment' },
+        { type: 'follow', icon: '➕', class: 'follow' },
+        { type: 'repost', icon: '🔄', class: 'repost' }
+      ];
+      
+      for (let i = 0; i < 5; i++) {
+        const activity = activityTypes[Math.floor(Math.random() * activityTypes.length)];
+        const track = tracks[Math.floor(Math.random() * tracks.length)];
+        const users = ['Sarah', 'Alex', 'John', 'Mike', 'Nia', 'DJ Kairo'];
+        const user = users[Math.floor(Math.random() * users.length)];
+        
+        if (track) {
+          activities.push({
+            type: 'activity',
+            id: `activity-${i}`,
+            userName: user,
+            userHandle: user.toLowerCase().replace(' ', ''),
+            userAvatar: null,
+            timestamp: Date.now() - Math.random() * 86400000,
+            activityType: activity.type,
+            activityIcon: activity.icon,
+            activityClass: activity.class,
+            text: getActivityText(activity.type, user, track.title || 'this track'),
+            targetTrack: track.title || 'Untitled'
+          });
+        }
+      }
+      
+      return activities;
+    }
+    
+    function getActivityText(type, user, track) {
+      const texts = {
+        like: `${user} liked ${track}`,
+        comment: `${user} commented 🔥 on ${track}`,
+        follow: `${user} followed a creator`,
+        repost: `${user} reposted ${track}`
+      };
+      return texts[type] || `${user} interacted with ${track}`;
+    }
+    
+    // Generate text posts
+    function generateTextPosts() {
+      return [
+        {
+          type: 'text',
+          id: 'text-1',
+          userName: 'Music Lover',
+          userHandle: 'musiclover',
+          userAvatar: null,
+          timestamp: Date.now() - 3600000,
+          text: 'Who\'s the best upcoming Afrobeats creator on Audio City right now? Drop your recommendations! 🎵'
+        },
+        {
+          type: 'text',
+          id: 'text-2',
+          userName: 'Creator Pro',
+          userHandle: 'creatorpro',
+          userAvatar: null,
+          timestamp: Date.now() - 7200000,
+          text: 'Just finished mastering a new track. The difference is incredible! Audio City\'s mastering tool is a game changer. 🔥'
+        }
+      ];
+    }
+    
+    // Generate featured posts
+    function generateFeaturedPosts(artists) {
+      if (!artists || artists.length === 0) return [];
+      
+      return [
+        {
+          type: 'featured',
+          id: 'featured-1',
+          timestamp: Date.now() - 1800000,
+          badge: 'Trending',
+          title: '🔥 Trending Creators This Week',
+          text: `Check out the top ${Math.min(artists.length, 5)} creators making waves on Audio City!`,
+          artists: artists.slice(0, 5)
+        }
+      ];
+    }
+    
+    // Generate ad posts
+    function generateAdPosts() {
+      return [
+        {
+          type: 'ad',
+          id: 'ad-1',
+          businessName: 'Nia Clothing',
+          businessHandle: 'niaclothing',
+          businessLogo: '',
+          timestamp: Date.now() - 3600000,
+          text: 'Check out our latest collection of streetwear! 🔥 Limited time offer - 20% off all items.',
+          websiteUrl: 'https://niaclothing.com',
+          isFeatured: true,
+          category: 'Fashion'
+        },
+        {
+          type: 'ad',
+          id: 'ad-2',
+          businessName: 'Audio Studio Pro',
+          businessHandle: 'audiostudiopro',
+          businessLogo: null,
+          timestamp: Date.now() - 7200000,
+          text: 'Professional recording studio in Kampala. Book your session today! 🎙️',
+          websiteUrl: 'https://audiostudiopro.ug',
+          isFeatured: false,
+          category: 'Music Services'
+        }
+      ];
+    }
+    
+    // Render feed
+    function renderFeed() {
+      const container = document.getElementById('feedPosts');
+      let filteredData = feedData;
+      
+      switch (currentFilter) {
+        case 'hot':
+          filteredData = feedData.filter(post => post.type === 'music');
+          break;
+        case 'music':
+          filteredData = feedData.filter(post => post.type === 'music');
+          break;
+        case 'community':
+          filteredData = feedData.filter(post => post.type === 'text' || post.type === 'activity');
+          break;
+        case 'ads':
+          filteredData = feedData.filter(post => post.type === 'ad');
+          break;
+        case 'following':
+        case 'nearby':
+        case 'all':
+        default:
+          filteredData = feedData;
+      }
+      
+      if (filteredData.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">No posts found</p><p style="font-size: 14px;">Try a different filter or check back later</p></div>';
+        container.style.display = 'block';
+        return;
+      }
+        
+      container.innerHTML = filteredData.map(post => renderPost(post)).join('');
+      container.style.display = 'block';
+      attachEventListeners();
+    }
+
+    // Check if post belongs to current user
+    // Check if user is admin
+    function isAdmin() {
+      return localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+    }
+
+    function isCurrentUserPost(post) {
+      try {
+        const userId = localStorage.getItem('user_id');
+        const isAdminUser = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+        
+        // ALWAYS return false for admin users - admins never own regular user posts
+        // Admin user IDs are special (admin, admin_*, etc.) and should never match regular user IDs
+        if (isAdminUser) {
+          return false;
+        }
+        
+        // Check if post belongs to current user (only for non-admin users)
+        if (!userId || !post.userId) return false;
+        return post.userId.toString() === userId.toString();
+      } catch {
+        return false;
+      }
+    }
+    
+    // Render individual post
+    function renderPost(post) {
+      const timeAgo = getTimeAgo(post.timestamp);
+      
+      switch (post.type) {
+        case 'music':
+          return `
+            <div class="post-card large" data-post-id="${post.id}">
+              <div class="post-header">
+                ${post.rank ? `<div class="hot-rank-badge" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent-purple)); color: white; font-weight: 700; font-size: 14px; flex-shrink: 0; margin-right: 4px;">#${post.rank}</div>` : ''}
+                <div class="post-avatar">
+                  ${post.userAvatar ? `<img src="${escapeHtml(post.userAvatar)}" alt="${escapeHtml(post.userName)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                  <div class="avatar-fallback" style="${post.userAvatar ? 'display: none;' : 'display: flex;'}">🎤</div>
+                  ${post.isVerified ? '<div class="verified-badge">✓</div>' : ''}
+              </div>
+                <div class="post-user-info">
+                  <div class="post-user-name">
+                    ${escapeHtml(post.userName)}
+                    ${post.isVerified ? '<span style="color: var(--accent);">✓</span>' : ''}
+                </div>
+                  <div class="post-user-handle">@${escapeHtml(post.userHandle)}</div>
+              </div>
+              <div class="post-header-actions">
+                <div class="post-time">${timeAgo}</div>
+                ${(isCurrentUserPost(post) || isAdmin()) ? `<button class="delete-btn ${isAdmin() ? 'admin-delete' : ''}" data-action="delete" data-post-id="${post.id}" title="${isAdmin() ? 'Admin: Delete post' : 'Delete post'}">🗑️</button>` : ''}
+              </div>
+            </div>
+              <div class="post-content">
+                <div class="post-text">${escapeHtml(post.text)}</div>
+                <div class="music-player-card" data-track-id="${post.id}">
+                  <div class="player" data-track-title="${escapeHtml(post.music.title)}">
+                    <div class="disc">
+                      <div class="music-cover" style="position: relative;">
+                        ${post.music.cover ? `<img src="${escapeHtml(post.music.cover)}" alt="${escapeHtml(post.music.title)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                        <div style="${post.music.cover ? 'display: none;' : 'display: flex;'}">🎵</div>
+                        <!-- SoundCloud-style play button overlay -->
+                        <div class="cover-play-overlay">
+                          <button class="cover-play-button" aria-label="Play" data-src="${escapeHtml(post.music.audioUrl || '')}" data-title="${escapeHtml(post.music.title)}" data-artist="${escapeHtml(post.music.artist)}" data-cover="${escapeHtml(post.music.cover || '')}">
+                            <div class="cover-play-icon">
+                              <span class="play-triangle"></span>
+                              <span class="pause-bars">
+                                <span class="pause-bar"></span>
+                                <span class="pause-bar"></span>
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+                        <div class="cover-waveform-progress">
+                          <div class="cover-waveform-fill"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="music-info">
+                      <div class="music-title">${escapeHtml(post.music.title)}</div>
+                      <div class="music-artist">${escapeHtml(post.music.artist)} • ${escapeHtml(post.music.genre)}</div>
+                      <div class="music-controls">
+                        <span style="font-size: 12px; color: var(--muted);">${(post.music.views || 0).toLocaleString()} plays</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+          </div>
+              <div class="post-actions">
+                <button class="action-btn" data-action="like" data-post-id="${post.id}">
+                  <span>❤️</span>
+                  <span>${(post.stats.likes || 0).toLocaleString()}</span>
+                </button>
+                <button class="action-btn" data-action="comment" data-post-id="${post.id}">
+                  <span>💬</span>
+                  <span>${(post.stats.comments || 0).toLocaleString()}</span>
+                </button>
+                <button class="action-btn" data-action="repost" data-post-id="${post.id}">
+                  <span>🔄</span>
+                  <span>${(post.stats.reposts || 0).toLocaleString()}</span>
+                </button>
+              </div>
+            </div>
+          `;
+        
+        case 'activity':
+          return `
+            <div class="post-card small" data-post-id="${post.id}">
+              <div class="activity-icon ${post.activityClass}">${post.activityIcon}</div>
+              <div class="post-avatar">
+                ${post.userAvatar ? `<img src="${escapeHtml(post.userAvatar)}" alt="${escapeHtml(post.userName)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                <div class="avatar-fallback" style="${post.userAvatar ? 'display: none;' : 'display: flex;'}">👤</div>
+              </div>
+              <div class="post-user-info" style="flex: 1;">
+                <div class="post-text">${escapeHtml(post.text)}</div>
+                <div class="post-time" style="margin-top: 4px;">${timeAgo}</div>
+              </div>
+            </div>
+          `;
+        
+        case 'text':
+          return `
+            <div class="post-card medium" data-post-id="${post.id}">
+              <div class="post-header">
+                <div class="post-avatar">
+                  ${post.userAvatar ? `<img src="${escapeHtml(post.userAvatar)}" alt="${escapeHtml(post.userName)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                  <div class="avatar-fallback" style="${post.userAvatar ? 'display: none;' : 'display: flex;'}">💬</div>
+                </div>
+                <div class="post-user-info">
+                  <div class="post-user-name">${escapeHtml(post.userName)}</div>
+                  <div class="post-user-handle">@${escapeHtml(post.userHandle)}</div>
+                </div>
+                <div class="post-time">${timeAgo}</div>
+              </div>
+              <div class="post-content">
+                <div class="post-text">${escapeHtml(post.text)}</div>
+              </div>
+              <div class="post-actions">
+                <button class="action-btn" data-action="like" data-post-id="${post.id}">
+                  <span>❤️</span>
+                  <span>0</span>
+                </button>
+                <button class="action-btn" data-action="comment" data-post-id="${post.id}">
+                  <span>💬</span>
+                  <span>0</span>
+                </button>
+              </div>
+            </div>
+          `;
+        
+        case 'featured':
+          return `
+            <div class="post-card featured" data-post-id="${post.id}">
+              <div class="featured-badge">${escapeHtml(post.badge)}</div>
+              <div class="post-content">
+                <div class="post-text" style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">${escapeHtml(post.title)}</div>
+                <div class="post-text">${escapeHtml(post.text)}</div>
+                ${post.artists && post.artists.length > 0 ? `
+                  <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    ${post.artists.slice(0, 5).map(artist => `
+                      <div style="padding: 8px 12px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 13px;">
+                        ${escapeHtml(artist.name || 'Creator')}
+              </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        
+        case 'ad':
+          return `
+            <div class="post-card ad ${post.isFeatured ? 'featured' : ''}" data-post-id="${post.id}">
+              ${post.isFeatured ? '<div class="ad-badge">⭐ Featured Ad</div>' : '<div class="ad-badge">📢 Ad</div>'}
+              <div class="ad-header">
+                <div class="ad-logo">
+                  ${post.businessLogo ? `<img src="${escapeHtml(post.businessLogo)}" alt="${escapeHtml(post.businessName)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                  <div style="${post.businessLogo ? 'display: none;' : 'display: flex;'}">🏢</div>
+              </div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 700; font-size: 18px; margin-bottom: 4px;">${escapeHtml(post.businessName)}</div>
+                  <div style="font-size: 13px; color: var(--muted);">@${escapeHtml(post.businessHandle)} • ${escapeHtml(post.category || 'Business')}</div>
+              </div>
+              </div>
+              <div class="post-content">
+                <div class="post-text" style="font-size: 15px; line-height: 1.6; margin-bottom: 12px;">${escapeHtml(post.text)}</div>
+                <button class="ad-cta" data-ad-id="${escapeHtml(post.id)}" data-ad-url="${escapeHtml(post.websiteUrl)}">
+                  Visit Website →
+                </button>
+            </div>
+          </div>
+          `;
+        
+        default:
+          return '';
+      }
+    }
+    
+    // Track ad clicks for analytics
+    function trackAdClick(adId) {
+      console.log('Ad clicked:', adId);
+      // Would send to analytics API
+      // fetch(`${API_BASE_URL}/api/ads/${adId}/click`, { method: 'POST' });
+    }
+    
+    // Initialize global player event listeners (PUBLIC - no auth required)
+    function initGlobalPlayer() {
+      if (!globalPlayer) {
+        globalPlayer = document.getElementById('globalPlayer');
+        if (!globalPlayer) {
+          globalPlayer = document.createElement('audio');
+          globalPlayer.id = 'globalPlayer';
+          document.body.appendChild(globalPlayer);
+        }
+      }
+      
+      // Update waveform progress
+      globalPlayer.addEventListener('timeupdate', () => {
+        if (globalPlayer.duration) {
+          const progress = (globalPlayer.currentTime / globalPlayer.duration) * 100;
+          document.querySelectorAll('.cover-waveform-fill').forEach(fill => {
+            fill.style.width = `${progress}%`;
+          });
+        }
+      });
+      
+      // Handle ended
+      globalPlayer.addEventListener('ended', () => {
+        if (currentButton) {
+          currentButton.classList.remove('playing');
+          const cover = currentButton.closest('.music-cover');
+          if (cover) cover.classList.remove('playing');
+        }
+        currentButton = null;
+        isPlaying = false;
+        const playBtn = document.getElementById('miniPlayBtn');
+        if (playBtn) playBtn.textContent = '▶';
+      });
+      
+      // Handle play/pause state changes
+      globalPlayer.addEventListener('play', () => {
+        isPlaying = true;
+        if (currentButton) {
+          currentButton.classList.add('playing');
+          const cover = currentButton.closest('.music-cover');
+          if (cover) cover.classList.add('playing');
+        }
+        const playBtn = document.getElementById('miniPlayBtn');
+        if (playBtn) playBtn.textContent = '⏸';
+      });
+      
+      globalPlayer.addEventListener('pause', () => {
+        isPlaying = false;
+        // Remove playing class from all buttons and covers
+        document.querySelectorAll('.cover-play-button.playing').forEach(btn => {
+          btn.classList.remove('playing');
+        });
+        document.querySelectorAll('.music-cover.playing').forEach(cover => {
+          cover.classList.remove('playing');
+        });
+        if (currentButton) {
+          currentButton.classList.remove('playing');
+          const cover = currentButton.closest('.music-cover');
+          if (cover) cover.classList.remove('playing');
+        }
+        const playBtn = document.getElementById('miniPlayBtn');
+        if (playBtn) playBtn.textContent = '▶';
+      });
+      
+      // Mini player controls
+      const miniPlayBtn = document.getElementById('miniPlayBtn');
+      if (miniPlayBtn) {
+        miniPlayBtn.addEventListener('click', () => {
+          if (globalPlayer.paused) {
+            globalPlayer.play().catch(err => console.error('Play error:', err));
+          } else {
+            globalPlayer.pause();
+          }
+        });
+      }
+    }
+    
+    // Initialize global player on page load
+    initGlobalPlayer();
+    
+    // Event Delegation: ONE listener for ALL play buttons (works for dynamically added buttons)
+    // PUBLIC - no authentication required for audio playback
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.cover-play-button');
+      if (!btn) return;
+      
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const src = btn.dataset.src;
+      if (!src || src === 'null' || src === 'undefined' || src.trim() === '') {
+        console.warn('No audio source for button:', btn);
+        return;
+      }
+      
+      const normalizedSrc = normalizeAudioUrl(src);
+      if (!normalizedSrc) {
+        console.warn('Invalid audio URL (may be data URI):', src?.substring(0, 100));
+        alert('Audio file not available. The track may not have a valid audio file.');
+        return;
+      }
+      
+      const title = btn.dataset.title || 'Unknown Track';
+      const artist = btn.dataset.artist || 'Unknown Artist';
+      const cover = btn.dataset.cover || '';
+      const musicCard = btn.closest('.music-player-card');
+      const trackId = musicCard ? musicCard.dataset.trackId : null;
+      
+      // Get music cover element
+      const musicCover = btn.closest('.music-cover');
+      
+      // Check if same track is playing
+      if (globalPlayer && globalPlayer.src) {
+        const currentSrc = globalPlayer.src.split('?')[0].split('#')[0];
+        const newSrc = normalizedSrc.split('?')[0].split('#')[0];
+        if (currentSrc === newSrc && !globalPlayer.paused) {
+          // Pause
+          globalPlayer.pause();
+          btn.classList.remove('playing');
+          if (musicCover) musicCover.classList.remove('playing');
+          currentButton = null;
+          return;
+        }
+      }
+      
+      // Reset previous button
+      if (currentButton && currentButton !== btn) {
+        currentButton.classList.remove('playing');
+        const prevCover = currentButton.closest('.music-cover');
+        if (prevCover) prevCover.classList.remove('playing');
+      }
+      
+      // Play new track
+      playTrack(normalizedSrc, title, artist, cover, trackId);
+      btn.classList.add('playing');
+      if (musicCover) musicCover.classList.add('playing');
+      currentButton = btn;
+    });
+    
+    // Attach event listeners (for non-play-button actions)
+    function attachEventListeners() {
+      // Play buttons are now handled by event delegation above - no need to attach here
+      
+      // Legacy play button handler (for compatibility) - now handled by event delegation
+      
+      // Action buttons (like, comment, repost)
+      document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          const postId = btn.dataset.postId;
+          handleAction(action, postId, btn);
+        });
+      });
+      
+      // Post avatars and usernames - navigate to profile
+      document.querySelectorAll('.post-avatar, .post-user-name, .post-user-handle').forEach(element => {
+        element.style.cursor = 'pointer';
+        element.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const postCard = element.closest('.post-card');
+          if (postCard) {
+            const postId = postCard.dataset.postId;
+            // Extract userId from post data or use postId
+            const post = feedData.find(p => p.id === postId);
+            if (post && post.userId) {
+              window.location.href = `profile.html?id=${post.userId}`;
+            } else {
+              window.location.href = 'profile.html';
+            }
+          }
+        });
+      });
+      
+      // Music cover images - navigate to track page
+      document.querySelectorAll('.music-cover, .music-title').forEach(element => {
+        element.style.cursor = 'pointer';
+        element.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const musicCard = element.closest('.music-player-card');
+          if (musicCard) {
+            const trackId = musicCard.dataset.trackId;
+            if (trackId) {
+              window.location.href = `track.html?id=${trackId}`;
+            }
+          }
+        });
+      });
+      
+      // Mini player cover and title - navigate to track page (set up once, update on track change)
+      setupMiniPlayerNavigation();
+      
+      // Ad CTA buttons - replace onclick with proper event listeners
+      document.querySelectorAll('.ad-cta').forEach(btn => {
+        // Remove existing onclick if present
+        btn.removeAttribute('onclick');
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const adId = btn.dataset.adId;
+          const adUrl = btn.dataset.adUrl;
+          if (adId && adUrl) {
+            trackAdClick(adId);
+            window.open(adUrl, '_blank');
+          } else {
+            // Fallback: try to get from post card
+            const adCard = btn.closest('.post-card.ad');
+            if (adCard) {
+              const postId = adCard.dataset.postId;
+              const post = feedData.find(p => p.id === postId);
+              if (post && post.websiteUrl) {
+                trackAdClick(postId);
+                window.open(post.websiteUrl, '_blank');
+              }
+            }
+          }
+        });
+      });
+      
+      // Post cards - make entire card clickable for some types (optional)
+      document.querySelectorAll('.post-card').forEach(card => {
+        // Only make text posts fully clickable
+        if (card.classList.contains('medium')) {
+          card.style.cursor = 'pointer';
+          card.addEventListener('click', (e) => {
+            // Don't trigger if clicking on buttons or links
+            if (e.target.closest('button') || e.target.closest('a')) {
+          return;
+            }
+            const postId = card.dataset.postId;
+            // Could navigate to post detail page or expand post
+            console.log('Post clicked:', postId);
+          });
+        }
+      });
+
+      // Delete button handlers
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const postId = btn.dataset.postId;
+          if (!postId) return;
+
+          const isAdminDelete = btn.classList.contains('admin-delete');
+          const confirmMessage = isAdminDelete 
+            ? '⚠️ ADMIN DELETE: Are you sure you want to delete this user\'s post? This action cannot be undone and will remove the content permanently.'
+            : 'Are you sure you want to delete this post? This action cannot be undone.';
+          
+          if (!confirm(confirmMessage)) {
+            return;
+          }
+
+          try {
+            const authToken = localStorage.getItem('auth_token');
+            if (!authToken) {
+              alert('You must be logged in to delete posts.');
+              return;
+            }
+
+            // Call API to delete the post
+            const response = await fetch(`${API_BASE_URL}/api/tracks/${postId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok || response.status === 404) {
+              // Remove from feed data
+              feedData = feedData.filter(p => p.id !== postId);
+              // Re-render feed
+              renderFeed();
+              if (isAdminDelete) {
+                alert('✅ Admin: Post deleted successfully.');
+              }
+            } else {
+              const error = await response.json().catch(() => ({ error: 'Failed to delete post' }));
+              alert(error.error || 'Failed to delete post. Please try again.');
+            }
+          } catch (err) {
+            console.error('Delete error:', err);
+            // Even if API fails, remove from local feed (admin can force remove)
+            if (isAdminDelete || response?.ok) {
+            feedData = feedData.filter(p => p.id !== postId);
+            renderFeed();
+              if (isAdminDelete) {
+                alert('✅ Admin: Post removed from feed.');
+              }
+            } else {
+              alert('Post removal failed. If it reappears, it may need to be deleted from the server.');
+            }
+          }
+        });
+      });
+    }
+    
+    // Play track with global audio player (PUBLIC - no auth required)
+    function playTrack(audioUrl, title, artist, cover, trackId = null) {
+      // Ensure global player is initialized
+      if (!globalPlayer) {
+        initGlobalPlayer();
+      }
+      
+      if (!audioUrl) {
+        alert('Audio URL not available');
+        return;
+      }
+      
+      // audioUrl is already normalized by the event delegation handler
+      const normalizedUrl = audioUrl;
+      console.log('Playing track:', { normalized: normalizedUrl, title, artist });
+      
+      currentTrack = { audioUrl: normalizedUrl, title, artist, cover, id: trackId };
+      
+      // Update global player source
+      if (globalPlayer.src !== normalizedUrl) {
+        try { globalPlayer.pause(); } catch (_) {}
+        globalPlayer.src = normalizedUrl;
+        globalPlayer.currentTime = 0;
+      }
+      
+      // Update mini player UI
+      const miniPlayerTitle = document.getElementById('miniPlayerTitle');
+      const miniPlayerArtist = document.getElementById('miniPlayerArtist');
+      const miniPlayerCover = document.getElementById('miniPlayerCover');
+      const miniPlayer = document.getElementById('miniPlayer');
+      
+      if (miniPlayerTitle) miniPlayerTitle.textContent = title || 'Unknown Track';
+      if (miniPlayerArtist) miniPlayerArtist.textContent = artist || 'Unknown Creator';
+      if (miniPlayerCover) {
+        if (cover) {
+          const normalizedCover = normalizeImageUrl(cover);
+          miniPlayerCover.src = normalizedCover || cover;
+          miniPlayerCover.style.display = 'block';
+        } else {
+          miniPlayerCover.style.display = 'none';
+        }
+      }
+      if (miniPlayer) miniPlayer.classList.add('active');
+      
+      // Add rotating animation to cover
+      const coverContainer = miniPlayerCover?.parentElement;
+      if (coverContainer) {
+        coverContainer.classList.add('playing');
+      }
+      
+      // Setup navigation for mini player
+      setupMiniPlayerNavigation();
+      
+      // Play audio (PUBLIC - no authentication required)
+      globalPlayer.play().catch(error => {
+        console.error('Play error:', error);
+        alert('Unable to play audio. Please check your connection.');
+      });
+    }
+    
+    // Update all play buttons to reflect current playing state
+    function updateAllPlayButtons(trackTitle, playing) {
+      // Update SoundCloud-style buttons
+      document.querySelectorAll('.cover-play-button').forEach(btn => {
+        if (btn.dataset.trackTitle === trackTitle) {
+          const musicCover = btn.closest('.music-cover');
+          if (playing) {
+            btn.classList.add('playing');
+            if (musicCover) musicCover.classList.add('playing');
+          } else {
+            btn.classList.remove('playing');
+            if (musicCover) musicCover.classList.remove('playing');
+          }
+        }
+      });
+      
+      // Update legacy play buttons
+      document.querySelectorAll('.play-btn').forEach(btn => {
+        if (btn.dataset.trackTitle === trackTitle) {
+          btn.textContent = playing ? '⏸' : '▶';
+          btn.style.opacity = playing ? '1' : '1';
+        }
+      });
+      
+      // Update player disc animation
+      document.querySelectorAll('.player').forEach(player => {
+        if (player.dataset.trackTitle === trackTitle) {
+          if (playing) {
+            player.classList.add('playing');
+          } else {
+            player.classList.remove('playing');
+          }
+        } else {
+          // Remove playing class from other players
+          player.classList.remove('playing');
+        }
+      });
+    }
+    
+    // Mini player play/pause button
+    const miniPlayBtn = document.getElementById('miniPlayBtn');
+    miniPlayBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!audioPlayer) return;
+      
+      if (isPlaying) {
+        audioPlayer.pause();
+      } else {
+        audioPlayer.play();
+      }
+    });
+    // Keyboard support
+    miniPlayBtn.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && audioPlayer) {
+        e.preventDefault();
+        if (isPlaying) {
+          audioPlayer.pause();
+        } else {
+          audioPlayer.play();
+        }
+      }
+    });
+    
+    // Setup mini player navigation (cover and title clickable)
+    function setupMiniPlayerNavigation() {
+      const miniPlayerCover = document.getElementById('miniPlayerCover');
+      const miniPlayerTitle = document.getElementById('miniPlayerTitle');
+      const miniPlayerInfo = document.querySelector('.mini-player-info');
+      
+      // Remove existing listeners by cloning (clean approach)
+      if (miniPlayerCover) {
+        miniPlayerCover.style.cursor = 'pointer';
+        // Remove old listener if exists
+        const newCover = miniPlayerCover.cloneNode(true);
+        miniPlayerCover.parentNode.replaceChild(newCover, miniPlayerCover);
+        // Add new listener
+        document.getElementById('miniPlayerCover').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (currentTrack && currentTrack.id) {
+            window.location.href = `track.html?id=${currentTrack.id}`;
+          }
+        });
+      }
+      
+      if (miniPlayerTitle) {
+        miniPlayerTitle.style.cursor = 'pointer';
+        const newTitle = miniPlayerTitle.cloneNode(true);
+        miniPlayerTitle.parentNode.replaceChild(newTitle, miniPlayerTitle);
+        document.getElementById('miniPlayerTitle').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (currentTrack && currentTrack.id) {
+            window.location.href = `track.html?id=${currentTrack.id}`;
+          }
+        });
+      }
+      
+      if (miniPlayerInfo) {
+        miniPlayerInfo.style.cursor = 'pointer';
+        miniPlayerInfo.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (currentTrack && currentTrack.id) {
+            window.location.href = `track.html?id=${currentTrack.id}`;
+          }
+        });
+      }
+    }
+    
+    // Handle actions
+    function handleAction(action, postId, btn) {
+      switch (action) {
+        case 'like':
+          btn.classList.toggle('liked');
+          const likeCount = btn.querySelector('span:last-child');
+          const currentCount = parseInt(likeCount.textContent.replace(/,/g, '')) || 0;
+          likeCount.textContent = btn.classList.contains('liked') 
+            ? (currentCount + 1).toLocaleString()
+            : (currentCount - 1).toLocaleString();
+          break;
+        case 'comment':
+          alert('Comments coming soon!');
+          break;
+        case 'repost':
+          alert('Repost feature coming soon!');
+          break;
+      }
+    }
+    
+    // Julypay API Configuration
+    const JULYPAY_API_KEY = 'jp_43Rhfj10DFLHdpUTX4LSN1o0.KqIomUDBY7j15rO1QUJSG6Zy6MfjlTuKTrJSCrwb';
+    
+    // Show donation modal
+    function showDonateModal() {
+      const modal = document.createElement('div');
+      modal.id = 'donateModal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700; color: var(--accent);">💜 Donate to Audio City</h2>
+            <button class="close-donate-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+          </div>
+          <p style="color: var(--muted); margin-bottom: 24px; line-height: 1.6;">
+            Help us keep Audio City running! Click the button below to make a secure donation via Julypay. You'll be redirected to a secure payment page where you can enter your amount and mobile money details.
+          </p>
+          <div style="margin-bottom: 24px; padding: 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <span style="font-size: 24px;">🔒</span>
+              <div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Secure Payment</div>
+                <div style="font-size: 12px; color: var(--muted);">All transactions are encrypted and secure</div>
+            </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📱</span>
+              <div>
+                <div style="font-weight: 600; margin-bottom: 4px;">MTN & Airtel Uganda</div>
+                <div style="font-size: 12px; color: var(--muted);">Supports both mobile money networks</div>
+            </div>
+            </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+            <a href="https://app.julypay.net/pay/user/nico-d7oz" target="_blank" rel="noopener noreferrer" id="donateLinkBtn" style="flex: 1; padding: 16px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>💜</span>
+              <span>Donate via Julypay</span>
+              <span style="font-size: 14px;">↗</span>
+            </a>
+            <button type="button" class="close-donate-modal" style="padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Close modal handlers
+      modal.querySelectorAll('.close-donate-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.remove());
+      });
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+      
+      // Track when user clicks donate link
+      const donateLinkBtn = modal.querySelector('#donateLinkBtn');
+      if (donateLinkBtn) {
+        donateLinkBtn.addEventListener('click', () => {
+          // Store donation intent locally
+          const donationIntent = {
+            timestamp: new Date().toISOString(),
+            source: 'feed.html'
+          };
+          const donations = JSON.parse(localStorage.getItem('audio_city_donations') || '[]');
+          donations.push(donationIntent);
+          localStorage.setItem('audio_city_donations', JSON.stringify(donations));
+          
+          // Close modal after a short delay to show the link was clicked
+    setTimeout(() => {
+            modal.remove();
+    }, 500);
+        });
+      }
+    }
+    
+    // Show create modal
+    function showCreateModal() {
+      const modal = document.createElement('div');
+      modal.id = 'createModal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 400px; width: 90%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700;">Create</h2>
+            <button class="close-create-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button class="create-option-btn" data-action="upload" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">🎵</span>
+              <div style="flex: 1;">
+                <div>Upload Audio</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Share your music</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="post" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">💬</span>
+              <div style="flex: 1;">
+                <div>Write Post</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Share your thoughts</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="playlist" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📀</span>
+              <div style="flex: 1;">
+                <div>Create Playlist</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Curate tracks</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="ad" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📢</span>
+              <div style="flex: 1;">
+                <div>Post Ad</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Promote your business</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="master" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">🎚️</span>
+              <div style="flex: 1;">
+                <div>Master Audio</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Professional audio mastering</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Add hover effects
+      modal.querySelectorAll('.create-option-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = 'rgba(139, 92, 246, 0.1)';
+          btn.style.borderColor = 'var(--accent)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = 'var(--glass)';
+          btn.style.borderColor = 'var(--border)';
+        });
+      });
+      
+      // Close modal handlers
+      modal.querySelectorAll('.close-create-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.remove());
+      });
+      
+      // Close on background click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      // Handle option clicks
+      modal.querySelectorAll('.create-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action;
+          modal.remove();
+          
+          switch (action) {
+            case 'upload':
+              window.location.href = 'artist-corner.html';
+              break;
+            case 'post':
+              alert('Text posts coming soon!');
+              break;
+            case 'playlist':
+              alert('Playlists coming soon!');
+              break;
+            case 'ad':
+              showPostAdModal();
+              break;
+            case 'master':
+              window.location.href = 'mastering.html';
+              break;
+          }
+        });
+      });
+    }
+    
+    // Show Post Ad Modal
+    function showPostAdModal() {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700;">Post Business Ad</h2>
+            <button class="close-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer;">×</button>
+          </div>
+          <form id="postAdForm">
+            <div style="margin-bottom: 20px;">
+              <label for="adBusinessName" style="display: block; margin-bottom: 8px; font-weight: 600;">Business Name *</label>
+              <input type="text" id="adBusinessName" name="adBusinessName" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Nia Clothing" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adBusinessHandle" style="display: block; margin-bottom: 8px; font-weight: 600;">Business Handle *</label>
+              <input type="text" id="adBusinessHandle" name="adBusinessHandle" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="niaclothing" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adDescription" style="display: block; margin-bottom: 8px; font-weight: 600;">Ad Description *</label>
+              <textarea id="adDescription" name="adDescription" rows="3" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell people about your business..."></textarea>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adWebsiteUrl" style="display: block; margin-bottom: 8px; font-weight: 600;">Website URL *</label>
+              <input type="url" id="adWebsiteUrl" name="adWebsiteUrl" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="https://yourbusiness.com" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adCategory" style="display: block; margin-bottom: 8px; font-weight: 600;">Category</label>
+              <input type="text" id="adCategory" name="adCategory" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Fashion, Music, Services, etc." />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adFeatured" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="adFeatured" name="adFeatured" />
+                <span>Make this a Featured Ad (Paid)</span>
+              </label>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button type="submit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer;">Post Ad</button>
+              <button type="button" class="close-modal" style="padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Close modal handlers
+      modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.remove());
+      });
+      
+      // Form submission
+      modal.querySelector('#postAdForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const adData = {
+          businessName: document.getElementById('adBusinessName').value,
+          businessHandle: document.getElementById('adBusinessHandle').value,
+          text: document.getElementById('adDescription').value,
+          websiteUrl: document.getElementById('adWebsiteUrl').value,
+          category: document.getElementById('adCategory').value || 'Business',
+          isFeatured: document.getElementById('adFeatured').checked
+        };
+        
+        // Would send to API
+        console.log('Posting ad:', adData);
+        alert('Ad posted! (This would normally save to the database)');
+        modal.remove();
+        // Reload feed to show new ad
+        loadFeed();
+      });
+    }
+    
+    // Utility functions
+    function getTimeAgo(timestamp) {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      return `${Math.floor(seconds / 86400)}d ago`;
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Force fresh load - prevent any caching
+    if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_BACK_FORWARD) {
+      window.location.reload(true);
+    }
+    
+    // Update header profile picture and wire donate on load
+    window.addEventListener('load', () => {
+      updateHeaderProfilePicture();
+      // Load feed on page load
+      loadFeed();
+    });
+    
+    // Also load feed when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        loadFeed();
+      });
+    } else {
+      // DOM already loaded
+      loadFeed();
+    }
+    
+    // Development mode check (only show logs in development)
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            if (isDevelopment) {
+            console.log('✅ Service Worker registered:', registration.scope);
+            }
+          })
+          .catch(error => {
+            // Always log errors, even in production
+            console.error('❌ Service Worker registration failed:', error);
+          });
+      });
+    }
+    
+    // Check if we're seeing old design and force reload
+    setTimeout(() => {
+      const hasGlassmorphism = document.querySelector('.bg-layer');
+      const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      const hasNewAccent = accentColor.includes('8b5cf6') || accentColor === '#8b5cf6';
+      
+      if (isDevelopment) {
+      console.log('Design Check:', {
+        hasGlassmorphism: !!hasGlassmorphism,
+        accentColor: accentColor,
+        hasNewAccent: hasNewAccent
+      });
+      }
+      
+      if (!hasGlassmorphism || !hasNewAccent) {
+        console.warn('❌ OLD DESIGN DETECTED - Forcing reload with cache-busting');
+        const url = new URL(window.location.href);
+        url.searchParams.set('v', Date.now());
+        url.searchParams.set('nocache', '1');
+        window.location.href = url.toString();
+      } else if (isDevelopment) {
+        console.log('✅ NEW DESIGN CONFIRMED - All styles loaded correctly');
+      }
+    }, 500);
+  </script>
+  
+  <!-- Footer -->
+  <footer style="background: var(--bg); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
+          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
+          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
+        </p>
+        <div style="display: flex; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
+          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
+          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
+          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
+          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+    </div>
+  </footer>
+  
+  <!-- Moderation System -->
+  <script src="js/moderation-system.js"></script>
+  <script src="js/moderation-ui.js"></script>
+  <script src="js/moderation-integration.js"></script>
+</body>
+</html>

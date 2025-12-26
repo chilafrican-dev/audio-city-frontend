@@ -1,0 +1,57 @@
+═══════════════════════════════════════════════════════════════
+  SSH CONFIG BROKEN - FIX NEEDED
+═══════════════════════════════════════════════════════════════
+
+Server: audio-city-server (168.119.241.59)
+Issue: SSH configs might be broken, blocking port 22
+
+═══════════════════════════════════════════════════════════════
+  PLEASE FIX SSH CONFIG:
+═══════════════════════════════════════════════════════════════
+
+Option 1: RESET SSH CONFIG (RECOMMENDED)
+─────────────────────────────────────────
+1. Backup current config:
+   cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
+
+2. Check SSH config for issues:
+   sshd -t
+   (Should show no errors)
+
+3. If errors, restore default SSH config or fix:
+   - Ensure: Port 22 is set
+   - Ensure: PermitRootLogin yes (or without-password)
+   - Ensure: PasswordAuthentication can be no (if using keys)
+
+4. Restart SSH:
+   systemctl restart ssh
+   systemctl status ssh
+
+Option 2: REINSTALL SSH (IF CONFIG IS TOO BROKEN)
+──────────────────────────────────────────────────
+apt update
+apt install --reinstall openssh-server
+systemctl enable ssh
+systemctl start ssh
+systemctl status ssh
+
+Option 3: CHECK SSH LOGS FOR ERRORS
+────────────────────────────────────
+journalctl -u ssh -n 50
+tail -50 /var/log/auth.log
+
+This will show what's wrong with SSH.
+
+Option 4: RESET SERVER (LAST RESORT)
+─────────────────────────────────────
+If configs are too broken, reinstall/reset the server
+(We can redeploy everything after)
+
+═══════════════════════════════════════════════════════════════
+
+Once SSH is fixed, I need to deploy:
+/opt/backend/api-server.js
+
+Thank you!
+
+═══════════════════════════════════════════════════════════════

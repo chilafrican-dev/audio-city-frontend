@@ -1,0 +1,640 @@
+═══════════════════════════════════════════════════════════════
+  HOW TO DEPLOY AUDIO CITY FOR PUBLIC USE
+═══════════════════════════════════════════════════════════════
+
+YOU NEED 2 THINGS:
+──────────────────
+1. Frontend (HTML pages) → FREE on Netlify
+2. Backend (Mastering server) → FREE VPS
+
+═══════════════════════════════════════════════════════════════
+  PART 1: DEPLOY FRONTEND (FREE - 5 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+Go to: https://www.netlify.com
+1. Sign up (free, use GitHub/Google)
+2. Drag & drop your entire "online master" folder
+3. Wait 30 seconds
+4. Done! Your site is live!
+
+You'll get: https://your-site-123.netlify.app
+
+═══════════════════════════════════════════════════════════════
+  PART 2: DEPLOY BACKEND (FREE VPS - 30 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+WHAT YOU NEED:
+──────────────
+1. A VPS (Virtual Private Server) - like renting a computer online
+2. Your backend code (you already have this)
+
+STEP 1: GET A FREE VPS (NO CREDIT CARD NEEDED)
+───────────────────────────────────────────────
+
+OPTION A: Alavps (FREE - No Credit Card)
+─────────────────────────────────────────
+Go to: https://alavps.com/vps.html
+- 2 CPU cores, 8GB RAM, 128GB storage
+- No credit card needed
+- Instant activation
+- Choose: Ubuntu 22.04
+
+OPTION B: FreeVPS.info (200 Days FREE Trial)
+─────────────────────────────────────────────
+Go to: https://freevps.info/free-vps-trial.php
+- 2 CPU cores, 4GB RAM, 60GB storage
+- No credit card needed
+- 200 days free trial
+- Choose: Ubuntu 22.04
+
+OPTION C: Hetzner (€4/month - CHEAPEST PAID)
+──────────────────────────────────────────────
+Go to: https://www.hetzner.com/cloud
+- 2 CPU cores, 2GB RAM, 20GB storage
+- Only €4/month (about $4.50)
+- Very reliable
+- Choose: Ubuntu 22.04
+
+⚠️ NOTE: Cloudflare Workers CANNOT run FFmpeg
+   You MUST use a VPS (Virtual Private Server)
+   Cloudflare is only for simple websites, not audio processing
+
+After signing up, write down your VPS IP address (looks like: 123.45.67.89)
+
+
+STEP 2: CONNECT TO YOUR VPS
+─────────────────────────────
+Open Terminal (Mac) or Command Prompt (Windows)
+
+Type:
+  ssh root@YOUR_VPS_IP
+
+Example:
+  ssh root@123.45.67.89
+
+Press Enter, type "yes" if asked, enter password
+
+
+STEP 3: INSTALL SOFTWARE
+─────────────────────────
+Copy and paste these commands ONE BY ONE:
+
+Command 1:
+  apt update && apt upgrade -y
+
+Command 2:
+  curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+
+Command 3:
+  apt install -y nodejs
+
+Command 4:
+  apt install -y ffmpeg
+
+Command 5:
+  npm install -g pm2
+
+Command 6:
+  apt install -y nginx
+
+
+STEP 4: UPLOAD YOUR CODE
+─────────────────────────
+On YOUR COMPUTER (not VPS):
+
+1. Open Terminal
+2. Go to your project:
+   cd "online master"
+
+3. Compress backend:
+   tar -czf backend.tar.gz backend/
+
+4. Upload to VPS:
+   scp backend.tar.gz root@YOUR_VPS_IP:/opt/
+
+Back on VPS:
+
+5. Extract files:
+   cd /opt
+   tar -xzf backend.tar.gz
+   cd backend
+
+6. Install:
+   npm install --production
+
+7. Create folders:
+   mkdir -p uploads output logs
+   chmod 755 uploads output
+
+
+STEP 5: START THE SERVER
+─────────────────────────
+On VPS:
+
+  pm2 start ecosystem.config.js
+  pm2 save
+  pm2 startup
+
+Check if running:
+  pm2 status
+
+Should show "online" in green
+
+
+STEP 6: SETUP WEB SERVER (NGINX)
+─────────────────────────────────
+On VPS:
+
+1. Create config file:
+   nano /etc/nginx/sites-available/audio-city
+
+2. Paste this (replace YOUR_IP with your VPS IP):
+   
+   server {
+       listen 80;
+       server_name YOUR_IP;
+       client_max_body_size 200M;
+       location /api {
+           proxy_pass http://localhost:3001;
+       }
+       location /output {
+           proxy_pass http://localhost:3001;
+       }
+   }
+
+3. Save: Press Ctrl+X, then Y, then Enter
+
+4. Enable:
+   ln -s /etc/nginx/sites-available/audio-city /etc/nginx/sites-enabled/
+   nginx -t
+   systemctl restart nginx
+
+
+STEP 7: TEST IT
+───────────────
+On VPS:
+
+  curl http://localhost:3001/api/health
+
+Should see: {"status":"ok","ffmpeg":true}
+
+
+STEP 8: UPDATE FRONTEND
+────────────────────────
+On YOUR COMPUTER:
+
+  cd "online master"
+  node backend/update-frontend-api.js http://YOUR_VPS_IP
+
+Or manually edit mastering.html:
+  Find: const API = 'http://localhost:3001/api';
+  Change to: const API = 'http://YOUR_VPS_IP/api';
+
+
+✅ DONE!
+───────
+Open mastering.html in browser - it should work!
+
+
+PROBLEMS?
+─────────
+Server not running?
+  pm2 restart audio-city-backend
+
+See errors?
+  pm2 logs audio-city-backend
+
+Need help?
+  Check: backend/README.md
+
+═══════════════════════════════════════════════════════════════
+  HOW TO DEPLOY AUDIO CITY FOR PUBLIC USE
+═══════════════════════════════════════════════════════════════
+
+YOU NEED 2 THINGS:
+──────────────────
+1. Frontend (HTML pages) → FREE on Netlify
+2. Backend (Mastering server) → FREE VPS
+
+═══════════════════════════════════════════════════════════════
+  PART 1: DEPLOY FRONTEND (FREE - 5 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+Go to: https://www.netlify.com
+1. Sign up (free, use GitHub/Google)
+2. Drag & drop your entire "online master" folder
+3. Wait 30 seconds
+4. Done! Your site is live!
+
+You'll get: https://your-site-123.netlify.app
+
+═══════════════════════════════════════════════════════════════
+  PART 2: DEPLOY BACKEND (FREE VPS - 30 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+WHAT YOU NEED:
+──────────────
+1. A VPS (Virtual Private Server) - like renting a computer online
+2. Your backend code (you already have this)
+
+STEP 1: GET A FREE VPS (NO CREDIT CARD NEEDED)
+───────────────────────────────────────────────
+
+OPTION A: Alavps (FREE - No Credit Card)
+─────────────────────────────────────────
+Go to: https://alavps.com/vps.html
+- 2 CPU cores, 8GB RAM, 128GB storage
+- No credit card needed
+- Instant activation
+- Choose: Ubuntu 22.04
+
+OPTION B: FreeVPS.info (200 Days FREE Trial)
+─────────────────────────────────────────────
+Go to: https://freevps.info/free-vps-trial.php
+- 2 CPU cores, 4GB RAM, 60GB storage
+- No credit card needed
+- 200 days free trial
+- Choose: Ubuntu 22.04
+
+OPTION C: Hetzner (€4/month - CHEAPEST PAID)
+──────────────────────────────────────────────
+Go to: https://www.hetzner.com/cloud
+- 2 CPU cores, 2GB RAM, 20GB storage
+- Only €4/month (about $4.50)
+- Very reliable
+- Choose: Ubuntu 22.04
+
+⚠️ NOTE: Cloudflare Workers CANNOT run FFmpeg
+   You MUST use a VPS (Virtual Private Server)
+   Cloudflare is only for simple websites, not audio processing
+
+After signing up, write down your VPS IP address (looks like: 123.45.67.89)
+
+
+STEP 2: CONNECT TO YOUR VPS
+─────────────────────────────
+Open Terminal (Mac) or Command Prompt (Windows)
+
+Type:
+  ssh root@YOUR_VPS_IP
+
+Example:
+  ssh root@123.45.67.89
+
+Press Enter, type "yes" if asked, enter password
+
+
+STEP 3: INSTALL SOFTWARE
+─────────────────────────
+Copy and paste these commands ONE BY ONE:
+
+Command 1:
+  apt update && apt upgrade -y
+
+Command 2:
+  curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+
+Command 3:
+  apt install -y nodejs
+
+Command 4:
+  apt install -y ffmpeg
+
+Command 5:
+  npm install -g pm2
+
+Command 6:
+  apt install -y nginx
+
+
+STEP 4: UPLOAD YOUR CODE
+─────────────────────────
+On YOUR COMPUTER (not VPS):
+
+1. Open Terminal
+2. Go to your project:
+   cd "online master"
+
+3. Compress backend:
+   tar -czf backend.tar.gz backend/
+
+4. Upload to VPS:
+   scp backend.tar.gz root@YOUR_VPS_IP:/opt/
+
+Back on VPS:
+
+5. Extract files:
+   cd /opt
+   tar -xzf backend.tar.gz
+   cd backend
+
+6. Install:
+   npm install --production
+
+7. Create folders:
+   mkdir -p uploads output logs
+   chmod 755 uploads output
+
+
+STEP 5: START THE SERVER
+─────────────────────────
+On VPS:
+
+  pm2 start ecosystem.config.js
+  pm2 save
+  pm2 startup
+
+Check if running:
+  pm2 status
+
+Should show "online" in green
+
+
+STEP 6: SETUP WEB SERVER (NGINX)
+─────────────────────────────────
+On VPS:
+
+1. Create config file:
+   nano /etc/nginx/sites-available/audio-city
+
+2. Paste this (replace YOUR_IP with your VPS IP):
+   
+   server {
+       listen 80;
+       server_name YOUR_IP;
+       client_max_body_size 200M;
+       location /api {
+           proxy_pass http://localhost:3001;
+       }
+       location /output {
+           proxy_pass http://localhost:3001;
+       }
+   }
+
+3. Save: Press Ctrl+X, then Y, then Enter
+
+4. Enable:
+   ln -s /etc/nginx/sites-available/audio-city /etc/nginx/sites-enabled/
+   nginx -t
+   systemctl restart nginx
+
+
+STEP 7: TEST IT
+───────────────
+On VPS:
+
+  curl http://localhost:3001/api/health
+
+Should see: {"status":"ok","ffmpeg":true}
+
+
+STEP 8: UPDATE FRONTEND
+────────────────────────
+On YOUR COMPUTER:
+
+  cd "online master"
+  node backend/update-frontend-api.js http://YOUR_VPS_IP
+
+Or manually edit mastering.html:
+  Find: const API = 'http://localhost:3001/api';
+  Change to: const API = 'http://YOUR_VPS_IP/api';
+
+
+✅ DONE!
+───────
+Open mastering.html in browser - it should work!
+
+
+PROBLEMS?
+─────────
+Server not running?
+  pm2 restart audio-city-backend
+
+See errors?
+  pm2 logs audio-city-backend
+
+Need help?
+  Check: backend/README.md
+
+═══════════════════════════════════════════════════════════════
+  HOW TO DEPLOY AUDIO CITY FOR PUBLIC USE
+═══════════════════════════════════════════════════════════════
+
+YOU NEED 2 THINGS:
+──────────────────
+1. Frontend (HTML pages) → FREE on Netlify
+2. Backend (Mastering server) → FREE VPS
+
+═══════════════════════════════════════════════════════════════
+  PART 1: DEPLOY FRONTEND (FREE - 5 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+Go to: https://www.netlify.com
+1. Sign up (free, use GitHub/Google)
+2. Drag & drop your entire "online master" folder
+3. Wait 30 seconds
+4. Done! Your site is live!
+
+You'll get: https://your-site-123.netlify.app
+
+═══════════════════════════════════════════════════════════════
+  PART 2: DEPLOY BACKEND (FREE VPS - 30 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+WHAT YOU NEED:
+──────────────
+1. A VPS (Virtual Private Server) - like renting a computer online
+2. Your backend code (you already have this)
+
+STEP 1: GET A FREE VPS (NO CREDIT CARD NEEDED)
+───────────────────────────────────────────────
+
+OPTION A: Alavps (FREE - No Credit Card)
+─────────────────────────────────────────
+Go to: https://alavps.com/vps.html
+- 2 CPU cores, 8GB RAM, 128GB storage
+- No credit card needed
+- Instant activation
+- Choose: Ubuntu 22.04
+
+OPTION B: FreeVPS.info (200 Days FREE Trial)
+─────────────────────────────────────────────
+Go to: https://freevps.info/free-vps-trial.php
+- 2 CPU cores, 4GB RAM, 60GB storage
+- No credit card needed
+- 200 days free trial
+- Choose: Ubuntu 22.04
+
+OPTION C: Hetzner (€4/month - CHEAPEST PAID)
+──────────────────────────────────────────────
+Go to: https://www.hetzner.com/cloud
+- 2 CPU cores, 2GB RAM, 20GB storage
+- Only €4/month (about $4.50)
+- Very reliable
+- Choose: Ubuntu 22.04
+
+⚠️ NOTE: Cloudflare Workers CANNOT run FFmpeg
+   You MUST use a VPS (Virtual Private Server)
+   Cloudflare is only for simple websites, not audio processing
+
+After signing up, write down your VPS IP address (looks like: 123.45.67.89)
+
+
+STEP 2: CONNECT TO YOUR VPS
+─────────────────────────────
+Open Terminal (Mac) or Command Prompt (Windows)
+
+Type:
+  ssh root@YOUR_VPS_IP
+
+Example:
+  ssh root@123.45.67.89
+
+Press Enter, type "yes" if asked, enter password
+
+
+STEP 3: INSTALL SOFTWARE
+─────────────────────────
+Copy and paste these commands ONE BY ONE:
+
+Command 1:
+  apt update && apt upgrade -y
+
+Command 2:
+  curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+
+Command 3:
+  apt install -y nodejs
+
+Command 4:
+  apt install -y ffmpeg
+
+Command 5:
+  npm install -g pm2
+
+Command 6:
+  apt install -y nginx
+
+
+STEP 4: UPLOAD YOUR CODE
+─────────────────────────
+On YOUR COMPUTER (not VPS):
+
+1. Open Terminal
+2. Go to your project:
+   cd "online master"
+
+3. Compress backend:
+   tar -czf backend.tar.gz backend/
+
+4. Upload to VPS:
+   scp backend.tar.gz root@YOUR_VPS_IP:/opt/
+
+Back on VPS:
+
+5. Extract files:
+   cd /opt
+   tar -xzf backend.tar.gz
+   cd backend
+
+6. Install:
+   npm install --production
+
+7. Create folders:
+   mkdir -p uploads output logs
+   chmod 755 uploads output
+
+
+STEP 5: START THE SERVER
+─────────────────────────
+On VPS:
+
+  pm2 start ecosystem.config.js
+  pm2 save
+  pm2 startup
+
+Check if running:
+  pm2 status
+
+Should show "online" in green
+
+
+STEP 6: SETUP WEB SERVER (NGINX)
+─────────────────────────────────
+On VPS:
+
+1. Create config file:
+   nano /etc/nginx/sites-available/audio-city
+
+2. Paste this (replace YOUR_IP with your VPS IP):
+   
+   server {
+       listen 80;
+       server_name YOUR_IP;
+       client_max_body_size 200M;
+       location /api {
+           proxy_pass http://localhost:3001;
+       }
+       location /output {
+           proxy_pass http://localhost:3001;
+       }
+   }
+
+3. Save: Press Ctrl+X, then Y, then Enter
+
+4. Enable:
+   ln -s /etc/nginx/sites-available/audio-city /etc/nginx/sites-enabled/
+   nginx -t
+   systemctl restart nginx
+
+
+STEP 7: TEST IT
+───────────────
+On VPS:
+
+  curl http://localhost:3001/api/health
+
+Should see: {"status":"ok","ffmpeg":true}
+
+
+STEP 8: UPDATE FRONTEND
+────────────────────────
+On YOUR COMPUTER:
+
+  cd "online master"
+  node backend/update-frontend-api.js http://YOUR_VPS_IP
+
+Or manually edit mastering.html:
+  Find: const API = 'http://localhost:3001/api';
+  Change to: const API = 'http://YOUR_VPS_IP/api';
+
+
+✅ DONE!
+───────
+Open mastering.html in browser - it should work!
+
+
+PROBLEMS?
+─────────
+Server not running?
+  pm2 restart audio-city-backend
+
+See errors?
+  pm2 logs audio-city-backend
+
+Need help?
+  Check: backend/README.md
+
+
+
+
+
+
+
+
+
+
+
+
+
+

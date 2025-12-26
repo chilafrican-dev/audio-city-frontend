@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script>
+    // Authentication check - redirect if not logged in (must run first!)
+    (function() {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      
+      // If no auth token or user ID, redirect to login
+      if (!authToken || !userId) {
+        // Store the current URL to redirect back after login
+        const currentUrl = window.location.href;
+        window.location.href = 'login.html?return=' + encodeURIComponent(currentUrl);
+        return;
+      }
+    })();
+    
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
+  </script>
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Audio City" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #22c55e;
+      --error: #ef4444;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.05);
+      --shadow: rgba(0, 0, 0, 0.4);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Header - Same as Feed */
+    header {
+      position: sticky;
+      top: 0;
+      background: #000000 !important;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      display: block;
+      margin-left: 8px;
+    }
+    
+    .nav-main {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      font-weight: 700;
+      font-size: 15px;
+      position: relative;
+    }
+    
+    .nav-item:hover {
+      background: var(--glass);
+      color: white !important;
+    }
+    
+    .nav-item.active {
+      color: white !important;
+      background: var(--glass);
+    }
+    
+    .nav-dropdown { position: relative; }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+    .nav-dropdown:hover .dropdown-menu { display: block; }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .dropdown-item:hover {
+      background: var(--accent-glow);
+      color: white !important;
+    }
+    
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn-mastering {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+      color: white !important;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      display: inline-block !important;
+      visibility: visible !important;
+    }
+    
+    .btn-mastering:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2));
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    
+    .create-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .create-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    
+    .profile-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .profile-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Profile Container */
+    .profile-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Profile Header */
+    .profile-header {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 32px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+    
+    .profile-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--bg-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      border: 3px solid var(--accent);
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+    
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .profile-info {
+      flex: 1;
+    }
+    
+    .profile-name {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .verified-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: white;
+    }
+    
+    .profile-handle {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    
+    .profile-bio {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 20px;
+      max-width: 600px;
+    }
+
+    .sc-embed {
+      margin-top: 12px;
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+    
+    .profile-stats {
+      display: flex;
+      gap: 32px;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: white !important;
+      display: block;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    .profile-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .follow-btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .follow-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    
+    .follow-btn.following {
+      background: var(--glass);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    
+    .settings-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    .settings-btn:hover {
+      border-color: var(--accent);
+      color: white !important;
+    }
+    
+    .edit-profile-btn {
+      padding: 12px 24px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .edit-profile-btn:hover {
+      border-color: var(--accent);
+      color: white !important;
+      background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .message-btn {
+      padding: 12px 24px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .message-btn:hover {
+      background: var(--bg-light);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    
+    /* Profile Sections */
+    .profile-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    
+    .section {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-link {
+      color: white !important;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    /* Tracks Grid */
+    .tracks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    
+    .track-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .track-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+    }
+    
+    .track-cover {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .track-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .track-info {
+      padding: 12px;
+    }
+    
+    .track-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .track-stats {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .profile-container {
+        padding: 16px;
+      }
+      
+      .profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+      }
+      
+      .profile-stats {
+        justify-content: center;
+      }
+      
+      .nav-main {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="index.html" class="logo-brand">
+        <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none';">
+        <div class="brand-text">AUDIO CITY</div>
+      </a>
+      <nav class="nav-main">
+        <a href="discover.html" class="nav-item">Home</a>
+        <a href="feed.html" class="nav-item">Feed</a>
+        <a href="artists.html" class="nav-item">Artists</a>
+        <div class="nav-dropdown">
+          <a href="#" class="nav-item">🛠️ Tools</a>
+          <div class="dropdown-menu">
+            <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
+          </div>
+        </div>
+        <a href="inbox.html" class="nav-item">Inbox</a>
+      </nav>
+      <div class="nav-right">
+        <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
+        <button id="signOutBtnHeader" onclick="signOut()" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
+        <button class="create-btn" id="createBtn" title="Create">+</button>
+        <div class="profile-btn" id="profileBtn" style="position: relative;" onclick="toggleProfileMenu(event)">
+          <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+          <div class="dropdown-menu" id="profileMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000;">
+            <a href="profile.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">👤 Profile</a>
+            <a href="profile.html#edit" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">✏️ Edit Profile</a>
+            <a href="settings.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">⚙️ Settings</a>
+            <div class="dropdown-item" onclick="signOut()" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--error); cursor: pointer; border-radius: 8px; font-size: 14px; transition: all 0.2s; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px;">🚪 Sign out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Sign Out Confirmation Modal -->
+  <div id="signOutModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); position: relative;">
+      <button onclick="closeSignOutModal()" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--muted); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-light)'; this.style.color='var(--text)'" onmouseout="this.style.background='transparent'; this.style.color='var(--muted)'">×</button>
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🚪</div>
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Sign Out</h2>
+        <p style="color: var(--muted); font-size: 14px;">Are you sure you want to sign out of your account?</p>
+      </div>
+      
+      <div style="display: flex; gap: 12px;">
+        <button type="button" onclick="handleSignOut()" id="signOutConfirmBtn" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; color: white; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Sign Out</button>
+        <button type="button" onclick="closeSignOutModal()" style="padding: 12px 24px; background: var(--bg-light); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-card)'" onmouseout="this.style.background='var(--bg-light)'">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="profile-container">
+    <!-- Profile Header -->
+      <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar">
+        <img src="" alt="Profile" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div style="display: flex;">👤</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">
+          Loading...
+          <div class="verified-badge" id="verifiedBadge" style="display: none;">✓</div>
+        </div>
+        <div class="profile-handle" id="profileHandle">@loading</div>
+        <div class="profile-bio" id="profileBio">No bio yet.</div>
+        <div class="profile-location" id="profileLocation" style="font-size: 14px; color: var(--muted); margin-bottom: 16px; display: none;">
+          📍 <span id="locationText"></span>
+        </div>
+        <div class="profile-stats">
+          <div class="stat-item">
+            <span class="stat-value" id="tracksCount">0</span>
+            <span class="stat-label">Tracks</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="followersCount">0</span>
+            <span class="stat-label">Followers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="followingCount">0</span>
+            <span class="stat-label">Following</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="playsCount">0</span>
+            <span class="stat-label">Total Plays</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sc-embed" id="profileSoundCloudEmbed"></div>
+      <div class="profile-actions">
+        <button class="message-btn" id="messageBtn" style="display: inline-flex;">💬 Message</button>
+        <button class="follow-btn" id="followBtn" style="display: none;">Follow</button>
+        <button class="edit-profile-btn" id="editProfileBtn" style="display: none;">✏️ Edit Profile</button>
+        <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+        <button class="report-btn" id="reportBtn" style="display: none;" title="Report User">🚩 Report</button>
+      </div>
+    </div>
+    
+    <!-- Profile Sections (Auto-adaptive) -->
+    <div class="profile-sections">
+      <!-- Tracks Section (appears if user has tracks) -->
+      <div class="section" id="tracksSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">🎵 Tracks</h3>
+          <a href="#" class="section-link">View All →</a>
+        </div>
+        <div class="tracks-grid" id="tracksGrid"></div>
+      </div>
+      
+      <!-- Posts Section (appears if user has posts) -->
+      <div class="section" id="postsSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">💬 Posts</h3>
+          <a href="#" class="section-link">View All →</a>
+        </div>
+        <div id="postsGrid" class="empty-state">No posts yet</div>
+      </div>
+      
+      <!-- Playlists Section (appears if user has playlists) -->
+      <div class="section" id="playlistsSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">📀 Playlists</h3>
+          <a href="#" class="section-link">View All →</a>
+        </div>
+        <div id="playlistsGrid" class="empty-state">No playlists yet</div>
+      </div>
+      
+      <!-- User Posts Section (filtered by userId) -->
+      <div class="section" id="userPostsSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">📝 Posts</h3>
+        </div>
+        <div id="userPostsContainer" class="empty-state">No posts yet</div>
+      </div>
+      
+      <!-- Activity Section (always visible) -->
+      <div class="section" id="activitySection">
+        <div class="section-header">
+          <h3 class="section-title">📊 Activity</h3>
+        </div>
+        <div id="activityGrid" class="empty-state">No recent activity</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 700;">Edit Profile</h2>
+        <button id="closeEditModal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer;">×</button>
+      </div>
+      <form id="editProfileForm">
+        <div style="margin-bottom: 20px;">
+          <label for="editAvatar" style="display: block; margin-bottom: 8px; font-weight: 600;">Profile Picture</label>
+          <div style="display: flex; gap: 16px; align-items: center;">
+            <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background: var(--glass); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <img id="avatarPreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <div id="avatarPreviewPlaceholder" style="font-size: 40px;">👤</div>
+            </div>
+            <div style="flex: 1;">
+              <input type="file" id="editAvatar" name="editAvatar" accept="image/*" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; cursor: pointer;" />
+              <input type="url" id="editAvatarUrl" name="editAvatarUrl" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; margin-top: 8px;" placeholder="Or enter image URL (optional)" />
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Upload an image file or paste an image URL</p>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label for="editName" style="display: block; margin-bottom: 8px; font-weight: 600;">Display Name</label>
+          <input type="text" id="editName" name="editName" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Your display name" />
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label for="editUsername" style="display: block; margin-bottom: 8px; font-weight: 600;">Username</label>
+          <input type="text" id="editUsername" name="editUsername" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Your username" />
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label for="editBio" style="display: block; margin-bottom: 8px; font-weight: 600;">Bio</label>
+          <textarea id="editBio" name="editBio" rows="4" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell us about yourself..."></textarea>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label for="editLocation" style="display: block; margin-bottom: 8px; font-weight: 600;">Location</label>
+          <input type="text" id="editLocation" name="editLocation" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="City, Country" />
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button type="submit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer;">Save Changes</button>
+          <button type="button" id="cancelEdit" style="padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    // Use local API for development, production API for deployed site
+    if (typeof API_BASE_URL === 'undefined') {
+      var API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3002'
+        : 'https://audio-city-api.chilafrican.workers.dev';
+    }
+    function buildSoundCloudEmbed(url, { visual = false, autoplay = false } = {}) {
+      // Only build embed if we have a valid URL
+      if (!url || !url.trim()) return '';
+      
+      // Validate URL is a SoundCloud URL
+      if (!url.includes('soundcloud.com')) {
+        console.warn('Invalid SoundCloud URL:', url);
+        return '';
+      }
+      
+      const params = new URLSearchParams({
+        url: url.trim(),
+        auto_play: autoplay ? 'true' : 'false',
+        visual: visual ? 'true' : 'false',
+        show_comments: 'false',
+        show_related: 'false',
+        show_reposts: 'false',
+        show_teaser: 'false',
+        hide_related: 'true',
+        liking: 'false',
+        sharing: 'false',
+      });
+      const height = visual ? 380 : 120;
+      return `<iframe width="100%" height="${height}" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?${params.toString()}" onerror="this.parentElement.style.display='none';"></iframe>`;
+    }
+    
+    // Get user ID from URL or use current user
+    if (typeof urlParams === 'undefined') {
+      var urlParams = new URLSearchParams(window.location.search);
+    }
+    if (typeof profileUserId === 'undefined') {
+      var profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
+    }
+    
+    // Initialize buttons and UI when DOM is ready
+    function initializeProfileUI() {
+      // Create button
+      const createBtn = document.getElementById('createBtn');
+      if (createBtn) {
+        createBtn.addEventListener('click', () => {
+          window.location.href = 'artist-corner.html';
+        });
+      }
+      
+      // Settings button
+      const settingsBtn = document.getElementById('settingsBtn');
+      if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+          window.location.href = 'settings.html';
+        });
+      }
+      
+      // Check if viewing own profile
+      if (typeof currentUserId === 'undefined') {
+        var currentUserId = localStorage.getItem('user_id');
+      }
+      if (typeof isOwnProfile === 'undefined') {
+        var isOwnProfile = !profileUserId || profileUserId === currentUserId;
+      }
+      
+      // Show/hide buttons based on profile ownership
+      const editProfileBtn = document.getElementById('editProfileBtn');
+      const followBtn = document.getElementById('followBtn');
+      const reportBtn = document.getElementById('reportBtn');
+      const messageBtn = document.getElementById('messageBtn');
+      
+      if (isOwnProfile) {
+        // Own profile: Show edit, hide follow/report/message
+        if (editProfileBtn) editProfileBtn.style.display = 'block';
+        if (followBtn) followBtn.style.display = 'none';
+        if (reportBtn) reportBtn.style.display = 'none';
+        if (messageBtn) messageBtn.style.display = 'none';
+      } else {
+        // Other user's profile: Show follow/report/message, hide edit
+        if (followBtn) followBtn.style.display = 'block';
+        if (editProfileBtn) editProfileBtn.style.display = 'none';
+        if (reportBtn) reportBtn.style.display = 'block';
+        if (messageBtn) messageBtn.style.display = 'inline-flex';
+      }
+      
+      // Report button
+      if (reportBtn) {
+        reportBtn.addEventListener('click', () => {
+          const reason = prompt('Please provide a reason for reporting this user:');
+          if (reason && reason.trim()) {
+            // TODO: Implement report API call
+            alert('Thank you for your report. We will review it shortly.');
+            console.log('Report user:', profileUserId, 'Reason:', reason);
+          }
+        });
+      }
+      
+      // Message button event listener (reuse messageBtn from above)
+      if (messageBtn) {
+        messageBtn.addEventListener('click', () => {
+          // Navigate to inbox with the profile user's ID
+          window.location.href = `inbox.html?user=${profileUserId}`;
+        });
+      }
+      
+      // Follow button
+      if (followBtn) {
+        followBtn.addEventListener('click', () => {
+          const btn = document.getElementById('followBtn');
+          btn.classList.toggle('following');
+          btn.textContent = btn.classList.contains('following') ? 'Following' : 'Follow';
+        });
+      }
+      
+      // Edit profile button
+      if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', () => {
+          document.getElementById('editProfileModal').style.display = 'flex';
+      // Load current values
+      const currentName = document.getElementById('profileName')?.textContent?.trim() || localStorage.getItem('user_name') || '';
+      const currentUsername = document.getElementById('profileHandle')?.textContent?.replace('@', '') || localStorage.getItem('username') || '';
+      const currentBio = document.getElementById('profileBio')?.textContent?.trim() || localStorage.getItem('bio') || '';
+      const currentLocation = document.getElementById('locationText')?.textContent?.trim() || localStorage.getItem('location') || '';
+      
+      // Set form values
+      if (document.getElementById('editName')) document.getElementById('editName').value = currentName;
+      if (document.getElementById('editUsername')) document.getElementById('editUsername').value = currentUsername;
+      if (document.getElementById('editBio')) document.getElementById('editBio').value = currentBio;
+      if (document.getElementById('editLocation')) document.getElementById('editLocation').value = currentLocation;
+      
+      const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || '';
+      if (existingAvatar) {
+        if (existingAvatar.startsWith('data:image')) {
+          // It's a data URL (uploaded image) - show in preview
+          document.getElementById('avatarPreview').src = existingAvatar;
+          document.getElementById('avatarPreview').style.display = 'block';
+          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+          document.getElementById('editAvatarUrl').value = '';
+        } else {
+          // It's a URL
+          document.getElementById('editAvatarUrl').value = existingAvatar;
+          document.getElementById('avatarPreview').src = existingAvatar;
+          document.getElementById('avatarPreview').style.display = 'block';
+          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+        }
+      } else {
+        // No avatar - reset preview
+        document.getElementById('avatarPreview').style.display = 'none';
+        document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
+        document.getElementById('editAvatarUrl').value = '';
+      }
+      document.getElementById('editAvatar').value = ''; // Clear file input
+      
+      // Setup file upload preview
+      document.getElementById('editAvatar').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          // Check file size (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            alert('Image file is too large. Please select an image smaller than 5MB.');
+            e.target.value = '';
+            return;
+          }
+          
+          // Check file type
+          if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file.');
+            e.target.value = '';
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            document.getElementById('avatarPreview').src = dataUrl;
+            document.getElementById('avatarPreview').style.display = 'block';
+            document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+            // Clear URL input when file is selected
+            document.getElementById('editAvatarUrl').value = '';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      
+      // Setup URL input preview
+      document.getElementById('editAvatarUrl').addEventListener('input', function(e) {
+        const url = e.target.value.trim();
+        if (url) {
+          document.getElementById('avatarPreview').src = url;
+          document.getElementById('avatarPreview').style.display = 'block';
+          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+          // Clear file input when URL is entered
+          document.getElementById('editAvatar').value = '';
+        } else {
+          // Clear preview if URL is empty
+          const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+          if (!existingAvatar) {
+            document.getElementById('avatarPreview').style.display = 'none';
+            document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
+          }
+        }
+      });
+      
+      // Handle preview image errors
+      document.getElementById('avatarPreview').onerror = function() {
+        document.getElementById('avatarPreview').style.display = 'none';
+        document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
+      };
+        });
+      }
+      
+      // Close edit modal
+      const closeEditModal = document.getElementById('closeEditModal');
+      if (closeEditModal) {
+        closeEditModal.addEventListener('click', () => {
+          document.getElementById('editProfileModal').style.display = 'none';
+        });
+      }
+      
+      const cancelEdit = document.getElementById('cancelEdit');
+      if (cancelEdit) {
+        cancelEdit.addEventListener('click', () => {
+          document.getElementById('editProfileModal').style.display = 'none';
+        });
+      }
+      
+      // Save profile edits
+      const editProfileForm = document.getElementById('editProfileForm');
+      if (editProfileForm) {
+        editProfileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.querySelector('#editProfileForm button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+      
+      try {
+        const userId = profileUserId || localStorage.getItem('user_id');
+        if (!userId) {
+          alert('User ID not found. Please log in again.');
+          return;
+        }
+      
+      // Handle avatar - prefer file upload over URL
+      const avatarFile = document.getElementById('editAvatar').files[0];
+        let avatarUrl = null;
+        
+      if (avatarFile) {
+          // Upload profile picture to backend
+          const formData = new FormData();
+          formData.append('profilePicture', avatarFile);
+          formData.append('userId', userId);
+          
+          const uploadResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-picture`, {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            avatarUrl = uploadData.avatar_url || uploadData.profile_image;
+            // Also save to localStorage as backup
+            localStorage.setItem('profile_image_url', avatarUrl);
+      } else {
+            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+            alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
+          }
+          } else {
+          // Use URL input
+          const avatarUrlInput = document.getElementById('editAvatarUrl').value.trim();
+          if (avatarUrlInput) {
+            avatarUrl = avatarUrlInput;
+            localStorage.setItem('profile_image_url', avatarUrl);
+          }
+        }
+        
+        // Update profile (bio, location, etc.)
+        const bio = document.getElementById('editBio').value;
+        const location = document.getElementById('editLocation').value;
+        const name = document.getElementById('editName')?.value;
+        const username = document.getElementById('editUsername')?.value;
+        
+        const profileData = {};
+        if (bio) profileData.bio = bio;
+        if (location) profileData.location = location;
+        if (name) profileData.name = name;
+        if (username) profileData.username = username;
+        
+        if (Object.keys(profileData).length > 0) {
+          const updateResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile`, {
+            method: 'PUT',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            },
+            body: JSON.stringify(profileData)
+          });
+          
+          if (updateResponse.ok) {
+            // Persist returned user details so they show up after reload and across tabs
+            const updated = await updateResponse.json().catch(() => null);
+            const updatedUser = updated?.user;
+            if (updatedUser) {
+              if (updatedUser.name) localStorage.setItem('user_name', updatedUser.name);
+              if (updatedUser.username) localStorage.setItem('username', updatedUser.username);
+              if (updatedUser.bio) localStorage.setItem('bio', updatedUser.bio);
+              if (updatedUser.location) localStorage.setItem('location', updatedUser.location);
+              if (updatedUser.avatar_url || updatedUser.profile_image) {
+                const avatarPersisted = updatedUser.avatar_url || updatedUser.profile_image;
+                localStorage.setItem('profile_image_url', avatarPersisted);
+                updateProfilePicture(avatarPersisted);
+              }
+            }
+          } else {
+            console.warn('Profile update failed, but continuing...');
+          }
+        }
+        
+        // Save to localStorage as backup
+        if (bio) localStorage.setItem('bio', bio);
+        if (location) localStorage.setItem('location', location);
+        
+          // Close modal and reload
+          document.getElementById('editProfileModal').style.display = 'none';
+          loadProfile();
+        } catch (error) {
+          console.error('Error saving profile:', error);
+          alert('Failed to save profile. Please try again.');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
+      }
+    }
+    
+    // Show sign out modal
+    window.showSignOutModal = function() {
+      const modal = document.getElementById('signOutModal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    };
+    
+    // Close sign out modal
+    window.closeSignOutModal = function() {
+      const modal = document.getElementById('signOutModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    };
+    
+    // Handle sign out confirmation
+    window.handleSignOut = function() {
+      try {
+        const signOutBtn = document.getElementById('signOutConfirmBtn');
+        if (signOutBtn) {
+          signOutBtn.disabled = true;
+          signOutBtn.textContent = 'Signing out...';
+        }
+        
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('is_admin');
+        localStorage.removeItem('admin_mode');
+        localStorage.removeItem('profile_image_url');
+        localStorage.removeItem('bio');
+        localStorage.removeItem('location');
+        
+        // Close modal
+        closeSignOutModal();
+        
+        // Redirect to home page
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error('Error during sign out:', error);
+        const signOutBtn = document.getElementById('signOutConfirmBtn');
+        if (signOutBtn) {
+          signOutBtn.disabled = false;
+          signOutBtn.textContent = 'Sign Out';
+        }
+        alert('An error occurred during sign out. Please try again.');
+      }
+    };
+    
+    // Sign out function - make it global (shows modal instead of confirm)
+    window.signOut = function() {
+      showSignOutModal();
+    };
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+      const signOutModal = document.getElementById('signOutModal');
+      if (signOutModal && e.target === signOutModal) {
+        closeSignOutModal();
+      }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const signOutModal = document.getElementById('signOutModal');
+        if (signOutModal && signOutModal.style.display === 'flex') {
+          closeSignOutModal();
+        }
+      }
+    });
+    
+    // Toggle profile menu - make it global
+    window.toggleProfileMenu = function(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('profileMenu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+      }
+    };
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const profileMenu = document.getElementById('profileMenu');
+      const profileBtn = document.getElementById('profileBtn');
+      if (profileMenu && profileBtn && !profileBtn.contains(e.target)) {
+        profileMenu.style.display = 'none';
+      }
+    });
+    
+    // Helper function to update profile picture display
+    function updateProfilePicture(imageSrc) {
+      if (imageSrc) {
+        // Update main profile avatar
+        const avatarEl = document.querySelector('#profileAvatar img');
+        const placeholder = document.querySelector('#profileAvatar > div');
+        if (avatarEl) {
+          avatarEl.src = imageSrc;
+          avatarEl.style.display = 'block';
+          if (placeholder) {
+            placeholder.style.display = 'none';
+          }
+        }
+        
+        // Update header profile button
+        const headerImg = document.getElementById('headerProfileImg');
+        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+        if (headerImg) {
+          headerImg.src = imageSrc;
+          headerImg.style.display = 'block';
+        }
+        if (headerPlaceholder) {
+          headerPlaceholder.style.display = 'none';
+        }
+      } else {
+        // Hide image if no avatar
+        const avatarEl = document.querySelector('#profileAvatar img');
+        const placeholder = document.querySelector('#profileAvatar > div');
+        if (avatarEl) {
+          avatarEl.style.display = 'none';
+        }
+        if (placeholder) {
+          placeholder.style.display = 'flex';
+        }
+        
+        // Update header profile button
+        const headerImg = document.getElementById('headerProfileImg');
+        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+        if (headerImg) {
+          headerImg.style.display = 'none';
+        }
+        if (headerPlaceholder) {
+          headerPlaceholder.style.display = 'flex';
+        }
+      }
+    }
+    
+    // Load profile
+    async function loadProfile() {
+      try {
+        if (!profileUserId) {
+          console.error('No profile user ID found');
+          // Try to get from localStorage
+          const storedUserId = localStorage.getItem('user_id');
+          if (storedUserId) {
+            profileUserId = storedUserId;
+          } else {
+            document.getElementById('profileName').textContent = 'Please log in';
+            document.getElementById('profileHandle').textContent = '@guest';
+            return;
+          }
+        }
+        
+        // Try to fetch user data from API
+        let userData = null;
+        try {
+          const userResponse = await fetch(`${API_BASE_URL}/api/users/${profileUserId}`);
+          if (userResponse.ok) {
+            userData = await userResponse.json();
+            console.log('Loaded user data from API:', userData);
+          } else {
+            console.log('API returned error:', userResponse.status);
+          }
+        } catch (e) {
+          console.error('Could not fetch user from API:', e);
+        }
+        
+        // Load user data (from API or localStorage)
+        const userName = userData?.name || userData?.full_name || localStorage.getItem('user_name') || 'User';
+        const username = userData?.username || userData?.handle || localStorage.getItem('username') || 'user';
+        
+        console.log('Setting profile name:', userName, 'username:', username);
+        // Get avatar from API response first, then fallback to localStorage
+        let avatar = userData?.profile_image || userData?.avatar_url || null;
+        
+        // If avatar URL is relative, make it absolute
+        if (avatar && avatar.startsWith('/uploads/')) {
+          avatar = `${API_BASE_URL}${avatar}`;
+        }
+        
+        // Fallback to localStorage if no avatar from API
+        if (!avatar) {
+          avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || null;
+        }
+        const bio = userData?.bio || userData?.description || localStorage.getItem('bio') || 'No bio yet.';
+        const location = userData?.location || localStorage.getItem('location') || null;
+        const isVerified = userData?.is_verified || userData?.verified || false;
+        
+        // Preserve admin status - don't overwrite if user is admin
+        // Check if user ID starts with 'admin_' to maintain admin status
+        const isAdminUser = profileUserId && profileUserId.startsWith('admin_');
+        if (isAdminUser && !localStorage.getItem('is_admin')) {
+          localStorage.setItem('is_admin', 'true');
+          localStorage.setItem('admin_mode', 'true');
+          console.log('Admin status preserved for admin user');
+        }
+        
+        // Update localStorage with profile data (but preserve admin status)
+        localStorage.setItem('name', userName);
+        localStorage.setItem('user_name', userName);
+        localStorage.setItem('username', username);
+        
+        document.getElementById('profileName').textContent = userName;
+        document.getElementById('profileHandle').textContent = `@${username}`;
+        document.getElementById('profileBio').textContent = bio;
+        
+        // Show/hide verification badge
+        const verifiedBadge = document.getElementById('verifiedBadge');
+        if (verifiedBadge) {
+          if (isVerified) {
+            verifiedBadge.style.display = 'flex';
+          } else {
+            verifiedBadge.style.display = 'none';
+          }
+        }
+        
+        updateProfilePicture(avatar);
+        
+        // Show location if available
+        if (location) {
+          document.getElementById('profileLocation').style.display = 'block';
+          document.getElementById('locationText').textContent = location;
+        }
+        
+        // Load tracks
+        const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${profileUserId}&order=created_at.desc&limit=12`);
+        const tracks = tracksResponse.ok ? await tracksResponse.json() : [];
+        
+        // Get total tracks count (not just the 12 we fetched for display)
+        const allTracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${profileUserId}`);
+        const allTracks = allTracksResponse.ok ? await allTracksResponse.json() : [];
+        const tracksCountEl = document.getElementById('tracksCount');
+        if (tracksCountEl) {
+          tracksCountEl.textContent = allTracks.length.toLocaleString();
+        }
+        
+        // Calculate total plays from all tracks
+        const totalPlays = allTracks.reduce((sum, t) => sum + (parseInt(t.views_count || t.plays_count) || 0), 0);
+        const playsCountEl = document.getElementById('playsCount');
+        if (playsCountEl) {
+          playsCountEl.textContent = totalPlays.toLocaleString();
+        }
+        
+        if (tracks.length > 0) {
+          document.getElementById('tracksSection').style.display = 'block';
+          
+          // Check if user is admin
+          const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+          
+          document.getElementById('tracksGrid').innerHTML = tracks.map(track => {
+            const adminDeleteBtn = (isAdmin && track.id) ? `<button class="admin-delete-track-btn" data-track-id="${track.id}" title="Admin: Delete track" onclick="event.stopPropagation(); deleteTrackAsAdmin('${track.id}');" style="position: absolute; top: 8px; right: 8px; z-index: 20; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🗑️</button>` : '';
+            return `
+            <div class="track-card" onclick="window.location.href='track.html?id=${track.id}'" style="position: relative;">
+              ${adminDeleteBtn}
+              <div class="track-cover">
+                ${track.cover_art_url ? `<img src="${escapeHtml(track.cover_art_url)}" alt="${escapeHtml(track.title)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                <div style="${track.cover_art_url ? 'display: none;' : 'display: flex;'}">🎵</div>
+              </div>
+              <div class="track-info">
+                <div class="track-title">${escapeHtml(track.title || 'Untitled')}</div>
+                <div class="track-stats">👁️ ${(track.views_count || 0).toLocaleString()}</div>
+              </div>
+            </div>
+          `;
+          }).join('');
+        }
+        
+        // Load user's posts (filtered by userId)
+        await loadUserPosts(profileUserId);
+        
+        // Load stats (followers, following)
+        loadUserStats(profileUserId);
+
+        // SoundCloud playlist embed (only if user has a playlist URL)
+        const scEmbedContainer = document.getElementById('profileSoundCloudEmbed');
+        if (scEmbedContainer) {
+          const scUrl = userData?.playlist_url || userData?.soundcloud_playlist_url;
+          if (scUrl && scUrl.trim() && scUrl.includes('soundcloud.com')) {
+            // User has a valid SoundCloud playlist URL - show embed
+            scEmbedContainer.style.display = 'block';
+            scEmbedContainer.innerHTML = buildSoundCloudEmbed(scUrl, { visual: true, autoplay: false });
+            
+            // Handle iframe load errors
+            const iframe = scEmbedContainer.querySelector('iframe');
+            if (iframe) {
+              iframe.onerror = function() {
+                console.warn('SoundCloud embed failed to load');
+                scEmbedContainer.style.display = 'none';
+              };
+            }
+          } else {
+            // No valid playlist URL - hide the embed container
+            scEmbedContainer.style.display = 'none';
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+    
+    // Admin delete track function
+    async function deleteTrackAsAdmin(trackId) {
+      const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+      if (!isAdmin) {
+        alert('Admin access required');
+        return;
+      }
+      
+      const confirmMessage = `⚠️ ADMIN DELETE: Are you sure you want to delete this track? This action cannot be undone and will remove the content permanently.`;
+      
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+      
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        if (!authToken) {
+          alert('You must be logged in to delete tracks.');
+          return;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/api/tracks/${trackId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok || response.status === 404) {
+          alert('✅ Admin: Track deleted successfully.');
+          // Reload the page to refresh tracks
+          window.location.reload();
+    } else {
+          const error = await response.json().catch(() => ({ error: 'Failed to delete track' }));
+          alert(error.error || 'Failed to delete track. Please try again.');
+        }
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Error deleting track. Please try again.');
+      }
+    }
+    
+    // Load user's posts (filtered by userId)
+    async function loadUserPosts(userId) {
+      try {
+        const userPostsSection = document.getElementById('userPostsSection');
+        const userPostsContainer = document.getElementById('userPostsContainer');
+        
+        if (!userPostsSection || !userPostsContainer) {
+          console.warn('User posts section elements not found');
+          return;
+        }
+        
+        // Fetch feed data and filter by userId
+        const feedResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${userId}&order=created_at.desc&limit=20`);
+        const userTracks = feedResponse.ok ? await feedResponse.json() : [];
+        
+        if (userTracks.length > 0) {
+          userPostsSection.style.display = 'block';
+          userPostsContainer.classList.remove('empty-state');
+          
+          // Clear existing content
+          userPostsContainer.innerHTML = '';
+          
+          // Render posts similar to feed
+          userTracks.forEach(track => {
+            const postCard = document.createElement('div');
+            postCard.className = 'post-card';
+            postCard.style.cssText = 'margin-bottom: 16px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.2s;';
+            postCard.onclick = () => {
+              window.location.href = `track.html?id=${track.id}`;
+            };
+            postCard.onmouseenter = function() {
+              this.style.transform = 'translateY(-2px)';
+              this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+            };
+            postCard.onmouseleave = function() {
+              this.style.transform = 'translateY(0)';
+              this.style.boxShadow = 'none';
+            };
+            
+            const coverUrl = track.cover_art_url || track.coverArtUrl || null;
+            const trackTitle = escapeHtml(track.title || 'Untitled');
+            const trackDate = track.created_at ? new Date(track.created_at).toLocaleDateString() : 'Unknown date';
+            const artistName = escapeHtml(track.artist_name || 'Unknown');
+            
+            postCard.innerHTML = `
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                ${coverUrl ? `
+                  <div style="width: 80px; height: 80px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--glass);">
+                    <img src="${escapeHtml(coverUrl)}" alt="${trackTitle}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 32px;">🎵</div>
+                  </div>
+                ` : `
+                  <div style="width: 80px; height: 80px; flex-shrink: 0; border-radius: 8px; background: var(--glass); display: flex; align-items: center; justify-content: center; font-size: 32px;">🎵</div>
+                `}
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px; color: var(--text);">${trackTitle}</div>
+                  <div style="font-size: 14px; color: var(--muted); margin-bottom: 4px;">by ${artistName}</div>
+                  <div style="font-size: 12px; color: var(--muted);">${trackDate}</div>
+                  ${track.views_count || track.plays_count ? `
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                      👁️ ${(track.views_count || track.plays_count || 0).toLocaleString()} plays
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+            
+            userPostsContainer.appendChild(postCard);
+          });
+        } else {
+          // No posts - show empty state
+          userPostsSection.style.display = 'block';
+          userPostsContainer.classList.add('empty-state');
+          userPostsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">No posts yet</div>';
+        }
+      } catch (error) {
+        console.error('Error loading user posts:', error);
+        const userPostsContainer = document.getElementById('userPostsContainer');
+        if (userPostsContainer) {
+          userPostsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">Error loading posts</div>';
+        }
+      }
+    }
+    
+    // Load user stats and activity
+    async function loadUserStats(userId) {
+      try {
+        // Fetch user data to get followers/following counts
+        let followersCount = 0;
+        let followingCount = 0;
+        
+        try {
+          const userResponse = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            followersCount = userData?.followers_count || userData?.followers || 0;
+            followingCount = userData?.following_count || userData?.following || 0;
+          }
+        } catch (err) {
+          console.warn('Could not fetch user stats from API:', err);
+        }
+        
+        // Update follower/following counts
+        const followersCountEl = document.getElementById('followersCount');
+        const followingCountEl = document.getElementById('followingCount');
+        if (followersCountEl) {
+          followersCountEl.textContent = followersCount.toLocaleString();
+        }
+        if (followingCountEl) {
+          followingCountEl.textContent = followingCount.toLocaleString();
+        }
+        
+        // Load activity data
+        await loadUserActivity(userId);
+      } catch (error) {
+        console.error('Error loading user stats:', error);
+      }
+    }
+    
+    // Load user activity (recent tracks, likes, comments)
+    async function loadUserActivity(userId) {
+      try {
+        const activityGrid = document.getElementById('activityGrid');
+        if (!activityGrid) {
+          console.warn('Activity grid element not found');
+          return;
+        }
+        
+        // Fetch user's recent tracks
+        const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${userId}&order=created_at.desc&limit=5`);
+        const recentTracks = tracksResponse.ok ? await tracksResponse.json() : [];
+        
+        // Clear existing content
+        activityGrid.innerHTML = '';
+        activityGrid.classList.remove('empty-state');
+        
+        if (recentTracks.length > 0) {
+          // Create activity items
+          recentTracks.forEach(track => {
+            const activityItem = document.createElement('div');
+            activityItem.className = 'activity-item';
+            activityItem.style.cssText = 'display: flex; gap: 12px; align-items: center; padding: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;';
+            activityItem.onclick = () => {
+              window.location.href = `track.html?id=${track.id}`;
+            };
+            activityItem.onmouseenter = function() {
+              this.style.background = 'var(--bg-light)';
+              this.style.transform = 'translateX(4px)';
+            };
+            activityItem.onmouseleave = function() {
+              this.style.background = 'var(--bg-card)';
+              this.style.transform = 'translateX(0)';
+            };
+            
+            const coverUrl = track.cover_art_url || track.coverArtUrl || null;
+            const trackTitle = escapeHtml(track.title || 'Untitled');
+            const trackDate = track.created_at ? new Date(track.created_at).toLocaleDateString() : 'Unknown date';
+            const timeAgo = track.created_at ? getTimeAgo(new Date(track.created_at)) : 'Recently';
+            
+            activityItem.innerHTML = `
+              <div style="width: 48px; height: 48px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: var(--glass); display: flex; align-items: center; justify-content: center;">
+                ${coverUrl ? `
+                  <img src="${escapeHtml(coverUrl)}" alt="${trackTitle}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <div style="display: none; font-size: 20px;">🎵</div>
+                ` : `
+                  <div style="font-size: 20px;">🎵</div>
+                `}
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px; color: var(--text);">${trackTitle}</div>
+                <div style="font-size: 12px; color: var(--muted);">
+                  <span>🎵 Uploaded track</span>
+                  <span style="margin: 0 4px;">•</span>
+                  <span>${timeAgo}</span>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: var(--muted); flex-shrink: 0;">
+                ${track.views_count || track.plays_count ? `👁️ ${(track.views_count || track.plays_count || 0).toLocaleString()}` : ''}
+              </div>
+            `;
+            
+            activityGrid.appendChild(activityItem);
+          });
+        } else {
+          // No activity - show empty state
+          activityGrid.classList.add('empty-state');
+          activityGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">No recent activity</div>';
+        }
+      } catch (error) {
+        console.error('Error loading user activity:', error);
+        const activityGrid = document.getElementById('activityGrid');
+        if (activityGrid) {
+          activityGrid.classList.add('empty-state');
+          activityGrid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">Error loading activity</div>';
+        }
+      }
+    }
+    
+    // Helper function to get time ago string
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diff = now - date;
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      if (days > 7) {
+        return date.toLocaleDateString();
+      } else if (days > 0) {
+        return `${days}d ago`;
+      } else if (hours > 0) {
+        return `${hours}h ago`;
+      } else if (minutes > 0) {
+        return `${minutes}m ago`;
+      } else {
+        return 'just now';
+      }
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Initialize
+    // Initialize
+    function initializePage() {
+      // Initialize UI first
+      initializeProfileUI();
+      
+      // Then load profile data
+      loadProfile();
+      
+      // Auto-open edit modal when hash is #edit
+      if (window.location.hash === '#edit') {
+        const btn = document.getElementById('editProfileBtn');
+        if (btn) {
+          btn.style.display = 'block';
+          btn.click();
+        }
+      }
+    }
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      // DOM already loaded
+      initializePage();
+    }
+    
+    // Also listen for window load as backup
+    window.addEventListener('load', () => {
+      if (!profileUserId) {
+        // Retry loading if profileUserId wasn't set yet
+        profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
+        if (profileUserId) {
+          loadProfile();
+        }
+      }
+    });
+  </script>
+  
+  <!-- Moderation System -->
+  <script src="js/moderation-system.js"></script>
+  <script src="js/moderation-ui.js"></script>
+  <script src="js/moderation-integration.js"></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+═══════════════════════════════════════════════════════════════
+  DEPLOY FRONTEND TO CLOUDFLARE PAGES (FREE)
+═══════════════════════════════════════════════════════════════
+
+✅ YES - Cloudflare Pages can host your frontend!
+❌ NO - Cloudflare Workers cannot run FFmpeg backend
+
+═══════════════════════════════════════════════════════════════
+  METHOD 1: DRAG & DROP (EASIEST - 5 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Go to Cloudflare
+─────────────────────────
+1. Visit: https://dash.cloudflare.com
+2. Sign up (free account) or log in
+3. Use GitHub/Google to sign up (fastest)
+
+STEP 2: Create Pages Project
+─────────────────────────────
+1. In dashboard, click "Pages" in left sidebar
+2. Click "Create a project" button
+3. Choose "Upload assets" (direct upload)
+
+STEP 3: Upload Your Site
+─────────────────────────
+1. Drag & drop your entire "online master" folder
+   OR
+   Click "Select folder" and choose "online master"
+2. Click "Deploy site"
+3. Wait 30-60 seconds
+
+STEP 4: Done!
+─────────────
+✅ Your site is live at: https://your-site-123.pages.dev
+✅ Free SSL certificate (HTTPS)
+✅ Global CDN (fast worldwide)
+✅ Auto-updates on every upload
+
+═══════════════════════════════════════════════════════════════
+  METHOD 2: GITHUB (RECOMMENDED - AUTO-DEPLOY)
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Push to GitHub
+──────────────────────
+1. Create GitHub account: https://github.com
+2. Create new repository: "audio-city"
+3. In your terminal:
+
+   cd "/Users/nicopan/online master"
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/YOUR_USERNAME/audio-city.git
+   git push -u origin main
+
+STEP 2: Connect to Cloudflare
+──────────────────────────────
+1. Go to Cloudflare Pages
+2. Click "Create a project"
+3. Choose "Connect to Git"
+4. Authorize GitHub
+5. Select your "audio-city" repository
+6. Build settings:
+   - Build command: (leave empty)
+   - Build output directory: / (root)
+7. Click "Save and Deploy"
+
+STEP 3: Auto-Deploy
+───────────────────
+✅ Every time you push to GitHub, Cloudflare auto-deploys
+✅ No manual uploads needed
+✅ Version history
+
+═══════════════════════════════════════════════════════════════
+  CUSTOM DOMAIN (OPTIONAL)
+═══════════════════════════════════════════════════════════════
+
+1. In Cloudflare Pages project
+2. Go to "Custom domains" tab
+3. Click "Set up a custom domain"
+4. Enter your domain (e.g., audiocity.com)
+5. Follow DNS instructions
+6. Done! Your site is at your custom domain
+
+═══════════════════════════════════════════════════════════════
+  UPDATE BACKEND API URL
+═══════════════════════════════════════════════════════════════
+
+After deploying frontend, update backend URL:
+
+1. Edit mastering.html:
+   Change: const API = 'http://localhost:3001/api';
+   To: const API = 'https://your-vps-domain.com/api';
+
+2. Edit feed.html:
+   Change: const API_BASE_URL = 'https://audio-city-api.chilafrican.workers.dev';
+   To: const API_BASE_URL = 'https://your-vps-domain.com';
+
+3. Or use the update script:
+   cd backend
+   node update-frontend-api.js https://your-vps-domain.com
+
+═══════════════════════════════════════════════════════════════
+  BACKEND STILL NEEDS VPS
+═══════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANT: Cloudflare Workers CANNOT run your backend!
+
+Why?
+• Workers run in JavaScript sandbox
+• Cannot install FFmpeg
+• Cannot execute shell commands
+• No file system access
+
+Solution:
+• Frontend: Cloudflare Pages ✅
+• Backend: VPS (Alavps/Hetzner) ✅
+
+See: HOW_TO_DEPLOY.txt for backend setup
+
+═══════════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════════
+
+✅ Frontend → Cloudflare Pages (FREE, 5 min)
+✅ Backend → VPS (FREE or €4/month, 30 min)
+
+Total: $0/month (with free VPS)
+Time: ~35 minutes
+
+
+
+
+
+
+
+
+
+
+
+
