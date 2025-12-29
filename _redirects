@@ -1,7 +1,11 @@
 # Cloudflare Pages Redirects and Headers
 # This file handles routing for single-page application
 
-# Redirect all routes to index.html for client-side routing
+# Exclude service worker and manifest from redirects
+/sw.js    /sw.js   200
+/manifest.json    /manifest.json   200
+
+# Redirect all other routes to index.html for client-side routing
 /*    /index.html   200
 
 # API proxy (if needed)
@@ -14,6 +18,7 @@
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
+
 
 
 
