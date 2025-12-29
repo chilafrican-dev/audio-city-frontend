@@ -653,7 +653,9 @@
   </div>
   
   <script>
-    const API_BASE_URL = 'http://localhost:3002';
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://api.audiocity-ug.com';
 
     let currentConversationId = null;
     let currentConversationUserId = null; // For UI display (other user's info)
@@ -775,6 +777,10 @@
       }
       } catch (error) {
         console.error('Error loading messages:', error);
+        // If it's a network error (mixed content), show helpful message
+        if (error.message && error.message.includes('Failed to fetch')) {
+          console.warn('Mixed content blocked: Site is HTTPS but backend is HTTP. Messages may not load.');
+        }
         document.getElementById('messagesList').innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">⚠️</div>

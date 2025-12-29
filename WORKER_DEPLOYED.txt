@@ -1,0 +1,61 @@
+# ✅ Cloudflare Worker Deployed Successfully!
+
+## Worker Details:
+- **URL**: https://audio-city-api-proxy.chilafrican.workers.dev
+- **Name**: audio-city-api-proxy
+- **Status**: Deployed and Active
+
+## Next Steps:
+
+### 1. Set Backend URL
+The worker needs to know where your backend is:
+
+```bash
+NODE_TLS_REJECT_UNAUTHORIZED=0 npx wrangler secret put BACKEND_URL
+# Enter: https://api.audiocity-ug.com
+# (or your actual backend HTTPS URL)
+```
+
+**Important**: Backend must be HTTPS (not HTTP)
+
+### 2. Test Worker
+```bash
+curl https://audio-city-api-proxy.chilafrican.workers.dev/api/health
+```
+
+### 3. Update Frontend
+In your HTML files, change API URL:
+
+```javascript
+// Old:
+const API_BASE_URL = 'http://api.audiocity-ug.com:3002';
+
+// New:
+const API_BASE_URL = 'https://audio-city-api-proxy.chilafrican.workers.dev';
+```
+
+### 4. Custom Domain (Optional)
+To use `api.audiocity-ug.com`:
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → audio-city-api-proxy
+3. Triggers → Custom Domains
+4. Add: `api.audiocity-ug.com`
+
+## What the Worker Does:
+- ✅ Proxies all `/api/*` requests to your backend
+- ✅ Handles CORS automatically
+- ✅ Supports file uploads
+- ✅ Health check endpoint
+
+## Backend Requirements:
+⚠️ Your backend must:
+- Be accessible via HTTPS
+- Run on a public server (VPS, etc.)
+- Handle the API requests
+
+## Current Status:
+- ✅ Worker deployed
+- ⏳ Backend URL needs to be set
+- ⏳ Frontend needs to be updated
+

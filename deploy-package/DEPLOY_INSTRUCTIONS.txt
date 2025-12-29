@@ -1,0 +1,54 @@
+# Deployment Instructions for VPS
+
+## Files in this package:
+- api-server.js (updated with R2 support)
+- r2-storage.js (R2 storage helper)
+- package.json (with R2 dependencies)
+
+## Steps to Deploy:
+
+1. Upload all files to /opt/backend/ on your VPS
+   (via web console or SFTP)
+
+2. SSH into VPS (or use web console terminal):
+   cd /opt/backend
+
+3. Install dependencies:
+   npm install
+
+4. Add R2 credentials to .env:
+   Add these lines to /opt/backend/.env:
+   
+   R2_ACCOUNT_ID=46e46abeb32a1a41fe25bea655d9b69a
+   R2_ACCESS_KEY_ID=5f2fe12f710705c52bcd5cfb9990711a
+   R2_SECRET_ACCESS_KEY=1371502d227222cf623fd8f98b62883f56d8c9759d57f48c2dddfa5b406b4bf2
+   R2_BUCKET_NAME=audio-city-tracks
+   R2_PUBLIC_URL=https://pub-xxxxx.r2.dev
+
+5. Restart backend:
+   pm2 restart audio-city-api
+   # OR
+   pm2 restart audio-city-backend
+   # OR
+   pm2 restart all
+
+6. Test:
+   pm2 logs audio-city-api
+   # Check for any errors
+
+## Quick Commands:
+
+# Check if files uploaded correctly
+ls -la /opt/backend/
+
+# Install dependencies
+cd /opt/backend && npm install
+
+# Check PM2 status
+pm2 status
+
+# View logs
+pm2 logs audio-city-api
+
+# Test R2 connection (optional)
+cd /opt/backend && node configure-r2.js

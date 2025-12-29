@@ -1,0 +1,54 @@
+# Quick Deploy Mastering to VPS (No Dashboard)
+
+## Your New SSH Public Key:
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHzLTUgcZovbKKpH55SmCi8/aO74yxomMIGmCTOMGVy/ audio-city-server
+
+## Step 1: Add SSH Key to VMSocket
+- Contact VMSocket support OR
+- Add this key via VMSocket account settings (if available)
+
+## Step 2: Deploy (once SSH works)
+Run: ./setup-mastering-vps.sh
+
+## OR: Manual Deploy via Any Access Method
+
+### Option A: If you get SSH access
+```bash
+# Upload file
+scp backend/server.js root@168.119.241.59:/opt/backend/
+
+# On VPS:
+cd /opt/backend
+apt-get update && apt-get install -y ffmpeg
+npm install
+pm2 start server.js --name mastering -- --port 3001
+pm2 save
+```
+
+### Option B: Base64 Copy-Paste
+1. Get access to VPS terminal (any method)
+2. cd /opt/backend
+3. Copy contents of server.js.base64
+4. Run: cat > server.js.base64 << 'ENDBASE64'
+   [paste base64 content]
+   ENDBASE64
+5. base64 -d server.js.base64 > server.js
+6. apt-get install -y ffmpeg
+7. npm install
+8. pm2 start server.js --name mastering
+
+### Option C: Direct File Upload
+If you have ANY file transfer method:
+- Upload backend/server.js to /opt/backend/
+- Then run setup commands above
+
+## What Gets Deployed:
+- server.js (mastering only, ~7KB)
+- FFmpeg (for audio processing)
+- Node.js dependencies
+
+## Endpoint:
+POST http://168.119.241.59:3001/api/quick-master
+
+## Test:
+curl http://168.119.241.59:3001/api/health

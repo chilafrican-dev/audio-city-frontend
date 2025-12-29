@@ -1,0 +1,83 @@
+# FINAL DEPLOYMENT GUIDE - Mastering Only to VPS
+
+## VPS Details:
+- IP: 168.119.241.59
+- User: root
+- Purpose: Mastering only (FFmpeg)
+
+## What to Deploy:
+- File: backend/server.js (mastering backend only)
+- Size: ~7KB
+- Port: 3001
+- Endpoint: POST /api/quick-master
+
+## Deployment Methods:
+
+### METHOD 1: SSH (Once you have access)
+```bash
+# Upload file
+scp backend/server.js root@168.119.241.59:/opt/backend/
+
+# SSH into VPS
+ssh root@168.119.241.59
+
+# On VPS, run:
+cd /opt/backend
+apt-get update
+apt-get install -y ffmpeg
+npm install express multer cors uuid
+npm install -g pm2
+pm2 start server.js --name mastering -- --port 3001
+pm2 save
+pm2 startup
+```
+
+### METHOD 2: Base64 Copy-Paste
+1. Get terminal access to VPS (any method)
+2. cd /opt/backend
+3. Copy entire contents of server.js.base64
+4. Run:
+   ```bash
+   cat > server.js.base64 << 'ENDBASE64'
+   [paste entire base64 content here]
+   ENDBASE64
+   base64 -d server.js.base64 > server.js
+   rm server.js.base64
+   ```
+5. Install dependencies:
+   ```bash
+   apt-get update && apt-get install -y ffmpeg
+   npm install express multer cors uuid
+   npm install -g pm2
+   pm2 start server.js --name mastering -- --port 3001
+   ```
+
+### METHOD 3: Direct File Upload
+If you have ANY file transfer method:
+1. Upload backend/server.js to /opt/backend/server.js
+2. Run installation commands from Method 1
+
+## Verify Deployment:
+```bash
+# Check if running
+pm2 status
+
+# Check logs
+pm2 logs mastering
+
+# Test endpoint
+curl http://localhost:3001/api/health
+```
+
+## What This Does:
+- ✅ Handles audio mastering requests
+- ✅ Uses FFmpeg for processing
+- ✅ Stores temporary files (auto-deleted after 2 hours)
+- ❌ NO user data, tracks, or profiles stored
+
+## Endpoint:
+POST http://168.119.241.59:3001/api/quick-master
+Content-Type: multipart/form-data
+- audio: (file)
+- preset: (string)
+

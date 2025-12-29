@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script>
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
+  </script>
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Audio City" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --cyan: #06b6d4;
+      --success: #10b981;
+      --error: #ef4444;
+      --border: rgba(255, 255, 255, 0.1);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 440px;
+      width: 100%;
+    }
+    
+    .card {
+      background: rgba(20, 20, 32, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 12px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .logo-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .logo h1 {
+      font-size: 36px;
+      font-weight: 900;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    
+    .logo p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    .status {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .status.success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--success);
+      display: block;
+    }
+    
+    .status.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--error);
+      display: block;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      transition: all 0.3s;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    
+    .form-group input::placeholder {
+      color: var(--muted);
+    }
+    
+    .password-strength {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .password-strength.weak { color: var(--error); }
+    .password-strength.medium { color: #f59e0b; }
+    .password-strength.strong { color: var(--success); }
+    
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 8px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px var(--accent-glow);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .links {
+      text-align: center;
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    .links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    
+    .links a:hover {
+      color: var(--accent-light);
+    }
+    
+    .back-link {
+      position: absolute;
+      top: -50px;
+      left: 0;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: var(--accent);
+    }
+    
+    .terms-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .terms-checkbox input[type="checkbox"] {
+      width: auto;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+    
+    .terms-checkbox label {
+      font-size: 13px;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    
+    .terms-checkbox a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    .terms-checkbox a:hover {
+      text-decoration: underline;
+    }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    
+    .divider span {
+      padding: 0 16px;
+    }
+    
+    .social-btns {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .social-btn {
+      flex: 1;
+      padding: 12px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .social-btn:hover {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <div class="container">
+    <a href="index.html" class="back-link">← Back to Audio City</a>
+    
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none'; this.parentElement.innerHTML='🎵';">
+        </div>
+        <h1>Audio City</h1>
+        <p>Create your account</p>
+      </div>
+      
+      <div id="status" class="status"></div>
+      
+      <form id="signupForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" required placeholder="Choose a username" autocomplete="username" minlength="3" maxlength="30">
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="Enter your email" autocomplete="email">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="Create a password" autocomplete="new-password" minlength="6">
+          <div id="passwordStrength" class="password-strength"></div>
+        </div>
+        
+        <div class="form-group">
+          <div class="terms-checkbox">
+            <input type="checkbox" id="agreeTerms" required>
+            <label for="agreeTerms">
+              I agree to the <a href="terms.html" target="_blank">Terms & Conditions</a> and <a href="community-guidelines.html" target="_blank">Community Guidelines</a>
+            </label>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn" id="submitBtn">
+          Create Account
+        </button>
+      </form>
+      
+      <div class="divider">
+        <span>or</span>
+      </div>
+      
+      <div class="social-btns">
+        <button type="button" class="social-btn" id="googleSignInBtn" style="background: #fff; color: #333; font-weight: 600;">
+          <svg width="18" height="18" viewBox="0 0 18 18" style="margin-right: 8px;">
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+      
+      <div class="links">
+        Already have an account? <a href="login.html">Sign in</a>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Use local API for development, production API for deployed site
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'http://api.audiocity-ug.com:3002';
+    
+    // Check if already logged in
+    if (localStorage.getItem('auth_token')) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = 'status';
+      statusEl.style.display = 'block';
+      statusEl.style.background = 'rgba(139, 92, 246, 0.15)';
+      statusEl.style.border = '1px solid rgba(139, 92, 246, 0.3)';
+      statusEl.style.color = 'var(--accent)';
+      statusEl.innerHTML = 'You are already logged in. <a href="#" id="logoutLink" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Log out</a> or <a href="feed.html" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Go to Feed</a>';
+      
+      document.getElementById('logoutLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.reload();
+      });
+    }
+    
+    // Password strength indicator
+    const passwordInput = document.getElementById('password');
+    const passwordStrength = document.getElementById('passwordStrength');
+    
+    passwordInput.addEventListener('input', () => {
+      const password = passwordInput.value;
+      if (password.length === 0) {
+        passwordStrength.textContent = '';
+        return;
+      }
+      
+      let strength = 0;
+      if (password.length >= 6) strength++;
+      if (password.length >= 8) strength++;
+      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+      if (/\d/.test(password)) strength++;
+      if (/[^a-zA-Z\d]/.test(password)) strength++;
+      
+      if (strength <= 2) {
+        passwordStrength.textContent = 'Weak password';
+        passwordStrength.className = 'password-strength weak';
+      } else if (strength <= 3) {
+        passwordStrength.textContent = 'Medium strength';
+        passwordStrength.className = 'password-strength medium';
+      } else {
+        passwordStrength.textContent = 'Strong password';
+        passwordStrength.className = 'password-strength strong';
+      }
+    });
+    
+    // Prevent duplicate form submissions
+    let isSubmitting = false;
+    
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm && !signupForm.dataset.listenerAttached) {
+      signupForm.dataset.listenerAttached = 'true';
+      
+      signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Prevent duplicate submissions
+        if (isSubmitting) {
+          console.warn('Signup already in progress, ignoring duplicate submission');
+          return;
+        }
+        
+        const statusEl = document.getElementById('status');
+        const submitBtn = document.getElementById('submitBtn');
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const agreeTerms = document.getElementById('agreeTerms').checked;
+        
+        if (!username || !email || !password) {
+          statusEl.className = 'status error';
+          statusEl.textContent = 'Please fill in all fields';
+          return;
+        }
+        
+        if (!agreeTerms) {
+          statusEl.className = 'status error';
+          statusEl.textContent = 'You must agree to the Terms & Conditions and Community Guidelines';
+          return;
+        }
+        
+        if (username.length < 3) {
+          statusEl.className = 'status error';
+          statusEl.textContent = 'Username must be at least 3 characters';
+          return;
+        }
+        
+        if (password.length < 6) {
+          statusEl.className = 'status error';
+          statusEl.textContent = 'Password must be at least 6 characters';
+          return;
+        }
+        
+        // Set submitting flag
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating account...';
+        statusEl.className = 'status';
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password }),
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Signup failed');
+          }
+          
+          statusEl.className = 'status success';
+          statusEl.textContent = '✅ Account created successfully! Redirecting...';
+          
+          // Store user data if provided
+          if (data.user) {
+            if (data.user.id) localStorage.setItem('user_id', data.user.id);
+            if (data.user.name) localStorage.setItem('user_name', data.user.name);
+            if (data.user.username) localStorage.setItem('username', data.user.username);
+            if (data.user.email) localStorage.setItem('user_email', data.user.email);
+            if (data.user.avatar_url || data.user.profile_image) {
+              localStorage.setItem('profile_image_url', data.user.avatar_url || data.user.profile_image);
+            }
+          }
+          
+          // If token is provided, log them in automatically
+          if (data.token) {
+            localStorage.setItem('auth_token', data.token);
+            setTimeout(() => {
+              window.location.href = 'feed.html';
+            }, 1500);
+          } else {
+            // Otherwise redirect to login
+            setTimeout(() => {
+              window.location.href = 'login.html';
+            }, 1500);
+          }
+          
+        } catch (error) {
+          statusEl.className = 'status error';
+          statusEl.textContent = '❌ ' + error.message;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+          isSubmitting = false; // Reset flag on error
+        }
+      });
+    }
+    
+    // Google Sign-In functionality
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    if (googleSignInBtn) {
+      googleSignInBtn.addEventListener('click', () => {
+        handleGoogleSignIn();
+      });
+    }
+    
+    async function handleGoogleSignIn() {
+      const statusEl = document.getElementById('status');
+      statusEl.className = 'status';
+      statusEl.style.display = 'block';
+      statusEl.textContent = '⏳ Redirecting to Google...';
+      
+      // Redirect to backend OAuth endpoint
+      // Local vs Production backend
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const backendURL = isLocal
+        ? 'http://localhost:3002/auth/google'
+        : 'http://api.audiocity-ug.com:3002/auth/google';
+      
+      window.location.href = backendURL;
+    }
+  </script>
+  
+  <!-- Google Sign-In Library -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>

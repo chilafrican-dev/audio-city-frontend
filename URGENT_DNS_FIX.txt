@@ -1,0 +1,39 @@
+# ⚠️ URGENT: Update DNS to Fix 522 Errors
+
+## Current Problem:
+- DNS for api.audiocity-ug.com points to VPS IP: 168.119.241.59
+- Should point to Cloudflare Tunnel
+- This causes all 522 errors
+
+## Quick Fix (2 minutes):
+
+### In Cloudflare Dashboard:
+
+1. Go to: https://dash.cloudflare.com
+2. Select: audiocity-ug.com
+3. Click: DNS → Records
+4. Find: api (A record → 168.119.241.59)
+5. DELETE it
+6. Add NEW record:
+   - Type: CNAME
+   - Name: api
+   - Target: 8088831e-1f60-4f56-a029-e9fe49c9d700.cfargotunnel.com
+   - Proxy: ON (orange cloud)
+7. Save
+
+### Verify:
+
+Wait 1-2 minutes, then:
+```bash
+dig api.audiocity-ug.com
+# Should show CNAME to cfargotunnel.com (not A to VPS IP)
+
+curl https://api.audiocity-ug.com/api/health
+# Should return: {"status":"ok",...}
+```
+
+## After DNS Update:
+✅ 522 errors will be gone
+✅ Worker can reach backend
+✅ Site will work!
+

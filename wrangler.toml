@@ -10,6 +10,10 @@ name = "audio-city"
 # Pages configuration
 pages_build_output_dir = "."
 
+# Exclude large files and backend directories
+[build]
+command = ""
+
 # Environment variables (set these in Cloudflare dashboard)
 # [vars]
 # API_URL = "https://your-vps-domain.com"

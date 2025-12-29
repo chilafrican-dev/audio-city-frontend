@@ -1,0 +1,28 @@
+# Deploy Mastering Backend to VPS
+
+## File to Deploy:
+- server.js (mastering only, no user data)
+
+## Steps:
+
+1. Upload server.js to /opt/backend/ on VPS
+
+2. Restart mastering service:
+   cd /opt/backend
+   pm2 restart mastering
+   # OR
+   pm2 restart server
+   # OR
+   pm2 start server.js --name mastering
+
+3. Verify:
+   pm2 logs mastering
+   # Should show: "Audio City Mastering" on port 3001
+
+## Endpoint:
+POST http://168.119.241.59:3001/api/quick-master
+
+## What This Does:
+- Only handles audio mastering
+- Stores temporary files (auto-deleted after 2 hours)
+- NO user data, tracks, or profiles

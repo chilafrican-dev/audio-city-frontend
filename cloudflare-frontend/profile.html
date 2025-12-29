@@ -772,7 +772,7 @@
     if (typeof API_BASE_URL === 'undefined') {
       var API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3002'
-        : 'https://audio-city-api.chilafrican.workers.dev';
+        : 'https://api.audiocity-ug.com';
     }
     function buildSoundCloudEmbed(url, { visual = false, autoplay = false } = {}) {
       // Only build embed if we have a valid URL
@@ -1274,6 +1274,10 @@
           }
         } catch (e) {
           console.error('Could not fetch user from API:', e);
+          // If it's a network error (mixed content), show helpful message
+          if (e.message && e.message.includes('Failed to fetch')) {
+            console.warn('Mixed content blocked: Site is HTTPS but backend is HTTP. Using localStorage data.');
+          }
         }
         
         // Load user data (from API or localStorage)

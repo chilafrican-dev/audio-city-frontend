@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms & Conditions — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.05);
+      --shadow: rgba(0, 0, 0, 0.4);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(20, 20, 32, 0.8);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      display: block;
+      margin-left: 8px;
+    }
+    
+    .nav-main {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      font-weight: 500;
+      font-size: 15px;
+    }
+    
+    .nav-item:hover {
+      background: var(--glass);
+      color: var(--accent);
+    }
+    
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .profile-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--glass);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    .profile-btn:hover {
+      background: var(--accent);
+      transform: scale(1.05);
+    }
+    
+    /* Main Content */
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    
+    .page-title {
+      font-size: 48px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+    
+    .page-subtitle {
+      font-size: 20px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    
+    .content-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+    
+    .section-content {
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    
+    .section-content p {
+      margin-bottom: 20px;
+    }
+    
+    .section-content strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .section-content ul {
+      margin-left: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .section-content li {
+      margin-bottom: 12px;
+    }
+    
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    
+    .footer-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    .footer-link:hover {
+      color: var(--accent);
+    }
+    
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 36px;
+      }
+      
+      .content-section {
+        padding: 24px;
+      }
+      
+      .section-title {
+        font-size: 22px;
+      }
+      
+      .nav-main {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="feed.html" class="logo-brand">
+        <span class="brand-text">AUDIO CITY</span>
+      </a>
+      <nav class="nav-main">
+        <a href="feed.html" class="nav-item">Feed</a>
+        <a href="discover.html" class="nav-item">Discover</a>
+        <a href="artists.html" class="nav-item">Artists</a>
+        <a href="mastering.html" class="nav-item">Mastering</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="login.html" class="nav-item" id="signInLink" style="display: none;">Sign In</a>
+        <a href="signup.html" class="nav-item" id="signUpLink" style="display: none;">Sign Up</a>
+        <button class="profile-btn" id="profileBtn" onclick="window.location.href='profile.html'" style="display: none !important; visibility: hidden !important;">👤</button>
+      </div>
+    </div>
+  </header>
+  
+  <div class="content-wrapper">
+    <div class="page-header">
+      <h1 class="page-title">Terms & Conditions</h1>
+      <p class="page-subtitle">Last updated: 2024</p>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">1. Acceptance of Terms</h2>
+      <div class="section-content">
+        <p>By accessing or using Audio City (the "Platform"), you agree to be bound by these Terms and Conditions. If you do not agree, you may not use the Platform.</p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">2. Eligibility</h2>
+      <div class="section-content">
+        <p>You must be at least 13 years old to use Audio City. By using the Platform, you confirm that you meet this requirement.</p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">3. User Accounts</h2>
+      <div class="section-content">
+        <ul>
+          <li>You are responsible for maintaining the confidentiality of your account.</li>
+          <li>You are responsible for all activities that occur under your account.</li>
+          <li>Audio City reserves the right to suspend or terminate accounts that violate these terms.</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">4. Content Ownership</h2>
+      <div class="section-content">
+        <ul>
+          <li>You retain full ownership of the music and content you upload.</li>
+          <li>By uploading content, you grant Audio City a <strong>non-exclusive, worldwide, royalty-free license</strong> to host, stream, display, and promote your content on the Platform.</li>
+          <li>Audio City does <strong>not</strong> claim ownership of your music.</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">5. Prohibited Content</h2>
+      <div class="section-content">
+        <p>You may not upload or share content that:</p>
+        <ul>
+          <li>Infringes on copyright or intellectual property rights</li>
+          <li>Contains hate speech, harassment, or violence</li>
+          <li>Is illegal, misleading, or fraudulent</li>
+          <li>Contains malware or harmful code</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">6. Monetization and Tools</h2>
+      <div class="section-content">
+        <p>Some features, tools, or promotional services may be paid. Audio City reserves the right to modify pricing, features, or availability at any time.</p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">7. Termination</h2>
+      <div class="section-content">
+        <p>Audio City may suspend or terminate access to the Platform at any time for violations of these terms or applicable laws.</p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">8. Limitation of Liability</h2>
+      <div class="section-content">
+        <p>Audio City is provided "as is" without warranties of any kind. We are not responsible for loss of data, revenue, or content resulting from platform usage.</p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">9. Changes to Terms</h2>
+      <div class="section-content">
+        <p>Audio City may update these Terms and Conditions from time to time. Continued use of the Platform constitutes acceptance of the updated terms.</p>
+      </div>
+    </div>
+    
+    <div class="footer-links">
+      <a href="about.html" class="footer-link">About</a>
+      <a href="privacy.html" class="footer-link">Privacy Policy</a>
+      <a href="community-guidelines.html" class="footer-link">Community Guidelines</a>
+    </div>
+  </div>
+  
+  <script>
+    // Check authentication and update header
+    (function() {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const signInLink = document.getElementById('signInLink');
+      const signUpLink = document.getElementById('signUpLink');
+      const profileBtn = document.getElementById('profileBtn');
+      
+        if (authToken && userId) {
+          // User is logged in - show profile button, hide sign in/up
+          if (signInLink) {
+            signInLink.style.display = 'none';
+            signInLink.style.visibility = 'hidden';
+          }
+          if (signUpLink) {
+            signUpLink.style.display = 'none';
+            signUpLink.style.visibility = 'hidden';
+          }
+          if (profileBtn) {
+            profileBtn.style.display = 'inline-flex';
+            profileBtn.style.visibility = 'visible';
+            profileBtn.classList.add('show');
+          }
+        } else {
+          // User is not logged in - show sign in/up, hide profile button
+          if (signInLink) {
+            signInLink.style.display = 'inline-block';
+            signInLink.style.visibility = 'visible';
+          }
+          if (signUpLink) {
+            signUpLink.style.display = 'inline-block';
+            signUpLink.style.visibility = 'visible';
+          }
+          if (profileBtn) {
+            profileBtn.style.display = 'none';
+            profileBtn.style.visibility = 'hidden';
+            profileBtn.classList.remove('show');
+          }
+        }
+    })();
+  </script>
+</body>
+</html>
+
+

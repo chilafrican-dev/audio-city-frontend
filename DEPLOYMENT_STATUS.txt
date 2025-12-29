@@ -24,11 +24,9 @@ BACKEND (VPS):
 1. Upload backend/ folder to VPS
 2. Install: Node.js 20+, FFmpeg, PM2
 3. Copy .env.production.example to .env
-4. Fill in production values (IMPORTANT: Set NODE_ENV=production)
+4. Fill in production values
 5. Run: pm2 start api-server.js
 6. Set up Nginx + SSL (optional but recommended)
-
-📖 Detailed guide: See BACKEND_VPS_DEPLOYMENT.md for step-by-step instructions
 
 GOOGLE OAUTH:
 1. Go to: https://console.cloud.google.com/apis/credentials
@@ -55,6 +53,6 @@ GOOGLE OAUTH:
 4. Test all features after deployment
 
 ═══════════════════════════════════════════════════════════════
-
 Ready to deploy! Follow PRODUCTION_DEPLOYMENT_GUIDE.md for details.
+
 

@@ -1,0 +1,80 @@
+# FINAL DEPLOYMENT GUIDE - Mastering Backend
+
+## Current Status:
+- ✅ Mastering backend ready (backend/server.js)
+- ✅ SSH key generated (audio_city_final)
+- ⚠️ SSH authentication failing (key may need time to propagate)
+
+## Deployment Options:
+
+### OPTION 1: Automatic (When SSH Works)
+```bash
+./deploy-mastering-now.sh
+```
+
+### OPTION 2: Manual SSH (Once Key Works)
+```bash
+# Upload file
+scp -i ~/.ssh/audio_city_final backend/server.js root@168.119.241.59:/opt/backend/
+
+# Connect and setup
+ssh -i ~/.ssh/audio_city_final root@168.119.241.59
+cd /opt/backend
+apt-get update
+apt-get install -y ffmpeg nodejs npm
+npm install express multer cors uuid
+npm install -g pm2
+pm2 start server.js --name mastering -- --port 3001
+pm2 save
+pm2 startup
+```
+
+### OPTION 3: Base64 Copy-Paste (If SSH Never Works)
+1. Get ANY terminal access to VPS (web console, etc.)
+2. Run these commands:
+```bash
+cd /opt/backend
+mkdir -p uploads output
+
+# Paste entire contents of server.js.base64.new here
+cat > server.js.base64 << 'ENDBASE64'
+[paste entire base64 content]
+ENDBASE64
+
+# Decode
+base64 -d server.js.base64 > server.js
+rm server.js.base64
+
+# Install dependencies
+apt-get update
+apt-get install -y ffmpeg nodejs npm
+npm install express multer cors uuid
+npm install -g pm2
+
+# Start service
+pm2 start server.js --name mastering -- --port 3001
+pm2 save
+pm2 startup
+```
+
+## Verify Deployment:
+```bash
+# Check service
+pm2 status
+pm2 logs mastering
+
+# Test endpoint
+curl http://localhost:3001/api/health
+```
+
+## Endpoint:
+POST http://168.119.241.59:3001/api/quick-master
+Content-Type: multipart/form-data
+- audio: (file)
+- preset: (string, optional)
+
+## Troubleshooting SSH:
+1. Verify key is listed in VMSocket dashboard
+2. Wait 5-10 minutes for propagation
+3. Try removing and re-adding key
+4. Contact VMSocket support if still failing

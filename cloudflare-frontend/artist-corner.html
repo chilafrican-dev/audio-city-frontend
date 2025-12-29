@@ -1596,7 +1596,7 @@
         // Get API base URL
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
           ? 'http://localhost:3002'
-          : 'https://audio-city-api.chilafrican.workers.dev';
+          : 'https://audio-city-api-proxy.chilafrican.workers.dev';
         
         if (!authToken || !userId) {
           showAuthModal();
@@ -1836,7 +1836,7 @@
       // Get API base URL
       const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3002'
-        : 'https://audio-city-api.chilafrican.workers.dev';
+        : 'https://audio-city-api-proxy.chilafrican.workers.dev';
       
       try {
         // Fetch all users/artists
@@ -2982,7 +2982,7 @@
     // Use local API for development, production API for deployed site
     const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:3002'
-      : 'https://audio-city-api.chilafrican.workers.dev';
+      : 'http://api.audiocity-ug.com:3002';
     
     function showAuthModal() {
       const modal = document.getElementById('authModal');

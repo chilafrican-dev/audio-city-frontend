@@ -1,0 +1,21 @@
+{
+  "name": "audio-city",
+  "production_branch": "main",
+  "build_command": "",
+  "output_directory": ".",
+  "root_directory": "/",
+  "compatibility_flags": [],
+  "compatibility_date": "2024-01-01",
+  "env": {
+    "production": {
+      "vars": {
+        "API_BASE_URL": "https://your-vps-domain.com"
+      }
+    }
+  }
+}
+
+
+
+
+

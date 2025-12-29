@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio City — Discover. Get Discovered.</title>
+  <script>
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
+  </script>
+  <meta name="theme-color" content="#8b5cf6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Audio City" />
+  <meta name="description" content="Audio City - Uganda's music community platform. Discover your next obsession, or become someone else's.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --cyan: #06b6d4;
+      --border: rgba(255, 255, 255, 0.1);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Promotional Banner */
+    .promo-banner {
+      background: rgba(20, 20, 32, 0.95);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 100;
+    }
+
+    .promo-banner-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .promo-banner-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 8px;
+      transition: color 0.2s;
+    }
+
+    .promo-banner-close:hover {
+      color: var(--text);
+    }
+
+    /* Header */
+    .header {
+      position: relative;
+      z-index: 10;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #000000 !important;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo img {
+      height: 40px;
+      width: auto;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn-header {
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-signin {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-signin:hover {
+      background: var(--glass);
+      border-color: var(--accent);
+    }
+
+    .btn-mastering {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+      color: white !important;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      font-weight: 700;
+    }
+
+    .btn-mastering:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2));
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .btn-create {
+      background: var(--text);
+      color: var(--bg-deep);
+    }
+
+    .btn-create:hover {
+      background: var(--muted);
+    }
+
+    .btn-artists {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-artists:hover {
+      background: var(--glass);
+      border-color: var(--accent);
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      width: 100%;
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.1)),
+                  radial-gradient(ellipse at top, rgba(139, 92, 246, 0.2), transparent 50%);
+      overflow: hidden;
+      margin-top: -80px;
+      padding-top: 80px;
+    }
+
+    .hero-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 80px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-text {
+      max-width: 500px;
+    }
+
+    .hero-logo {
+      margin-bottom: 16px;
+    }
+
+    .hero-logo img {
+      max-width: 400px;
+      height: auto;
+      width: 100%;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    }
+
+    .hero-tagline {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 400;
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .hero-title {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+
+    .hero-description {
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .btn-hero {
+      padding: 16px 32px;
+      background: var(--text);
+      color: var(--bg-deep);
+      border: none;
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-hero:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-carousel {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .carousel-slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .carousel-slide img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%;
+      z-index: 0;
+    }
+
+    .carousel-slide.active {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .carousel-slide.active .carousel-content {
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .carousel-slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
+      z-index: 1;
+    }
+
+    .carousel-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 40px;
+      max-width: 600px;
+    }
+
+    .carousel-quote {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 16px;
+      line-height: 1.2;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.5);
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .carousel-subtitle {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .carousel-indicators {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 3;
+    }
+
+    .carousel-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .carousel-indicator.active {
+      background: var(--text);
+      border-color: var(--text);
+      width: 30px;
+      border-radius: 5px;
+    }
+
+    /* Promotional Sections */
+    .promo-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+
+    .promo-split {
+      padding: 80px 24px;
+    }
+
+    .promo-full {
+      padding: 60px 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .promo-full-image {
+      width: 100%;
+      max-width: 1400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      background: #000;
+    }
+
+    /* Slide-in Animations */
+    @keyframes slideInFromLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideInFromRight {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .animated-slide-in {
+      animation: slideInFromLeft 1s ease-out forwards;
+      opacity: 0;
+    }
+
+    .animated-slide-in-delay {
+      animation: slideInFromRight 1s ease-out 0.3s forwards;
+      opacity: 0;
+    }
+
+    /* Promo Split Layout (Studio + Actions) */
+    .promo-split-layout {
+      display: flex;
+      width: 100%;
+      min-height: 600px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .promo-left-image {
+      flex: 2;
+      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 600px;
+      overflow: visible;
+    }
+
+    .promo-left-image img {
+      width: 100%;
+      height: auto;
+      max-height: 700px;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+    }
+    
+    .promo-left-image:empty::after {
+      content: 'Add promo-studio-artist.png to assets folder';
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      padding: 20px;
+    }
+
+    .promo-right-actions {
+      flex: 1;
+      background: linear-gradient(135deg, #6b21a8, #7c3aed, #8b5cf6);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      padding: 60px 40px;
+    }
+
+    .action-option {
+      width: 100%;
+      padding: 20px 32px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #ffd700;
+      font-weight: 700;
+      font-size: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .action-option:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateX(-8px);
+      box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+    }
+
+    .action-text {
+      text-align: center;
+    }
+
+    /* Premium Black & Gold Banner */
+    .promo-premium {
+      padding: 80px 24px;
+    }
+
+    .premium-banner {
+      width: 100%;
+      min-height: 500px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .premium-bg-top,
+    .premium-bg-bottom {
+      flex: 1;
+      background: 
+        linear-gradient(135deg, rgba(184, 134, 11, 0.1), rgba(184, 134, 11, 0.05)),
+        repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 10px,
+          rgba(184, 134, 11, 0.03) 10px,
+          rgba(184, 134, 11, 0.03) 20px
+        );
+      position: relative;
+      overflow: hidden;
+    }
+
+    .premium-bg-top::before,
+    .premium-bg-bottom::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: 
+        linear-gradient(135deg, transparent 30%, rgba(184, 134, 11, 0.2) 50%, transparent 70%),
+        linear-gradient(45deg, transparent 40%, rgba(184, 134, 11, 0.15) 50%, transparent 60%);
+    }
+
+    .premium-banner-center {
+      background: #000;
+      padding: 40px 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      border-top: 2px solid #d4af37;
+      border-bottom: 2px solid #d4af37;
+      position: relative;
+    }
+
+    .premium-banner-center::before,
+    .premium-banner-center::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    }
+
+    .premium-banner-center::before {
+      top: 0;
+    }
+
+    .premium-banner-center::after {
+      bottom: 0;
+    }
+
+    .premium-text-left,
+    .premium-text-right {
+      font-size: 42px;
+      font-weight: 900;
+      color: #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      font-family: 'Arial Black', sans-serif;
+    }
+
+    .premium-diamond {
+      width: 240px;
+      height: 240px;
+      position: relative;
+      transform: rotate(45deg);
+      border: 3px solid #d4af37;
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+
+    .premium-diamond img {
+      width: 170%;
+      height: 170%;
+      object-fit: contain;
+      object-position: center;
+      transform: rotate(-45deg);
+      display: block;
+    }
+
+    /* Search Section */
+    .search-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .search-bar {
+      flex: 1;
+      max-width: 600px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 16px 20px 16px 48px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      color: var(--text);
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .search-input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .search-or {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .btn-upload {
+      padding: 16px 32px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-upload:hover {
+      background: var(--glass);
+      border-color: var(--accent);
+    }
+
+    /* CTA Section */
+    .cta-section {
+      text-align: center;
+      padding: 40px 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .cta-text {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .btn-explore {
+      padding: 16px 32px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.2s;
+    }
+
+    .btn-explore:hover {
+      background: var(--glass);
+      border-color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .hero-title {
+        font-size: 42px;
+      }
+
+      .hero-carousel {
+        height: 300px;
+      }
+
+      .carousel-quote {
+        font-size: 24px;
+      }
+
+      .carousel-subtitle {
+        font-size: 14px;
+      }
+
+      .carousel-content {
+        padding: 24px;
+      }
+
+      .header-actions {
+        flex-wrap: wrap;
+      }
+
+      .btn-header {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hero-logo img {
+        max-width: 240px;
+      }
+
+      .hero-tagline {
+        font-size: 12px;
+        letter-spacing: 1.5px;
+      }
+
+      .hero-title {
+        font-size: 32px;
+      }
+
+      .hero-description {
+        font-size: 16px;
+      }
+
+      .search-section {
+        flex-direction: column;
+      }
+
+      .search-bar {
+        max-width: 100%;
+      }
+
+      .promo-banner {
+        padding: 10px 16px;
+        font-size: 12px;
+      }
+
+      .logo img {
+        height: 28px;
+      }
+
+      .promo-section {
+        padding: 40px 16px;
+      }
+
+      .promo-split {
+        padding: 40px 16px;
+      }
+
+      .promo-split-layout {
+        flex-direction: column;
+        min-height: auto;
+      }
+
+      .promo-left-image {
+        flex: 1;
+        min-height: 300px;
+      }
+
+      .promo-left-image img {
+        object-fit: contain;
+      }
+
+      .promo-right-actions {
+        flex: 1;
+        gap: 12px;
+        padding: 40px 24px;
+      }
+
+      .action-option {
+        padding: 16px 24px;
+        font-size: 16px;
+        letter-spacing: 1px;
+      }
+
+      .premium-banner {
+        min-height: 400px;
+      }
+
+      .premium-banner-center {
+        flex-direction: column;
+        padding: 30px 20px;
+        gap: 20px;
+      }
+
+      .premium-text-left,
+      .premium-text-right {
+        font-size: 24px;
+        letter-spacing: 2px;
+      }
+
+      .premium-diamond {
+        width: 150px;
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Promotional Banner -->
+  <div class="promo-banner" id="promoBanner">
+    <div class="promo-banner-text">
+      <span>🎵</span>
+      <span>Now available: Professional mastering tools for your next upload. <a href="mastering.html" style="color: var(--accent); text-decoration: underline;">Learn More</a></span>
+    </div>
+    <button class="promo-banner-close" onclick="document.getElementById('promoBanner').style.display='none'">×</button>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <a href="index.html" class="logo">
+      <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span style="display: none;">🎵 AUDIO CITY</span>
+    </a>
+    <div class="header-actions" id="headerActions">
+      <a href="mastering.html" class="btn-header btn-mastering" id="masteringBtn" style="display: inline-block !important; visibility: visible !important;">🎛️ Mastering</a>
+      <a href="login.html" class="btn-header btn-signin" id="signInLink">Sign in</a>
+      <a href="signup.html" class="btn-header btn-create" id="signUpLink">Create account</a>
+      <a href="artist-corner.html" class="btn-header btn-artists" id="forArtistsLink">For Artists</a>
+      <!-- Authenticated user links (hidden by default) -->
+      <a href="discover.html" class="btn-header btn-signin" id="goToHomeLink" style="display: none;">Go to Home</a>
+      <a href="profile.html" class="btn-header btn-create" id="profileLink" style="display: none;">Profile</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <div class="hero-logo">
+          <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <div style="display: none; font-size: 36px; font-weight: 900; color: #ffffff !important;">AUDIO CITY</div>
+        </div>
+        <p class="hero-tagline">FROM SOUND TO STARDOM</p>
+        <h1 class="hero-title">Discover. Get Discovered.</h1>
+        <p class="hero-description">
+          Discover your next obsession, or become someone else's. Audio City is the only community where fans and artists come together to discover and connect through music.
+        </p>
+        <a href="discover.html" class="btn-hero">Get Started</a>
+        <!-- Get Started goes to Home (discover.html) - no sign-up required -->
+      </div>
+      <div class="hero-carousel">
+        <div class="carousel-container">
+          <!-- Slide 1 -->
+          <div class="carousel-slide active">
+            <img src="assets/hero-1.png" alt="Create. Connect. Celebrate Your Sound.">
+            <div class="carousel-content">
+              <div class="carousel-quote">Create. Connect. Celebrate Your Sound.</div>
+              <div class="carousel-subtitle">Join Uganda's premier music community</div>
+            </div>
+          </div>
+          
+          <!-- Slide 2 -->
+          <div class="carousel-slide">
+            <img src="assets/hero-2.png" alt="Your Music, Your Story, Your Success">
+            <div class="carousel-content">
+              <div class="carousel-quote">Your Music, Your Story, Your Success</div>
+              <div class="carousel-subtitle">Share your talent with the world</div>
+            </div>
+          </div>
+
+          <!-- Slide 3 - Using hero-1 with different message -->
+          <div class="carousel-slide">
+            <img src="assets/hero-1.png" alt="Master Your Craft">
+            <div class="carousel-content">
+              <div class="carousel-quote">Master Your Craft</div>
+              <div class="carousel-subtitle">Professional tools for professional artists</div>
+            </div>
+          </div>
+
+          <!-- Slide 4 - Using hero-2 with different message -->
+          <div class="carousel-slide">
+            <img src="assets/hero-2.png" alt="Build Your Legacy">
+            <div class="carousel-content">
+              <div class="carousel-quote">Build Your Legacy</div>
+              <div class="carousel-subtitle">From studio to stardom, we've got you</div>
+            </div>
+          </div>
+
+        </div>
+        
+        <!-- Indicators -->
+        <div class="carousel-indicators">
+          <div class="carousel-indicator active" data-slide="0"></div>
+          <div class="carousel-indicator" data-slide="1"></div>
+          <div class="carousel-indicator" data-slide="2"></div>
+          <div class="carousel-indicator" data-slide="3"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Promotional Section 2 - Black Minimalist Music YouTube Banner (Animated) -->
+  <section class="promo-section promo-full animated-slide-in-delay">
+    <div class="promo-full-image">
+      <img src="assets/premium-artist.png" alt="Black Minimalist Music YouTube Banner" style="width: 100%; height: auto; max-height: 800px; object-fit: contain; object-position: center; display: block; margin: 0 auto;">
+    </div>
+  </section>
+
+  <!-- Search Section -->
+  <section class="search-section">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="heroSearchInput" name="heroSearchInput" class="search-input" placeholder="Search for artists, bands, tracks, podcasts" onclick="window.location.href='discover.html'">
+    </div>
+    <span class="search-or">or</span>
+    <a href="artist-corner.html" class="btn-upload">Upload your own</a>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <p class="cta-text">Hear what's trending for free in the Audio City community</p>
+    <a href="discover.html" class="btn-explore">Start Exploring</a>
+  </section>
+
+  <script>
+    // Update header based on authentication status
+    (function() {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const signInLink = document.getElementById('signInLink');
+      const signUpLink = document.getElementById('signUpLink');
+      const goToHomeLink = document.getElementById('goToHomeLink');
+      const profileLink = document.getElementById('profileLink');
+      
+      if (authToken && userId) {
+        // User is authenticated - show profile/home links, hide sign in/up
+        if (signInLink) signInLink.style.display = 'none';
+        if (signUpLink) signUpLink.style.display = 'none';
+        if (goToHomeLink) goToHomeLink.style.display = 'inline-block';
+        if (profileLink) profileLink.style.display = 'inline-block';
+      } else {
+        // User is not authenticated - show sign in/up, hide profile/home
+        if (signInLink) signInLink.style.display = 'inline-block';
+        if (signUpLink) signUpLink.style.display = 'inline-block';
+        if (goToHomeLink) goToHomeLink.style.display = 'none';
+        if (profileLink) profileLink.style.display = 'none';
+      }
+    })();
+    
+    // Check if user wants to view landing page even when logged in
+    (function() {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const urlParams = new URLSearchParams(window.location.search);
+      const skipRedirect = urlParams.get('skip_redirect') === 'true' || urlParams.get('view_landing') === 'true';
+      
+      // If user is authenticated and hasn't explicitly requested to view landing page,
+      // show a banner with option to go to home or stay
+      if (authToken && userId && !skipRedirect) {
+        // Create a banner to let authenticated users know they can go to their home
+        const banner = document.createElement('div');
+        banner.id = 'authBanner';
+        banner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: rgba(139, 92, 246, 0.15); border-bottom: 1px solid rgba(139, 92, 246, 0.3); padding: 12px 24px; z-index: 1000; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(10px);';
+        banner.innerHTML = `
+          <span style="color: var(--accent); font-size: 14px;">You're logged in. <a href="discover.html" style="color: var(--accent-light); text-decoration: underline; font-weight: 600;">Go to Home</a> or <a href="index.html?skip_redirect=true" style="color: var(--muted); text-decoration: underline;">stay on landing page</a></span>
+          <button onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px 8px;">×</button>
+        `;
+        document.body.insertBefore(banner, document.body.firstChild);
+      }
+    })();
+
+    // Auto-hide promo banner after 5 seconds
+    setTimeout(() => {
+      const banner = document.getElementById('promoBanner');
+      if (banner) {
+        banner.style.transition = 'opacity 0.3s';
+        banner.style.opacity = '0';
+        setTimeout(() => banner.style.display = 'none', 300);
+      }
+    }, 5000);
+
+    // Hero Carousel Auto-Swipe
+    (function() {
+      const slides = document.querySelectorAll('.carousel-slide');
+      const indicators = document.querySelectorAll('.carousel-indicator');
+      let currentSlide = 0;
+      const totalSlides = slides.length;
+      const slideInterval = 5000; // 5 seconds per slide
+
+      function showSlide(index) {
+        // Remove active class from all slides and indicators
+        slides.forEach(slide => slide.classList.remove('active'));
+        indicators.forEach(indicator => indicator.classList.remove('active'));
+
+        // Add active class to current slide and indicator
+        slides[index].classList.add('active');
+        indicators[index].classList.add('active');
+      }
+
+      function nextSlide() {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        showSlide(currentSlide);
+      }
+
+      // Auto-advance slides
+      setInterval(nextSlide, slideInterval);
+
+      // Click indicators to jump to slide
+      indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', () => {
+          currentSlide = index;
+          showSlide(currentSlide);
+        });
+      });
+    })();
+
+    // Check authentication for upload/artist links
+    function checkAuthAndRedirect(e, targetUrl) {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      
+      if (!authToken || !userId) {
+        e.preventDefault();
+        // Redirect to login with return URL
+        const returnUrl = encodeURIComponent(targetUrl);
+        window.location.href = `login.html?return=${returnUrl}`;
+        return false;
+      }
+      return true;
+    }
+
+    // "For Artists" link - wait for DOM
+    const forArtistsLink = document.getElementById('forArtistsLink');
+    if (forArtistsLink) {
+      forArtistsLink.addEventListener('click', (e) => {
+        checkAuthAndRedirect(e, 'artist-corner.html');
+      });
+    }
+
+    // "Upload your own" link
+    const uploadYourOwnLink = document.getElementById('uploadYourOwnLink');
+    if (uploadYourOwnLink) {
+      uploadYourOwnLink.addEventListener('click', (e) => {
+        checkAuthAndRedirect(e, 'artist-corner.html');
+      });
+    }
+  </script>
+
+  <!-- Footer -->
+  <footer style="background: var(--bg); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
+          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
+          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
+        </p>
+        <div style="display: flex; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
+          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
+          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
+          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
+          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

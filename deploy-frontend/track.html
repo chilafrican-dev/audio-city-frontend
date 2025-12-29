@@ -1,0 +1,2869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.05);
+      --shadow: rgba(0, 0, 0, 0.4);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      background: #000000 !important;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand img {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      display: block;
+      margin-left: 8px;
+    }
+    
+    .nav-main {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    
+    .nav-item:hover {
+      background: var(--glass);
+      color: white !important;
+    }
+    
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn-mastering {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+      color: white !important;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      display: inline-block !important;
+      visibility: visible !important;
+    }
+    
+    .btn-mastering:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2));
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    
+    .create-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .profile-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    
+    /* Track Container */
+    .track-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Track Header */
+    .track-header {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    .track-cover-large {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 120px;
+      overflow: hidden;
+      box-shadow: 0 12px 48px var(--shadow);
+      border: 1px solid var(--border);
+      position: relative;
+      cursor: pointer;
+    }
+    
+    .track-cover-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .cover-play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0);
+      transition: background 0.2s ease, opacity 0.2s ease;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .track-cover-large:hover .cover-play-overlay,
+    .track-cover-large:active .cover-play-overlay,
+    .track-cover-large.playing .cover-play-overlay {
+      opacity: 1 !important;
+      background: rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
+    }
+    
+    /* Show overlay on mobile tap - make it always visible on touch devices */
+    @media (hover: none) {
+      .cover-play-overlay {
+        opacity: 0.8 !important;
+        pointer-events: auto;
+      }
+    }
+    
+    /* Ensure overlay is visible when track is playing */
+    .track-cover-large.playing .cover-play-overlay {
+      opacity: 1 !important;
+      pointer-events: auto;
+    }
+    
+    .cover-play-button {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      transform: scale(0.9);
+    }
+    
+    .track-cover-large:hover .cover-play-button,
+    .track-cover-large:active .cover-play-button {
+      transform: scale(1);
+      background: rgba(0, 0, 0, 0.7);
+    }
+    
+    .cover-play-button:active {
+      transform: scale(0.95);
+    }
+    
+    .cover-play-icon {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .play-triangle {
+      width: 0;
+      height: 0;
+      border-left: 18px solid white;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      margin-left: 4px;
+      transition: opacity 0.2s ease;
+      display: block !important; /* Default: always visible */
+    }
+    
+    .pause-bars {
+      position: absolute;
+      display: none !important; /* Default: always hidden */
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .pause-bar {
+      width: 4px;
+      height: 18px;
+      background: white;
+      border-radius: 1px;
+      display: block;
+    }
+    
+    /* When playing: hide play triangle, show pause bars */
+    .cover-play-button.playing .play-triangle,
+    .track-cover-large.playing .cover-play-button .play-triangle {
+      display: none !important;
+    }
+    
+    .cover-play-button.playing .pause-bars,
+    .track-cover-large.playing .cover-play-button .pause-bars {
+      display: flex !important;
+    }
+    
+    /* When NOT playing: show play triangle, hide pause bars */
+    .cover-play-button:not(.playing) .play-triangle {
+      display: block !important;
+    }
+    
+    .cover-play-button:not(.playing) .pause-bars {
+      display: none !important;
+    }
+    
+    .track-cover-large:not(.playing) .cover-play-button .play-triangle {
+      display: block !important;
+    }
+    
+    .track-cover-large:not(.playing) .cover-play-button .pause-bars {
+      display: none !important;
+    }
+    
+    .cover-waveform-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .track-cover-large.playing .cover-waveform-progress {
+      opacity: 1;
+    }
+    
+    .cover-waveform-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    
+    .cover-play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0);
+      transition: background 0.2s ease, opacity 0.2s ease;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .track-cover-large:hover .cover-play-overlay,
+    .track-cover-large:active .cover-play-overlay,
+    .track-cover-large.playing .cover-play-overlay {
+      opacity: 1 !important;
+      background: rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
+    }
+    
+    /* Show overlay on mobile tap - make it always visible on touch devices */
+    @media (hover: none) {
+      .cover-play-overlay {
+        opacity: 0.8 !important;
+        pointer-events: auto;
+      }
+    }
+    
+    /* Ensure overlay is visible when track is playing */
+    .track-cover-large.playing .cover-play-overlay {
+      opacity: 1 !important;
+      pointer-events: auto;
+    }
+    
+    .cover-play-button {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      transform: scale(0.9);
+    }
+    
+    .track-cover-large:hover .cover-play-button,
+    .track-cover-large:active .cover-play-button {
+      transform: scale(1);
+      background: rgba(0, 0, 0, 0.7);
+    }
+    
+    .cover-play-button:active {
+      transform: scale(0.95);
+    }
+    
+    .cover-play-icon {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .play-triangle {
+      width: 0;
+      height: 0;
+      border-left: 18px solid white;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+      margin-left: 4px;
+      transition: opacity 0.2s ease;
+      display: block !important; /* Default: always visible */
+    }
+    
+    .pause-bars {
+      position: absolute;
+      display: none !important; /* Default: always hidden */
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .pause-bar {
+      width: 4px;
+      height: 18px;
+      background: white;
+      border-radius: 1px;
+      display: block;
+    }
+    
+    /* When playing: hide play triangle, show pause bars */
+    .cover-play-button.playing .play-triangle,
+    .track-cover-large.playing .cover-play-button .play-triangle {
+      display: none !important;
+    }
+    
+    .cover-play-button.playing .pause-bars,
+    .track-cover-large.playing .cover-play-button .pause-bars {
+      display: flex !important;
+    }
+    
+    /* When NOT playing: show play triangle, hide pause bars */
+    .cover-play-button:not(.playing) .play-triangle {
+      display: block !important;
+    }
+    
+    .cover-play-button:not(.playing) .pause-bars {
+      display: none !important;
+    }
+    
+    .track-cover-large:not(.playing) .cover-play-button .play-triangle {
+      display: block !important;
+    }
+    
+    .track-cover-large:not(.playing) .cover-play-button .pause-bars {
+      display: none !important;
+    }
+    
+    .cover-waveform-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .track-cover-large.playing .cover-waveform-progress {
+      opacity: 1;
+    }
+    
+    .cover-waveform-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    
+    .track-info-header {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .track-title-large {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+    
+    .track-artist-large {
+      font-size: 20px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .track-artist-link {
+      color: white !important;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .track-artist-link:hover {
+      text-decoration: underline;
+    }
+    
+    .track-stats-header {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    .track-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+.sc-embed {
+  margin-top: 12px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+}
+    
+    .action-btn-large {
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .play-btn-large {
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      color: white;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    
+    .play-btn-large:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    
+    .action-btn-secondary {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    
+    .action-btn-secondary:hover {
+      border-color: var(--accent);
+      color: white !important;
+    }
+    
+    .action-btn-secondary.liked {
+      color: #ff3b5c;
+      border-color: #ff3b5c;
+    }
+    
+    /* Waveform Section */
+    .waveform-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    
+    .waveform-container {
+      height: 120px;
+      background: var(--bg-light);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .waveform {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        var(--accent) 0%, 
+        var(--accent-light) 50%, 
+        var(--accent) 100%);
+      opacity: 0.3;
+      animation: wave 2s ease-in-out infinite;
+    }
+    
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.5); }
+      50% { transform: scaleY(1); }
+    }
+    
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .time-display {
+      font-size: 14px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    
+    /* Comments Section */
+    .comments-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .comment-form {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .comment-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    .comment-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .comment-submit {
+      padding: 12px 24px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .comment-submit:hover {
+      transform: translateY(-2px);
+    }
+    
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .comment-item {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .comment-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-light);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    
+    .comment-avatar:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+    
+    .comment-avatar a {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .comment-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      border-radius: 50%;
+    }
+    
+    .comment-avatar.has-image {
+      background: transparent;
+      padding: 0;
+    }
+    
+    .comment-avatar.has-image img {
+      display: block !important;
+    }
+    
+    .comment-avatar.has-image::after,
+    .comment-avatar.has-image::before {
+      display: none !important;
+      content: none !important;
+    }
+    
+    .comment-avatar:not(.has-image) {
+      background: var(--bg-light);
+    }
+    
+    .comment-content {
+      flex: 1;
+    }
+    
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    
+    .comment-delete-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      opacity: 0.7;
+    }
+    
+    .comment-delete-btn:hover {
+      color: #ef4444;
+      opacity: 1;
+      background: rgba(239, 68, 68, 0.1);
+    }
+    
+    .comment-author {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .comment-time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    
+    .comment-actions {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .comment-action {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .comment-action:hover {
+      background: var(--glass);
+      color: white !important;
+    }
+    
+    .comment-like-btn.liked {
+      color: #ef4444;
+    }
+    
+    .comment-like-btn.liked .like-icon {
+      color: #ef4444;
+    }
+    
+    .like-count {
+      font-size: 11px;
+      min-width: 16px;
+      text-align: center;
+    }
+    
+    /* Mini Player */
+    .mini-player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: rgba(20, 20, 32, 0.95);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-top: 1px solid var(--border);
+      display: none;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      z-index: 200;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+    }
+    
+    .mini-player.active {
+      display: flex;
+    }
+    
+    .mini-player-cover {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: border-radius 0.3s;
+    }
+
+    .mini-player-cover.playing {
+      animation: rotate 3s linear infinite;
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    .mini-player-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .mini-player-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .mini-player-title {
+      font-weight: 600;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    
+    .mini-player-artist {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .mini-player-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .mini-play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .track-header {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      
+      .track-cover-large {
+        max-width: 300px;
+        margin: 0 auto;
+      }
+      
+      .nav-main {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="index.html" class="logo-brand">
+        <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none';">
+        <div class="brand-text">AUDIO CITY</div>
+      </a>
+      <nav class="nav-main">
+        <a href="discover.html" class="nav-item">Home</a>
+        <a href="feed.html" class="nav-item">Feed</a>
+        <a href="inbox.html" class="nav-item">Inbox</a>
+        <a href="profile.html" class="nav-item">Profile</a>
+      </nav>
+      <div class="nav-right">
+        <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
+        <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <button class="create-btn" id="createBtn" title="Create" style="display: none !important;">+</button>
+        <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative; cursor: pointer;" onclick="toggleProfileMenu(event)">
+          <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+          <div class="dropdown-menu" id="profileMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000;">
+            <a href="profile.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">👤 Profile</a>
+            <a href="settings.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">⚙️ Settings</a>
+            <div class="dropdown-item" onclick="signOut()" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #ef4444; cursor: pointer; border-radius: 8px; font-size: 14px; transition: all 0.2s; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px;">🚪 Sign out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <div class="track-container">
+    <!-- Hidden audio element -->
+    <audio id="audioPlayer" style="display: none;"></audio>
+    <!-- Track Header -->
+    <div class="track-header">
+      <div class="track-cover-large" id="trackCover">
+        <img src="" alt="Track" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div style="display: flex;">🎵</div>
+        <div class="cover-play-overlay">
+          <button class="cover-play-button" id="coverPlayButton" aria-label="Play">
+            <div class="cover-play-icon">
+              <span class="play-triangle"></span>
+              <span class="pause-bars">
+                <span class="pause-bar"></span>
+                <span class="pause-bar"></span>
+              </span>
+            </div>
+          </button>
+        </div>
+        <div class="cover-waveform-progress">
+          <div class="cover-waveform-fill" id="coverWaveformFill"></div>
+        </div>
+      </div>
+      <div class="track-info-header">
+        <h1 class="track-title-large" id="trackTitle">Loading...</h1>
+        <div class="track-artist-large">
+          by <a href="#" class="track-artist-link" id="trackArtistLink">Loading...</a>
+          <span class="verified-badge-track" id="trackVerifiedBadge" style="display: none; color: var(--accent); margin-left: 6px; font-size: 16px;">✓</span>
+        </div>
+        <div class="track-stats-header" id="trackStats">
+          <span>👁️ 0 plays</span>
+          <span>❤️ 0 likes</span>
+          <span>💬 0 comments</span>
+          <span>🎵 General</span>
+        </div>
+        <div class="track-actions">
+          <button class="action-btn-large action-btn-secondary" id="likeBtn">❤️ Like</button>
+          <button class="action-btn-large action-btn-secondary" id="repostBtn">🔄 Repost</button>
+          <button class="action-btn-large action-btn-secondary" id="shareBtn">📤 Share <span id="shareCount" style="margin-left: 4px; font-size: 14px; opacity: 0.8;">0</span></button>
+          <button class="action-btn-large action-btn-secondary" id="deleteBtn" style="display: none; background: transparent; border: 1px solid var(--border); color: #ef4444;">🗑️ Delete</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Waveform Section -->
+    <div class="waveform-section">
+      <div class="waveform-container">
+        <canvas id="waveformCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+      </div>
+      <div class="audio-controls">
+        <span class="time-display" id="currentTime">0:00</span>
+        <input type="range" id="progressBar" name="progressBar" min="0" max="100" value="0" style="flex: 1; height: 6px; border-radius: 3px; background: var(--bg-light); outline: none; cursor: pointer;">
+        <span class="time-display" id="totalTime">0:00</span>
+      </div>
+    </div>
+    
+    <!-- Comments Section -->
+    <div class="comments-section">
+      <div class="section-header">
+        <h3 class="section-title">💬 Comments</h3>
+        <span style="font-size: 14px; color: var(--muted);" id="commentsCount">0 comments</span>
+      </div>
+      <form class="comment-form" id="commentForm">
+        <input type="text" class="comment-input" id="commentInput" name="commentInput" placeholder="Add a comment..." />
+        <button type="submit" class="comment-submit">Post</button>
+      </form>
+      <div class="comments-list" id="commentsList">
+        <div class="empty-state">No comments yet. Be the first to comment!</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mini Player -->
+  <div class="mini-player" id="miniPlayer">
+    <div class="mini-player-cover">
+      <img id="miniPlayerCover" src="" alt="Track" onerror="this.style.display='none';" />
+    </div>
+    <div class="mini-player-info">
+      <div class="mini-player-title" id="miniPlayerTitle">No track playing</div>
+      <div class="mini-player-artist" id="miniPlayerArtist">—</div>
+    </div>
+    <div class="mini-player-controls" style="display: none;">
+    </div>
+  </div>
+  
+  <script>
+    // Use local API for development, production API for deployed site
+    if (typeof API_BASE_URL === 'undefined') {
+      var API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3002'
+        : 'http://api.audiocity-ug.com:3002';
+    }
+    const SAMPLE_SC_TRACK_URL = 'https://soundcloud.com/forss/flickermood';
+    
+    // Build SoundCloud embed
+    function buildSoundCloudEmbed(url, { visual = false, autoplay = false } = {}) {
+      const safeUrl = url || SAMPLE_SC_TRACK_URL;
+      if (!safeUrl) return '';
+      const params = new URLSearchParams({
+        url: safeUrl,
+        auto_play: autoplay ? 'true' : 'false',
+        visual: visual ? 'true' : 'false',
+        show_comments: 'false',
+        show_related: 'false',
+        show_reposts: 'false',
+        show_teaser: 'false',
+        hide_related: 'true',
+        liking: 'false',
+        sharing: 'false',
+      });
+      const height = visual ? 400 : 120;
+      return `<iframe width="100%" height="${height}" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?${params.toString()}"></iframe>`;
+    }
+    
+    if (typeof urlParams === 'undefined') {
+      var urlParams = new URLSearchParams(window.location.search);
+    }
+    if (typeof trackId === 'undefined') {
+      var trackId = urlParams.get('id');
+    }
+    
+    // Update header profile picture
+    async function updateHeaderProfilePicture() {
+      const userId = localStorage.getItem('user_id');
+      const headerImg = document.getElementById('headerProfileImg');
+      const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+      
+      if (!headerImg || !headerPlaceholder) return;
+      
+      let avatar = null;
+      
+      // Try to fetch from backend API first
+      if (userId && typeof API_BASE_URL !== 'undefined') {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+          if (response.ok) {
+            const userData = await response.json();
+            avatar = userData?.profile_image || userData?.avatar_url;
+            
+            // If avatar URL is relative, make it absolute
+            if (avatar && avatar.startsWith('/uploads/')) {
+              avatar = `${API_BASE_URL}${avatar}`;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load profile picture from API:', error);
+        }
+      }
+      
+      // Fallback to localStorage if API didn't return an avatar
+      if (!avatar) {
+        avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+      }
+      
+      // Update header image
+      if (avatar) {
+        headerImg.src = avatar;
+        headerImg.style.display = 'block';
+        headerPlaceholder.style.display = 'none';
+      } else {
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+      }
+    }
+    
+    // Sign out function - make it global
+    window.signOut = function() {
+      if (confirm('Are you sure you want to sign out?')) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('is_admin');
+        localStorage.removeItem('admin_mode');
+        localStorage.removeItem('profile_image_url');
+        localStorage.removeItem('bio');
+        localStorage.removeItem('location');
+        window.location.href = 'index.html';
+      }
+    };
+    
+    // Toggle profile menu - make it global
+    window.toggleProfileMenu = function(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('profileMenu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+      }
+    };
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const profileMenu = document.getElementById('profileMenu');
+      const profileBtn = document.getElementById('profileBtn');
+      if (profileMenu && profileBtn && !profileBtn.contains(e.target)) {
+        profileMenu.style.display = 'none';
+      }
+    });
+    
+    let trackData = null;
+    let isPlaying = false;
+    let audioPlayer = null;
+    let waveformHeights = null; // Store bar heights to keep waveform static
+    
+    function makeAbsoluteUrl(url) {
+      if (!url) return null;
+      // Keep data URIs and absolute URLs as-is
+      if (url.startsWith('data:') || url.startsWith('http')) return url;
+      if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+      return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
+    }
+    
+    // Prevent multiple simultaneous loadTrack calls
+    let isLoadingTrack = false;
+    let loadedTrackId = null;
+    
+    // Load track
+    async function loadTrack() {
+      console.log('loadTrack called, trackId:', trackId, 'API_BASE_URL:', API_BASE_URL);
+      
+      // Prevent duplicate calls
+      if (isLoadingTrack) {
+        console.log('loadTrack already in progress, skipping...');
+        return;
+      }
+      
+      // If same track already loaded, skip
+      if (loadedTrackId === trackId && trackData) {
+        console.log('Track already loaded, skipping...');
+        return;
+      }
+      
+      isLoadingTrack = true;
+      
+      if (!trackId) {
+        console.error('No trackId found in URL');
+        isLoadingTrack = false;
+        const container = document.querySelector('.track-container');
+        if (container) {
+          container.innerHTML = '<div class="empty-state"><h2>Track not found</h2><p>No track ID provided in URL</p></div>';
+        }
+        const titleEl = document.getElementById('trackTitle');
+        const artistEl = document.getElementById('trackArtistLink');
+        if (titleEl) titleEl.textContent = 'Track not found';
+        if (artistEl) artistEl.textContent = 'No track ID';
+        return;
+      }
+      
+      try {
+        const apiUrl = `${API_BASE_URL}/api/tracks/${trackId}`;
+        console.log('Fetching track from:', apiUrl);
+        const response = await fetch(apiUrl);
+        
+        console.log('Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Track fetch failed:', response.status, errorText);
+          throw new Error(`Track not found (${response.status}): ${errorText.substring(0, 100)}`);
+        }
+        
+        trackData = await response.json();
+        console.log('Track data loaded successfully:', trackData);
+        
+        // Normalize fields and URLs (handle camel/snake casing)
+        trackData.cover_art_url = makeAbsoluteUrl(trackData.cover_art_url || trackData.coverArtUrl) || null;
+        trackData.audio_url = makeAbsoluteUrl(trackData.audio_url || trackData.audioUrl) || null;
+        
+        // Determine permissions - creator or admin can delete
+        const currentUserId = localStorage.getItem('user_id');
+        const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+        // Allow delete if user is admin (for content takedown) OR track creator
+        const canDelete = isAdmin || (currentUserId && trackData.artist_id && String(trackData.artist_id) === String(currentUserId));
+        
+        // Update UI
+        document.getElementById('trackTitle').textContent = trackData.title || trackData.song_title || 'Untitled';
+        document.getElementById('trackArtistLink').textContent = trackData.artist_name || 'Unknown Creator';
+        document.getElementById('trackArtistLink').href = `profile.html?id=${trackData.artist_id}`;
+      
+      // Show verification badge if artist is verified
+      const verifiedBadge = document.getElementById('trackVerifiedBadge');
+      if (verifiedBadge) {
+        if (trackData.artist_is_verified || trackData.is_verified) {
+          verifiedBadge.style.display = 'inline';
+        } else {
+          verifiedBadge.style.display = 'none';
+        }
+      }
+        
+        if (trackData.cover_art_url) {
+          document.querySelector('#trackCover img').src = trackData.cover_art_url;
+          document.querySelector('#trackCover img').style.display = 'block';
+          document.querySelector('#trackCover div').style.display = 'none';
+        }
+        const views = trackData.views_count || trackData.plays_count || 0;
+        const likes = trackData.likes_count || 0;
+        const commentsCount = (trackData.comments && trackData.comments.length) ? trackData.comments.length : 0;
+        const genre = trackData.genre || 'General';
+        
+        document.getElementById('trackStats').innerHTML = `
+          <span>👁️ ${views.toLocaleString()} plays</span>
+          <span>❤️ ${likes.toLocaleString()} likes</span>
+          <span>💬 ${commentsCount.toLocaleString()} comments</span>
+          <span>🎵 ${genre}</span>
+        `;
+        
+        // Initialize shares_count if it doesn't exist
+        if (typeof trackData.shares_count !== 'number') {
+          trackData.shares_count = 0;
+        }
+        
+        // Update share button with count
+        updateShareButtonText();
+        
+        // Update mini player
+        updateMiniPlayer();
+        
+        // Set audio source
+        if (!audioPlayer) audioPlayer = document.getElementById('audioPlayer');
+        if (audioPlayer && trackData.audio_url) {
+          audioPlayer.src = trackData.audio_url;
+          audioPlayer.load();
+          // Play button removed - using cover play button instead
+          
+          // Initialize waveform and progress bar
+          audioPlayer.addEventListener('loadedmetadata', () => {
+            updateTotalTime();
+            waveformHeights = null; // Reset heights when new track loads
+            drawWaveform(); // Draw initial static waveform
+          });
+          
+          // Update progress during playback
+          audioPlayer.addEventListener('timeupdate', updateProgress);
+          
+          // Update progress bar on seek
+          const progressBar = document.getElementById('progressBar');
+          if (progressBar) {
+            progressBar.addEventListener('input', (e) => {
+              if (audioPlayer && audioPlayer.duration) {
+                const seekTime = (e.target.value / 100) * audioPlayer.duration;
+                audioPlayer.currentTime = seekTime;
+              }
+            });
+          }
+        } // End of if (audioPlayer && trackData.audio_url)
+        
+        // Show delete button ONLY for track creator (not admins)
+        const deleteBtn = document.getElementById('deleteBtn');
+        if (deleteBtn) {
+          // Only show delete button if current user is the track creator
+          if (canDelete) {
+            deleteBtn.style.display = 'inline-flex';
+            deleteBtn.onclick = async () => {
+              const ok = confirm('Delete this track? This cannot be undone.');
+              if (!ok) return;
+              deleteBtn.disabled = true;
+              deleteBtn.textContent = 'Deleting...';
+              try {
+                const resp = await fetch(`${API_BASE_URL}/api/tracks/${trackId}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Failed to delete track');
+                alert('Track deleted');
+                window.location.href = 'discover.html';
+              } catch (err) {
+                console.error(err);
+                alert('Could not delete track. Please try again.');
+              } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '🗑️ Delete';
+              }
+            };
+          } else {
+            // Hide delete button for non-creators
+            deleteBtn.style.display = 'none';
+            deleteBtn.onclick = null;
+          }
+        }
+        
+        // Render existing comments
+        if (trackData.comments && trackData.comments.length) {
+          const commentsList = document.getElementById('commentsList');
+          
+          // Clear existing comments completely before loading new ones
+          commentsList.innerHTML = '';
+          
+          // Track which comment IDs we've already rendered to prevent duplicates
+          const renderedCommentIds = new Set();
+          
+          // Also check DOM for existing comments to prevent duplicates (in case innerHTML didn't clear properly)
+          const existingCommentIds = new Set();
+          document.querySelectorAll('.comment-item').forEach(item => {
+            const commentId = item.querySelector('[data-comment-id]')?.dataset.commentId;
+            if (commentId) {
+              existingCommentIds.add(commentId);
+            }
+          });
+          
+          // Load comments with profile pictures
+          const loadComments = async () => {
+            for (const c of trackData.comments) {
+              // Skip if we've already rendered this comment (prevent duplicates)
+              if (c.id && (renderedCommentIds.has(c.id) || existingCommentIds.has(c.id))) {
+                console.log('Skipping duplicate comment:', c.id);
+                continue;
+              }
+              
+              // Mark as rendered
+              if (c.id) {
+                renderedCommentIds.add(c.id);
+                existingCommentIds.add(c.id);
+              }
+              const commentItem = document.createElement('div');
+              commentItem.className = 'comment-item';
+              
+              // Get profile picture for commenter
+              let avatarUrl = null;
+              
+              // Try to get profile picture by user_id first
+              if (c.user_id || c.author_id) {
+                try {
+                  const userId = c.user_id || c.author_id;
+                  const userResponse = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+                  if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    avatarUrl = userData?.profile_image || userData?.avatar_url || userData?.profile_image_url;
+                    if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                      avatarUrl = makeAbsoluteUrl(avatarUrl);
+                    }
+                    console.log('Found user by ID:', userId, 'Avatar:', avatarUrl);
+                  }
+                } catch (err) {
+                  console.warn('Failed to load commenter profile picture:', err);
+                }
+              }
+              
+              // Fallback: Try to find user by author name (case-insensitive)
+              if (!avatarUrl && c.author) {
+                try {
+                  const usersResponse = await fetch(`${API_BASE_URL}/api/users`);
+                  if (usersResponse.ok) {
+                    const users = await usersResponse.json();
+                    if (Array.isArray(users)) {
+                      const authorLower = c.author.toLowerCase().trim();
+                      const user = users.find(u => {
+                        const nameMatch = (u.name && u.name.toLowerCase().trim() === authorLower) ||
+                                         (u.username && u.username.toLowerCase().trim() === authorLower) ||
+                                         (u.user_name && u.user_name.toLowerCase().trim() === authorLower) ||
+                                         (u.display_name && u.display_name.toLowerCase().trim() === authorLower);
+                        return nameMatch;
+                      });
+                      if (user) {
+                        avatarUrl = user?.profile_image || user?.avatar_url || user?.profile_image_url;
+                        if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+                          avatarUrl = makeAbsoluteUrl(avatarUrl);
+                        }
+                        console.log('Found user by name:', c.author, 'Avatar:', avatarUrl);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Failed to find user by name:', err);
+                }
+              }
+              
+              // Also check if author matches current user
+              if (!avatarUrl) {
+                const currentUserName = localStorage.getItem('user_name');
+                if (c.author === currentUserName) {
+                  avatarUrl = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+                }
+              }
+              
+              console.log('Comment:', c.author, 'Avatar URL:', avatarUrl);
+              
+              // Get user ID for profile link (try user_id, author_id, or find by name)
+              let commenterUserId = c.user_id || c.author_id;
+              if (!commenterUserId && c.author) {
+                // Try to find user by author name
+                try {
+                  const usersResponse = await fetch(`${API_BASE_URL}/api/users`);
+                  if (usersResponse.ok) {
+                    const users = await usersResponse.json();
+                    const user = users.find(u => 
+                      (u.username && u.username.toLowerCase() === c.author.toLowerCase()) ||
+                      (u.name && u.name.toLowerCase() === c.author.toLowerCase())
+                    );
+                    if (user) {
+                      commenterUserId = user.id;
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Failed to find user for profile link:', err);
+                }
+              }
+              
+              // Create avatar element with clickable link
+              const avatarDiv = document.createElement('div');
+              avatarDiv.className = `comment-avatar ${avatarUrl ? 'has-image' : ''}`;
+              
+              // Create link wrapper if we have a user ID
+              if (commenterUserId) {
+                const avatarLink = document.createElement('a');
+                avatarLink.href = `profile.html?id=${commenterUserId}`;
+                avatarLink.title = `View ${c.author || 'User'}'s profile`;
+                avatarLink.style.cssText = 'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: inherit;';
+                
+                if (avatarUrl) {
+                  const img = document.createElement('img');
+                  img.src = avatarUrl;
+                  img.alt = c.author || 'User';
+                  img.style.cssText = 'display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
+                  img.onerror = function() {
+                    console.error('Image failed to load:', this.src);
+                    avatarDiv.classList.remove('has-image');
+                    this.remove();
+                    avatarLink.textContent = '👤';
+                  };
+                  img.onload = function() {
+                    console.log('Image loaded successfully:', this.src);
+                  };
+                  avatarLink.appendChild(img);
+                } else {
+                  avatarLink.textContent = '👤';
+                }
+                
+                avatarDiv.appendChild(avatarLink);
+              } else {
+                // No user ID, just show avatar without link
+                if (avatarUrl) {
+                  const img = document.createElement('img');
+                  img.src = avatarUrl;
+                  img.alt = c.author || 'User';
+                  img.style.cssText = 'display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
+                  img.onerror = function() {
+                    console.error('Image failed to load:', this.src);
+                    avatarDiv.classList.remove('has-image');
+                    this.remove();
+                    avatarDiv.textContent = '👤';
+                  };
+                  img.onload = function() {
+                    console.log('Image loaded successfully:', this.src);
+                  };
+                  avatarDiv.appendChild(img);
+                } else {
+                  avatarDiv.textContent = '👤';
+                }
+              }
+              
+              // Create comment content
+              const contentDiv = document.createElement('div');
+              contentDiv.className = 'comment-content';
+              
+              // Show delete button only for comment creator or admin
+              const commentUserId = c.user_id || c.author_id;
+              const isCommentOwner = currentUserId && commentUserId && String(commentUserId) === String(currentUserId);
+              const canDeleteComment = isAdmin || isCommentOwner;
+              const deleteButtonHtml = canDeleteComment ? `<button class="comment-delete-btn" data-comment-id="${c.id}" title="Delete comment">🗑️</button>` : '';
+              
+              contentDiv.innerHTML = `
+                <div class="comment-header">
+                  <span class="comment-author">${escapeHtml(c.author || 'User')}</span>
+                  <span class="comment-time">${escapeHtml(formatCommentTime(c.time))}</span>
+                  ${deleteButtonHtml}
+                </div>
+                <div class="comment-text">${parseMentions(c.text || '')}</div>
+                <div class="comment-actions">
+                  <button class="comment-action comment-like-btn" data-comment-id="${c.id}" data-liked="${(c.liked_by && currentUserId && c.liked_by.includes(currentUserId)) ? 'true' : 'false'}">
+                    <span class="like-icon">${(c.liked_by && currentUserId && c.liked_by.includes(currentUserId)) ? '❤️' : '🤍'}</span>
+                    <span class="like-count">${c.likes || 0}</span>
+                  </button>
+                  <button class="comment-action comment-reply-btn" data-comment-id="${c.id}">Reply</button>
+                </div>
+              `;
+              
+              // Append elements first
+              commentItem.appendChild(avatarDiv);
+              commentItem.appendChild(contentDiv);
+              
+              // Add like button event listener
+              const likeBtn = contentDiv.querySelector('.comment-like-btn');
+              if (likeBtn) {
+                likeBtn.addEventListener('click', async (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  await toggleCommentLike(c.id, likeBtn, commentItem);
+                });
+              }
+              
+              // Add reply button event listener
+              const replyBtn = contentDiv.querySelector('.comment-reply-btn');
+              if (replyBtn) {
+                replyBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleReplyClick(c.id, c.author);
+                });
+              }
+              
+              // Add delete button event listener AFTER appending to DOM (only if button exists)
+              const deleteBtn = contentDiv.querySelector('.comment-delete-btn');
+              if (deleteBtn) {
+                // Prevent multiple clicks
+                let isDeleting = false;
+                deleteBtn.addEventListener('click', async (e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  
+                  // Prevent double-clicking
+                  if (isDeleting) {
+                    console.log('Delete already in progress, ignoring...');
+                    return;
+                  }
+                  
+                  // Check if comment element still exists
+                  if (!commentItem.parentNode) {
+                    console.log('Comment already removed from DOM');
+                    return;
+                  }
+                  
+                  console.log('Delete button clicked for comment:', c.id);
+                  if (confirm('Are you sure you want to delete this comment?')) {
+                    isDeleting = true;
+                    deleteBtn.disabled = true;
+                    deleteBtn.style.opacity = '0.5';
+                    console.log('User confirmed deletion');
+                    await deleteComment(c.id, commentItem);
+                    isDeleting = false;
+                  }
+                });
+              }
+              // Note: Delete button only exists if user can delete (creator or admin)
+              // No error needed if button doesn't exist - it's expected behavior
+              
+              commentsList.appendChild(commentItem);
+            }
+            
+            // Update comment count after all comments are loaded
+            updateCommentsCount();
+          };
+          
+          await loadComments();
+        } else {
+          // No comments, ensure count is 0
+          updateCommentsCount();
+        }
+        
+        // Mark track as loaded
+        loadedTrackId = trackId;
+        
+      } catch (error) {
+        console.error('Error loading track:', error);
+        const container = document.querySelector('.track-container');
+        if (container) {
+          container.innerHTML = `<div class="empty-state">
+            <h2>Failed to load track</h2>
+            <p>${error.message || 'Unknown error'}</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 8px;">Track ID: ${trackId}</p>
+            <p style="font-size: 12px; color: var(--muted);">API: ${API_BASE_URL}/api/tracks/${trackId}</p>
+          </div>`;
+        }
+        // Also update the title and artist to show error
+        const titleEl = document.getElementById('trackTitle');
+        const artistEl = document.getElementById('trackArtistLink');
+        if (titleEl) titleEl.textContent = 'Error loading track';
+        if (artistEl) artistEl.textContent = 'Failed to load';
+      } finally {
+        // Always reset loading flag
+        isLoadingTrack = false;
+        
+        // Set up action buttons after track is loaded
+        setupActionButtons();
+        
+        // Update like button state based on whether user already liked
+        updateLikeButtonState();
+      }
+    }
+    
+    // Function to set up action buttons (called after track loads)
+    function setupActionButtons() {
+      // Like button
+      const likeBtn = document.getElementById('likeBtn');
+      if (likeBtn && !likeBtn.dataset.listenerAttached) {
+        likeBtn.dataset.listenerAttached = 'true';
+        
+        // Remove any existing listeners by cloning
+        const newLikeBtn = likeBtn.cloneNode(true);
+        likeBtn.parentNode.replaceChild(newLikeBtn, likeBtn);
+        
+        newLikeBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (!trackData || !trackData.id) {
+            console.error('No track data available');
+            alert('Track not loaded yet. Please wait...');
+            return;
+          }
+          
+          const currentUserId = localStorage.getItem('user_id');
+          if (!currentUserId) {
+            alert('Please sign in to like tracks');
+            return;
+          }
+          
+          // Prevent multiple clicks
+          if (newLikeBtn.disabled) {
+            return; // Already processing
+          }
+          
+          // Disable button during request
+          newLikeBtn.disabled = true;
+          const originalText = newLikeBtn.textContent;
+          const currentIsLiked = newLikeBtn.classList.contains('liked');
+          
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/tracks/${trackData.id}/like`, { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: currentUserId })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              
+              // Update track data
+              if (trackData) {
+                trackData.likes_count = data.likes_count || 0;
+                if (!trackData.liked_by) trackData.liked_by = [];
+                
+                // Update liked_by array based on server response
+                if (data.is_liked) {
+                  // Add user if not already in array
+                  if (!trackData.liked_by.some(id => String(id) === String(currentUserId))) {
+                    trackData.liked_by.push(currentUserId);
+                  }
+                } else {
+                  // Remove user from array
+                  trackData.liked_by = trackData.liked_by.filter(id => String(id) !== String(currentUserId));
+                }
+                updateTrackStats();
+              }
+              
+              // Update button state based on server response
+              if (data.is_liked) {
+                newLikeBtn.classList.add('liked');
+                newLikeBtn.textContent = '❤️ Liked';
+              } else {
+                newLikeBtn.classList.remove('liked');
+                newLikeBtn.textContent = '🤍 Like';
+              }
+            } else {
+              const errorText = await response.text();
+              console.error('Failed to like track:', response.status, errorText);
+              alert('Failed to like track. Please try again.');
+            }
+          } catch (error) {
+            console.error('Error liking track:', error);
+            alert('Error liking track. Please check your connection.');
+          } finally {
+            newLikeBtn.disabled = false;
+          }
+        });
+      }
+      
+      // Repost button
+      const repostBtn = document.getElementById('repostBtn');
+      if (repostBtn) {
+        // Remove any existing listeners by cloning (if not already cloned)
+        if (!repostBtn.dataset.listenerAttached) {
+          const newRepostBtn = repostBtn.cloneNode(true);
+          newRepostBtn.dataset.listenerAttached = 'true';
+          repostBtn.parentNode.replaceChild(newRepostBtn, repostBtn);
+        }
+        
+        const currentRepostBtn = document.getElementById('repostBtn');
+        if (currentRepostBtn && !currentRepostBtn.hasAttribute('data-click-bound')) {
+          currentRepostBtn.setAttribute('data-click-bound', 'true');
+          
+          currentRepostBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (!trackData || !trackData.id) {
+            console.error('No track data available');
+            alert('Track not loaded yet. Please wait...');
+            return;
+          }
+          
+          const currentUserId = localStorage.getItem('user_id');
+          if (!currentUserId) {
+            alert('Please sign in to repost tracks');
+            return;
+          }
+          
+          const originalText = currentRepostBtn.textContent;
+          currentRepostBtn.disabled = true;
+          currentRepostBtn.textContent = '⏳ Reposting...';
+          
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/tracks/${trackData.id}/repost`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                user_id: currentUserId,
+                reposted_by: currentUserId
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              currentRepostBtn.textContent = '✅ Reposted!';
+              setTimeout(() => {
+                currentRepostBtn.textContent = originalText;
+                currentRepostBtn.disabled = false;
+              }, 2000);
+              
+              // Optionally show a success message
+              console.log('Track reposted successfully:', data);
+            } else {
+              const errorText = await response.text();
+              console.error('Failed to repost:', response.status, errorText);
+              alert('Failed to repost track. Please try again.');
+              currentRepostBtn.textContent = originalText;
+              currentRepostBtn.disabled = false;
+            }
+          } catch (error) {
+            console.error('Error reposting track:', error);
+            alert('Error reposting track. Please check your connection.');
+            currentRepostBtn.textContent = originalText;
+            currentRepostBtn.disabled = false;
+          }
+        });
+        }
+      }
+      
+      // Share button
+      const shareBtn = document.getElementById('shareBtn');
+      if (shareBtn) {
+        // Remove any existing listeners by cloning (if not already cloned)
+        if (!shareBtn.dataset.listenerAttached) {
+          const newShareBtn = shareBtn.cloneNode(true);
+          newShareBtn.dataset.listenerAttached = 'true';
+          shareBtn.parentNode.replaceChild(newShareBtn, shareBtn);
+        }
+        
+        const currentShareBtn = document.getElementById('shareBtn');
+        if (currentShareBtn && !currentShareBtn.hasAttribute('data-click-bound')) {
+          currentShareBtn.setAttribute('data-click-bound', 'true');
+          
+          currentShareBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (!trackData || !trackData.id) {
+            console.error('No track data available');
+            alert('Track not loaded yet. Please wait...');
+            return;
+          }
+          
+          const trackUrl = `${window.location.origin}${window.location.pathname}?id=${trackData.id}`;
+          const trackTitle = encodeURIComponent(`${trackData.title || 'Track'} by ${trackData.artist_name || 'Unknown'}`);
+          const trackText = encodeURIComponent(`Check out this track: ${trackData.title || 'Untitled'}`);
+          
+          // Show share options modal
+          showShareModal(trackUrl, trackTitle, trackText, currentShareBtn);
+        });
+        }
+      }
+    }
+    
+    // Update like button state based on track data
+    function updateLikeButtonState() {
+      const likeBtn = document.getElementById('likeBtn');
+      if (!likeBtn || !trackData) return;
+      
+      const currentUserId = localStorage.getItem('user_id');
+      if (!currentUserId) {
+        likeBtn.classList.remove('liked');
+        likeBtn.textContent = '🤍 Like';
+        return;
+      }
+      
+      const isLiked = trackData.liked_by && trackData.liked_by.includes(currentUserId);
+      if (isLiked) {
+        likeBtn.classList.add('liked');
+        likeBtn.textContent = '❤️ Liked';
+      } else {
+        likeBtn.classList.remove('liked');
+        likeBtn.textContent = '🤍 Like';
+      }
+    }
+    
+    // Show share modal with social media options
+    function showShareModal(trackUrl, trackTitle, trackText, shareBtn) {
+      const originalText = shareBtn.textContent;
+      
+      // Create modal overlay
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+      
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);';
+      
+      modalContent.innerHTML = `
+        <h2 style="margin: 0 0 24px 0; color: var(--text); font-size: 24px;">Share Track</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+          <button class="share-option" data-platform="twitter" style="padding: 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 16px;">
+            🐦 Twitter
+          </button>
+          <button class="share-option" data-platform="facebook" style="padding: 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 16px;">
+            📘 Facebook
+          </button>
+          <button class="share-option" data-platform="whatsapp" style="padding: 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 16px;">
+            💬 WhatsApp
+          </button>
+          <button class="share-option" data-platform="telegram" style="padding: 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 16px;">
+            ✈️ Telegram
+          </button>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <button class="share-option" data-platform="native" style="flex: 1; padding: 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: 600; font-size: 16px;">
+            📱 Native Share
+          </button>
+          <button class="share-option" data-platform="copy" style="flex: 1; padding: 16px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; font-size: 16px;">
+            📋 Copy Link
+          </button>
+        </div>
+        <button class="close-share-modal" style="margin-top: 24px; width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer;">
+          Cancel
+        </button>
+      `;
+      
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      // Handle share options
+      modalContent.querySelectorAll('.share-option').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const platform = btn.dataset.platform;
+          let shareUrl = '';
+          let shareCompleted = false;
+          
+          switch(platform) {
+            case 'twitter':
+              shareUrl = `https://twitter.com/intent/tweet?text=${trackText}&url=${encodeURIComponent(trackUrl)}`;
+              window.open(shareUrl, '_blank', 'width=600,height=400');
+              shareCompleted = true;
+              break;
+            case 'facebook':
+              shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(trackUrl)}`;
+              window.open(shareUrl, '_blank', 'width=600,height=400');
+              shareCompleted = true;
+              break;
+            case 'whatsapp':
+              shareUrl = `https://wa.me/?text=${trackText}%20${encodeURIComponent(trackUrl)}`;
+              window.open(shareUrl, '_blank');
+              shareCompleted = true;
+              break;
+            case 'telegram':
+              shareUrl = `https://t.me/share/url?url=${encodeURIComponent(trackUrl)}&text=${trackText}`;
+              window.open(shareUrl, '_blank');
+              shareCompleted = true;
+              break;
+            case 'native':
+              if (navigator.share) {
+                try {
+                  await navigator.share({
+                    title: decodeURIComponent(trackTitle),
+                    text: decodeURIComponent(trackText),
+                    url: trackUrl
+                  });
+                  shareCompleted = true;
+                  shareBtn.textContent = '✅ Shared!';
+                  setTimeout(() => {
+                    updateShareButtonText();
+                  }, 2000);
+                } catch (err) {
+                  if (err.name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                  }
+                }
+              } else {
+                alert('Native sharing is not available on this device');
+              }
+              break;
+            case 'copy':
+              try {
+                await navigator.clipboard.writeText(trackUrl);
+                shareCompleted = true;
+                shareBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                  updateShareButtonText();
+                }, 2000);
+              } catch (err) {
+                prompt('Copy this URL:', trackUrl);
+                shareCompleted = true;
+              }
+              break;
+          }
+          
+          // Increment share count if share was completed
+          if (shareCompleted && trackData && trackData.id) {
+            try {
+              console.log('Incrementing share count for track:', trackData.id, 'Current count:', trackData.shares_count);
+              const response = await fetch(`${API_BASE_URL}/api/tracks/${trackData.id}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              
+              console.log('Share API response status:', response.status);
+              
+              if (response.ok) {
+                const data = await response.json();
+                console.log('Share count API response:', data);
+                if (data.shares_count !== undefined) {
+                  const oldCount = trackData.shares_count || 0;
+                  trackData.shares_count = data.shares_count;
+                  console.log('Updated trackData.shares_count from', oldCount, 'to', trackData.shares_count);
+                  updateShareButtonText();
+                  updateTrackStats();
+                } else {
+                  console.error('Response missing shares_count:', data);
+                }
+              } else {
+                const errorText = await response.text();
+                console.error('Failed to update share count:', response.status, errorText);
+              }
+            } catch (err) {
+              console.error('Failed to update share count - error:', err);
+            }
+          } else {
+            console.log('Share count not incremented:', { shareCompleted, hasTrackData: !!trackData, trackId: trackData?.id });
+          }
+          
+          // Close modal after a short delay to allow API call to complete
+          setTimeout(() => {
+            if (document.body.contains(modal)) {
+              document.body.removeChild(modal);
+            }
+          }, 100);
+        });
+      });
+      
+      // Close on cancel or outside click
+      modalContent.querySelector('.close-share-modal').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      });
+    }
+    
+    // Update mini player
+    function updateMiniPlayer() {
+      if (!trackData) return;
+      
+      document.getElementById('miniPlayerTitle').textContent = trackData.title || 'Untitled';
+      document.getElementById('miniPlayerArtist').textContent = trackData.artist_name || 'Unknown Creator';
+      
+      if (trackData.cover_art_url) {
+        document.getElementById('miniPlayerCover').src = trackData.cover_art_url;
+        document.getElementById('miniPlayerCover').style.display = 'block';
+      } else {
+        document.getElementById('miniPlayerCover').style.display = 'none';
+      }
+      
+      document.getElementById('miniPlayer').classList.add('active');
+    }
+    
+    function playAudio() {
+      if (!audioPlayer || !trackData || !trackData.audio_url) {
+        alert('Audio not available yet.');
+        return;
+      }
+      if (!isPlaying) {
+        audioPlayer.play();
+        incrementPlays();
+        isPlaying = true;
+        updateButtonLabels();
+        updateMiniPlayer();
+        updateCoverPlayButton();
+        startWaveformAnimation();
+      }
+    }
+    
+    function pauseAudio() {
+      if (!audioPlayer) return;
+      audioPlayer.pause();
+      isPlaying = false;
+      updateButtonLabels();
+      updateMiniPlayer();
+      updateCoverPlayButton();
+      stopWaveformAnimation();
+    }
+    
+    function stopAudio() {
+      if (!audioPlayer) return;
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      isPlaying = false;
+      updateButtonLabels();
+      updateMiniPlayer();
+      updateCoverPlayButton();
+      stopWaveformAnimation();
+      updateProgress();
+    }
+    
+    function updateCoverPlayButton() {
+      const coverPlayButton = document.getElementById('coverPlayButton');
+      const trackCover = document.getElementById('trackCover');
+      if (coverPlayButton) {
+        if (isPlaying) {
+          coverPlayButton.classList.add('playing');
+          if (trackCover) trackCover.classList.add('playing');
+        } else {
+          coverPlayButton.classList.remove('playing');
+          if (trackCover) trackCover.classList.remove('playing');
+        }
+      }
+    }
+    
+    function updateButtonLabels() {
+      // Play button removed - using cover play button instead
+    }
+    
+    function updateCoverPlayButton() {
+      const coverPlayButton = document.getElementById('coverPlayButton');
+      const trackCover = document.getElementById('trackCover');
+      if (coverPlayButton) {
+        if (isPlaying) {
+          coverPlayButton.classList.add('playing');
+          if (trackCover) trackCover.classList.add('playing');
+        } else {
+          coverPlayButton.classList.remove('playing');
+          if (trackCover) trackCover.classList.remove('playing');
+        }
+      }
+    }
+    
+    function updateTotalTime() {
+      if (!audioPlayer || !audioPlayer.duration) return;
+      const totalTime = formatTime(audioPlayer.duration);
+      document.getElementById('totalTime').textContent = totalTime;
+      const progressBar = document.getElementById('progressBar');
+      if (progressBar) {
+        progressBar.max = 100;
+      }
+    }
+    
+    function updateProgress() {
+      if (!audioPlayer) return;
+      const current = audioPlayer.currentTime;
+      const duration = audioPlayer.duration || 1;
+      const progress = (current / duration) * 100;
+      
+      document.getElementById('currentTime').textContent = formatTime(current);
+      const progressBar = document.getElementById('progressBar');
+      if (progressBar) {
+        progressBar.value = progress;
+      }
+      
+      // Update cover waveform progress
+      const coverWaveformFill = document.getElementById('coverWaveformFill');
+      if (coverWaveformFill) {
+        coverWaveformFill.style.width = progress + '%';
+      }
+      
+      drawWaveform();
+    }
+    
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function drawWaveform() {
+      const canvas = document.getElementById('waveformCanvas');
+      if (!canvas || !audioPlayer || !audioPlayer.src) return;
+      
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas with transparent background
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Calculate progress
+      const progress = audioPlayer.duration ? (audioPlayer.currentTime / audioPlayer.duration) : 0;
+      const progressX = canvas.width * progress;
+      
+      // Draw waveform bars - static white, orange for played portion
+      const barWidth = 3;
+      const gap = 2;
+      const bars = Math.floor(canvas.width / (barWidth + gap));
+      const centerY = canvas.height / 2;
+      
+      // Initialize bar heights only once (static waveform)
+      if (!waveformHeights || waveformHeights.length !== bars) {
+        waveformHeights = [];
+        for (let i = 0; i < bars; i++) {
+          waveformHeights.push(Math.random() * (canvas.height * 0.6) + (canvas.height * 0.1));
+        }
+      }
+      
+      // Draw bars with fixed heights
+      for (let i = 0; i < bars; i++) {
+        const x = i * (barWidth + gap);
+        const height = waveformHeights[i];
+        const y = centerY - height / 2;
+        
+        // Determine if this bar is in the played portion
+        const barEndX = x + barWidth;
+        const isPlayed = barEndX <= progressX;
+        
+        // Draw bar - orange if played, white if not
+        ctx.fillStyle = isPlayed ? '#ff6b35' : '#ffffff'; // Orange for played, white for unplayed
+        ctx.fillRect(x, y, barWidth, height);
+      }
+    }
+    
+    let waveformAnimationId = null;
+    function startWaveformAnimation() {
+      if (waveformAnimationId) return;
+      function animate() {
+        if (isPlaying) {
+          drawWaveform();
+          waveformAnimationId = requestAnimationFrame(animate);
+        } else {
+          waveformAnimationId = null;
+        }
+      }
+      animate();
+    }
+    
+    function stopWaveformAnimation() {
+      if (waveformAnimationId) {
+        cancelAnimationFrame(waveformAnimationId);
+        waveformAnimationId = null;
+      }
+    }
+    
+    // Wire buttons
+    // Play, Pause, Stop buttons removed - using cover play button instead
+    
+    // Set up action buttons immediately (will be re-setup after track loads)
+    setupActionButtons();
+    
+    // Cover play button
+    const coverPlayButton = document.getElementById('coverPlayButton');
+    if (coverPlayButton) {
+      coverPlayButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isPlaying) {
+          pauseAudio();
+        } else {
+          playAudio();
+        }
+      });
+    }
+    
+    // Cover click to play
+    const trackCover = document.getElementById('trackCover');
+    if (trackCover) {
+      trackCover.addEventListener('click', (e) => {
+        // Don't trigger if clicking the play button
+        if (e.target.closest('.cover-play-button')) return;
+        if (!isPlaying) {
+          playAudio();
+        }
+      });
+    }
+    
+    // Mini controls (only if buttons exist)
+    const miniPlayBtn = document.getElementById('miniPlayBtn');
+    if (miniPlayBtn) miniPlayBtn.addEventListener('click', playAudio);
+    const miniPauseBtn = document.getElementById('miniPauseBtn');
+    if (miniPauseBtn) miniPauseBtn.addEventListener('click', pauseAudio);
+    const miniStopBtn = document.getElementById('miniStopBtn');
+    if (miniStopBtn) miniStopBtn.addEventListener('click', stopAudio);
+    
+    // Audio end event
+    document.getElementById('audioPlayer').addEventListener('ended', () => {
+      isPlaying = false;
+      updateButtonLabels();
+    });
+    
+    async function incrementPlays() {
+      if (!trackData || !trackData.id) return;
+      try {
+        await fetch(`${API_BASE_URL}/api/tracks/${trackData.id}/play`, { method: 'POST' });
+      } catch (err) {
+        console.warn('Play count update failed', err);
+      }
+    }
+    
+    // Function to update share button text
+    function updateShareButtonText() {
+      const shareBtn = document.getElementById('shareBtn');
+      if (shareBtn && trackData) {
+        const shares = trackData.shares_count || 0;
+        console.log('Updating share button text, shares:', shares, 'trackData.shares_count:', trackData.shares_count);
+        shareBtn.innerHTML = `📤 Share${shares > 0 ? ` <span style="margin-left: 4px; font-size: 14px; opacity: 0.8;">${shares}</span>` : ''}`;
+      } else {
+        console.log('Cannot update share button:', { hasBtn: !!shareBtn, hasTrackData: !!trackData });
+      }
+    }
+    
+    // Function to update track stats display
+    function updateTrackStats() {
+      if (!trackData) return;
+      const trackStats = document.getElementById('trackStats');
+      if (trackStats) {
+        const views = trackData.views_count || trackData.plays_count || 0;
+        const likes = trackData.likes_count || trackData.likes || 0;
+        const commentsCount = (trackData.comments && trackData.comments.length) ? trackData.comments.length : 0;
+        const genre = trackData.genre || 'General';
+        
+        trackStats.innerHTML = `
+          <span>👁️ ${views.toLocaleString()} plays</span>
+          <span>❤️ ${likes.toLocaleString()} likes</span>
+          <span>💬 ${commentsCount.toLocaleString()} comments</span>
+          <span>🎵 ${genre}</span>
+        `;
+      }
+    }
+    
+    // Prevent duplicate form submissions
+    let isSubmittingComment = false;
+    
+    // Comment form
+    document.getElementById('commentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Prevent duplicate submissions
+      if (isSubmittingComment) {
+        console.log('Comment submission already in progress, ignoring...');
+        return;
+      }
+      
+      const input = document.getElementById('commentInput');
+      const text = input.value.trim();
+      
+      if (!text) return;
+      
+      // Mark as submitting
+      isSubmittingComment = true;
+      
+      // Add comment locally and persist
+      const commentsList = document.getElementById('commentsList');
+      if (commentsList.querySelector('.empty-state')) {
+        commentsList.innerHTML = '';
+      }
+      
+      const comment = {
+        id: Date.now(),
+        author: localStorage.getItem('user_name') || 'You',
+        text: text,
+        time: 'just now'
+      };
+      
+      // Get current user's profile picture
+      const currentUserId = localStorage.getItem('user_id');
+      let avatarUrl = null;
+      if (currentUserId) {
+        try {
+          const userResponse = await fetch(`${API_BASE_URL}/api/users/${currentUserId}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            avatarUrl = userData?.profile_image || userData?.avatar_url;
+            if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:')) {
+              avatarUrl = makeAbsoluteUrl(avatarUrl);
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to load profile picture:', err);
+        }
+      }
+      
+      // Fallback to localStorage
+      if (!avatarUrl) {
+        avatarUrl = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+      }
+      
+      console.log('New comment from:', comment.author, 'Avatar URL:', avatarUrl);
+      
+      // Get user ID for profile link
+      const commenterUserId = comment.user_id || comment.author_id || localStorage.getItem('user_id');
+      
+      const commentItem = document.createElement('div');
+      commentItem.className = 'comment-item';
+      
+      // Create avatar with clickable link
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = `comment-avatar ${avatarUrl ? 'has-image' : ''}`;
+      
+      if (commenterUserId) {
+        const avatarLink = document.createElement('a');
+        avatarLink.href = `profile.html?id=${commenterUserId}`;
+        avatarLink.title = `View ${comment.author || 'User'}'s profile`;
+        avatarLink.style.cssText = 'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: inherit;';
+        
+        if (avatarUrl) {
+          const img = document.createElement('img');
+          img.src = avatarUrl;
+          img.alt = comment.author || 'User';
+          img.style.cssText = 'display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
+          img.onerror = function() {
+            console.error('Image failed to load:', this.src);
+            avatarDiv.classList.remove('has-image');
+            this.remove();
+            avatarLink.textContent = '👤';
+          };
+          avatarLink.appendChild(img);
+        } else {
+          avatarLink.textContent = '👤';
+        }
+        
+        avatarDiv.appendChild(avatarLink);
+      } else {
+        // No user ID, just show avatar without link
+        if (avatarUrl) {
+          const img = document.createElement('img');
+          img.src = avatarUrl;
+          img.alt = comment.author || 'User';
+          img.style.cssText = 'display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;';
+          img.onerror = function() {
+            console.error('Image failed to load:', this.src);
+            avatarDiv.classList.remove('has-image');
+            this.remove();
+            avatarDiv.textContent = '👤';
+          };
+          avatarDiv.appendChild(img);
+        } else {
+          avatarDiv.textContent = '👤';
+        }
+      }
+      
+      // Show delete button only for comment creator or admin
+      // Reuse currentUserId already declared above in this function
+      const commentIsAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+      const commentUserId = comment.user_id || comment.author_id;
+      const isCommentOwner = currentUserId && commentUserId && String(commentUserId) === String(currentUserId);
+      const canDeleteComment = commentIsAdmin || isCommentOwner;
+      const deleteButtonHtml = canDeleteComment ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" title="Delete comment">🗑️</button>` : '';
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'comment-content';
+      contentDiv.innerHTML = `
+          <div class="comment-header">
+            <span class="comment-author">${escapeHtml(comment.author)}</span>
+            <span class="comment-time">${comment.time}</span>
+            ${deleteButtonHtml}
+          </div>
+          <div class="comment-text">${parseMentions(comment.text)}</div>
+          <div class="comment-actions">
+            <button class="comment-action comment-like-btn" data-comment-id="${comment.id}" data-liked="false">
+              <span class="like-icon">🤍</span>
+              <span class="like-count">0</span>
+            </button>
+            <button class="comment-action comment-reply-btn" data-comment-id="${comment.id}">Reply</button>
+          </div>
+      `;
+      
+      // Append avatar and content to comment item
+      commentItem.appendChild(avatarDiv);
+      commentItem.appendChild(contentDiv);
+      
+      // Insert into DOM first
+      commentsList.insertBefore(commentItem, commentsList.firstChild);
+      
+      // Add like button event listener
+      const likeBtn = commentItem.querySelector('.comment-like-btn');
+      if (likeBtn) {
+        likeBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          await toggleCommentLike(comment.id, likeBtn, commentItem);
+        });
+      }
+      
+      // Add reply button event listener
+      const replyBtn = commentItem.querySelector('.comment-reply-btn');
+      if (replyBtn) {
+        replyBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          handleReplyClick(comment.id, comment.author);
+        });
+      }
+      
+      // Add delete button event listener AFTER inserting to DOM (only if button exists)
+      const deleteBtn = commentItem.querySelector('.comment-delete-btn');
+      if (deleteBtn) {
+        // Prevent multiple clicks
+        let isDeleting = false;
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          
+          // Prevent double-clicking
+          if (isDeleting) {
+            console.log('Delete already in progress, ignoring...');
+            return;
+          }
+          
+          // Check if comment element still exists
+          if (!commentItem.parentNode) {
+            console.log('Comment already removed from DOM');
+            return;
+          }
+          
+          console.log('Delete button clicked for new comment:', comment.id);
+          if (confirm('Are you sure you want to delete this comment?')) {
+            isDeleting = true;
+            deleteBtn.disabled = true;
+            deleteBtn.style.opacity = '0.5';
+            console.log('User confirmed deletion');
+            await deleteComment(comment.id, commentItem);
+            isDeleting = false;
+          }
+        });
+      }
+      // Note: Delete button only exists if user can delete (creator or admin)
+      // No error needed if button doesn't exist - it's expected behavior
+      
+      input.value = '';
+      
+      // Add comment to trackData
+      if (trackData) {
+        if (!trackData.comments) trackData.comments = [];
+        trackData.comments.unshift(comment);
+      }
+      
+      // Update comment count immediately
+      updateCommentsCount();
+      
+      // Persist to backend
+      if (trackData && trackData.id) {
+        fetch(`${API_BASE_URL}/api/tracks/${trackData.id}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            author: comment.author, 
+            text: comment.text,
+            user_id: currentUserId || null
+          })
+        }).then(res => res.json()).then(data => {
+          // Update the comment with the backend response (includes proper ID and timestamp)
+          if (data.comment && commentItem) {
+            // Update the comment data in trackData
+            const commentIndex = trackData.comments.findIndex(c => c.id === comment.id || (c.text === comment.text && c.author === comment.author));
+            if (commentIndex !== -1) {
+              trackData.comments[commentIndex] = data.comment;
+              // Update the DOM element with the proper timestamp
+              const timeEl = commentItem.querySelector('.comment-time');
+              if (timeEl && data.comment.time) {
+                timeEl.textContent = formatCommentTime(data.comment.time);
+              }
+            }
+          }
+          // Update comment count
+          updateCommentsCount();
+        }).catch(() => {}).finally(() => {
+          // Reset submitting flag
+          isSubmittingComment = false;
+        });
+      } else {
+        // Reset submitting flag if no trackData
+        isSubmittingComment = false;
+      }
+    });
+    
+    function updateCommentsCount() {
+      // Count visible comment items in DOM
+      const count = document.querySelectorAll('.comment-item').length;
+      
+      // Update comments section count
+      const commentsCountEl = document.getElementById('commentsCount');
+      if (commentsCountEl) {
+        commentsCountEl.textContent = `${count} comment${count !== 1 ? 's' : ''}`;
+      }
+      
+      // Also update the header stats with actual trackData count
+      const trackStats = document.getElementById('trackStats');
+      if (trackStats && trackData) {
+        // Use trackData.comments.length if available, otherwise use DOM count
+        const commentsCount = (trackData.comments && trackData.comments.length) ? trackData.comments.length : count;
+        const genre = trackData.genre || 'General';
+        const plays = trackData.views_count || trackData.plays || 0;
+        const likes = trackData.likes_count || trackData.likes || 0;
+        
+        trackStats.innerHTML = `
+          <span>👁️ ${plays.toLocaleString()} plays</span>
+          <span>❤️ ${likes.toLocaleString()} likes</span>
+          <span>💬 ${commentsCount.toLocaleString()} comments</span>
+          <span>🎵 ${genre}</span>
+        `;
+      }
+    }
+    
+    // Parse @mentions in text and make them clickable
+    function parseMentions(text) {
+      if (!text) return '';
+      
+      // Escape HTML first to prevent XSS
+      const escaped = escapeHtml(text);
+      
+      // Match @username patterns (alphanumeric, underscores, hyphens, dots)
+      // Pattern: @ followed by word characters (letters, numbers, underscore, dot, hyphen)
+      const mentionRegex = /@([\w.-]+)/g;
+      
+      return escaped.replace(mentionRegex, (match, username) => {
+        // Create clickable link - try to find user by username, then link to profile
+        // For now, link to discover page with search, or profile with username
+        // The profile/discover page can handle username lookup
+        return `<a href="discover.html?search=${encodeURIComponent(username)}" class="mention-link" style="color: #3b82f6; text-decoration: none; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.textDecoration='underline'; this.style.color='#2563eb';" onmouseout="this.style.textDecoration='none'; this.style.color='#3b82f6';" title="View @${escapeHtml(username)}'s profile">@${escapeHtml(username)}</a>`;
+      });
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function formatCommentTime(timeString) {
+      if (!timeString) return 'just now';
+      if (timeString === 'just now') return 'just now';
+      
+      try {
+        const date = new Date(timeString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        
+        if (diffSecs < 60) return 'just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        // Format as date
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+      } catch (e) {
+        return timeString;
+      }
+    }
+    
+    // Delete comment function (only for comment creator or admin)
+    async function deleteComment(commentId, commentElement) {
+      console.log('=== deleteComment called ===');
+      console.log('commentId:', commentId);
+      console.log('trackData:', trackData);
+      console.log('commentElement:', commentElement);
+      
+      if (!trackData || !trackData.id) {
+        console.error('No track data available');
+        alert('Error: Track data not available');
+        return;
+      }
+      
+      if (!commentId) {
+        console.error('No comment ID provided');
+        alert('Error: Comment ID not found');
+        return;
+      }
+      
+      try {
+        const url = `${API_BASE_URL}/api/tracks/${trackData.id}/comments/${commentId}`;
+        console.log('DELETE URL:', url);
+        console.log('API_BASE_URL:', API_BASE_URL);
+        
+        const response = await fetch(url, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        console.log('Delete response status:', response.status);
+        console.log('Delete response ok:', response.ok);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Delete response data:', data);
+          
+          // Remove comment from trackData
+          if (trackData.comments) {
+            const commentIndex = trackData.comments.findIndex(c => c.id === commentId);
+            console.log('Comment index in trackData:', commentIndex);
+            if (commentIndex !== -1) {
+              trackData.comments.splice(commentIndex, 1);
+              console.log('Comment removed from trackData. New count:', trackData.comments.length);
+            } else {
+              console.warn('Comment not found in trackData.comments');
+            }
+          }
+          
+          // Remove comment from DOM
+          if (commentElement) {
+            console.log('Removing comment element from DOM');
+            commentElement.remove();
+            console.log('Comment removed from DOM');
+          } else {
+            console.warn('No comment element provided');
+          }
+          
+          // Update comment count
+          updateCommentsCount();
+          
+          console.log('✅ Comment deleted successfully');
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Delete failed:', response.status, errorText);
+          let errorMessage = 'Failed to delete comment';
+          try {
+            const error = JSON.parse(errorText);
+            errorMessage = error.error || errorMessage;
+            
+            // If comment not found (404), it might already be deleted
+            if (response.status === 404 && error.error === 'Comment not found') {
+              // Comment might already be deleted - remove from DOM if still there
+              if (commentElement && commentElement.parentNode) {
+                console.log('Comment not found in backend, removing from DOM');
+                commentElement.remove();
+                updateCommentsCount();
+              }
+              // Don't show error for already-deleted comments
+              console.log('Comment already deleted (404)');
+              return;
+            }
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
+          alert('Error: ' + errorMessage);
+        }
+      } catch (error) {
+        console.error('❌ Error deleting comment:', error);
+        alert('Failed to delete comment: ' + error.message);
+      }
+    }
+    
+    // Toggle comment like
+    async function toggleCommentLike(commentId, likeBtn, commentElement) {
+      if (!trackData || !trackData.id) {
+        console.error('No track data available');
+        return;
+      }
+      
+      const currentUserId = localStorage.getItem('user_id');
+      const isLiked = likeBtn.dataset.liked === 'true';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/tracks/${trackData.id}/comments/${commentId}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: currentUserId })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Update comment in trackData
+          if (trackData.comments) {
+            const comment = trackData.comments.find(c => c.id === commentId);
+            if (comment) {
+              comment.likes = data.likes;
+              if (!comment.liked_by) comment.liked_by = [];
+              if (data.is_liked && currentUserId && !comment.liked_by.includes(currentUserId)) {
+                comment.liked_by.push(currentUserId);
+              } else if (!data.is_liked && currentUserId) {
+                comment.liked_by = comment.liked_by.filter(id => id !== currentUserId);
+              }
+            }
+          }
+          
+          // Update UI
+          const likeIcon = likeBtn.querySelector('.like-icon');
+          const likeCount = likeBtn.querySelector('.like-count');
+          
+          if (likeIcon) {
+            likeIcon.textContent = data.is_liked ? '❤️' : '🤍';
+          }
+          if (likeCount) {
+            likeCount.textContent = data.likes || 0;
+          }
+          
+          likeBtn.dataset.liked = data.is_liked ? 'true' : 'false';
+          
+          // Add/remove liked class for styling
+          if (data.is_liked) {
+            likeBtn.classList.add('liked');
+          } else {
+            likeBtn.classList.remove('liked');
+          }
+          
+          console.log('Comment like toggled:', data);
+        } else {
+          const error = await response.json();
+          console.error('Failed to like comment:', error);
+        }
+      } catch (error) {
+        console.error('Error liking comment:', error);
+      }
+    }
+    
+    // Handle reply button click
+    function handleReplyClick(commentId, authorName) {
+      const commentInput = document.getElementById('commentInput');
+      if (commentInput) {
+        // Focus the input and add @mention
+        commentInput.value = `@${authorName} `;
+        commentInput.focus();
+        commentInput.setSelectionRange(commentInput.value.length, commentInput.value.length);
+        
+        // Scroll to input
+        commentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        console.log('Reply to comment:', commentId, 'by', authorName);
+      }
+    }
+    
+    // Initialize - call immediately and also on load
+    function initializePage() {
+      console.log('Initializing page...');
+      console.log('trackId:', trackId);
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('URL:', window.location.href);
+      
+      // Update header profile picture
+      updateHeaderProfilePicture();
+      
+      // Load track
+      loadTrack();
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      // DOM already loaded, call immediately
+      initializePage();
+    }
+    
+    // Also call on window load as backup (only if track not loaded)
+    window.addEventListener('load', () => {
+      if (!trackData && !isLoadingTrack && loadedTrackId !== trackId) {
+        console.log('Window loaded, retrying loadTrack, trackId:', trackId);
+        loadTrack();
+      } else {
+        console.log('Track already loaded or loading, skipping window load retry');
+      }
+    });
+  </script>
+</body>
+</html>

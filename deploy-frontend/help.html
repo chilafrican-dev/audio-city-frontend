@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help Center — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(20, 20, 32, 0.8);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      display: block;
+      margin-left: 8px;
+    }
+    
+    .nav-main {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      padding: 8px 16px;
+      color: var(--muted);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .nav-item:hover {
+      color: var(--text);
+      background: var(--glass);
+    }
+    
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .profile-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none !important; /* Hidden by default, shown only when logged in */
+    }
+    
+    .profile-btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: var(--accent);
+    }
+    
+    .profile-btn.show {
+      display: inline-flex !important;
+    }
+    
+    /* Content */
+    .content-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    
+    .page-title {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 16px;
+    }
+    
+    .content-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--accent-light);
+    }
+    
+    .section-content {
+      color: var(--text);
+      font-size: 16px;
+    }
+    
+    .section-content p {
+      margin-bottom: 16px;
+    }
+    
+    .contact-card {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .contact-icon {
+      font-size: 32px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    
+    .contact-info {
+      flex: 1;
+    }
+    
+    .contact-label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    
+    .contact-value {
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .contact-value a {
+      color: var(--accent-light);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .contact-value a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+    
+    .faq-item {
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .faq-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .faq-question {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-light);
+      margin-bottom: 8px;
+    }
+    
+    .faq-answer {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    
+    .footer {
+      margin-top: 64px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    
+    .footer-link {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .footer-link:hover {
+      color: var(--accent);
+    }
+    
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 36px;
+      }
+      
+      .content-section {
+        padding: 24px;
+      }
+      
+      .header-content {
+        padding: 0 16px;
+      }
+      
+      .nav-main {
+        display: none;
+      }
+      
+      .contact-card {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="discover.html" class="logo-brand">
+        <span class="brand-text">AUDIO CITY</span>
+      </a>
+      <nav class="nav-main">
+        <a href="discover.html" class="nav-item">Home</a>
+        <a href="feed.html" class="nav-item">Feed</a>
+        <a href="artists.html" class="nav-item">Artists</a>
+        <a href="mastering.html" class="nav-item">Mastering</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="login.html" class="nav-item" id="signInLink" style="display: none;">Sign In</a>
+        <a href="signup.html" class="nav-item" id="signUpLink" style="display: none;">Sign Up</a>
+        <button class="profile-btn" id="profileBtn" onclick="window.location.href='profile.html'" style="display: none !important; visibility: hidden !important;">👤</button>
+      </div>
+    </div>
+  </header>
+  
+  <div class="content-wrapper">
+    <div class="page-header">
+      <h1 class="page-title">Help Center</h1>
+      <p class="page-subtitle">Get support and find answers to your questions</p>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">Contact Support</h2>
+      <div class="section-content">
+        <p>Need help? Reach out to us directly through any of the following methods:</p>
+        
+        <div class="contact-card">
+          <div class="contact-icon">📱</div>
+          <div class="contact-info">
+            <div class="contact-label">WhatsApp</div>
+            <div class="contact-value">
+              <a href="https://wa.me/256704861228" target="_blank" rel="noopener noreferrer">+256 704 861 228</a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="contact-card">
+          <div class="contact-icon">✉️</div>
+          <div class="contact-info">
+            <div class="contact-label">Email</div>
+            <div class="contact-value">
+              <a href="mailto:chilafrican@gmail.com">chilafrican@gmail.com</a>
+            </div>
+          </div>
+        </div>
+        
+        <p style="margin-top: 24px; color: var(--muted); font-size: 14px;">
+          We typically respond within 24 hours. For urgent matters, please use WhatsApp for faster response.
+        </p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <div class="section-content">
+        <div class="faq-item">
+          <div class="faq-question">How do I upload my music?</div>
+          <div class="faq-answer">
+            Go to the "For Artists" section or visit the Artist Corner. You'll need to create an account first, then you can upload your tracks in MP3, WAV, or FLAC format (max 50MB).
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">How do I create an account?</div>
+          <div class="faq-answer">
+            Click "Create account" in the header, fill in your username, email, and password, agree to the Terms & Conditions, and you're all set!
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Can I use the mastering tools for free?</div>
+          <div class="faq-answer">
+            Yes! Audio City offers free mastering tools. Some premium features may be available for purchase, but basic mastering is free for all users.
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">How do I report inappropriate content?</div>
+          <div class="faq-answer">
+            Use the report feature available on content and user profiles, or contact us directly via WhatsApp or email with details about the violation.
+          </div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Who created Audio City?</div>
+          <div class="faq-answer">
+            Audio City was developed and founded by Nico Pan Beats, a Ugandan music producer, to bridge the gap between music fans and artists. Learn more on our <a href="about.html" style="color: var(--accent); text-decoration: none;">About</a> page.
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <h2 class="section-title">Still Need Help?</h2>
+      <div class="section-content">
+        <p>If you couldn't find what you're looking for, don't hesitate to reach out:</p>
+        <div style="margin-top: 24px;">
+          <a href="https://wa.me/256704861228" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Contact via WhatsApp</a>
+          <a href="mailto:chilafrican@gmail.com" style="display: inline-block; padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); text-decoration: none; border-radius: 8px; font-weight: 600; margin-left: 12px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">Send Email</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="footer-links">
+        <a href="terms.html" class="footer-link">Terms & Conditions</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="community-guidelines.html" class="footer-link">Community Guidelines</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="discover.html" class="footer-link">Home</a>
+      </div>
+      <p style="color: var(--muted); margin-top: 16px;">&copy; 2025 Audio City. All rights reserved.</p>
+    </div>
+  </div>
+  
+  <script>
+    // Check authentication and update header - run immediately
+    (function() {
+      function updateHeaderAuth() {
+        const authToken = localStorage.getItem('auth_token');
+        const userId = localStorage.getItem('user_id');
+        const signInLink = document.getElementById('signInLink');
+        const signUpLink = document.getElementById('signUpLink');
+        const profileBtn = document.getElementById('profileBtn');
+        
+        if (authToken && userId) {
+          // User is logged in - show profile button, hide sign in/up
+          if (signInLink) {
+            signInLink.style.display = 'none';
+            signInLink.style.visibility = 'hidden';
+          }
+          if (signUpLink) {
+            signUpLink.style.display = 'none';
+            signUpLink.style.visibility = 'hidden';
+          }
+          if (profileBtn) {
+            profileBtn.style.display = 'inline-flex';
+            profileBtn.style.visibility = 'visible';
+            profileBtn.classList.add('show');
+          }
+        } else {
+          // User is not logged in - show sign in/up, hide profile button
+          if (signInLink) {
+            signInLink.style.display = 'inline-block';
+            signInLink.style.visibility = 'visible';
+          }
+          if (signUpLink) {
+            signUpLink.style.display = 'inline-block';
+            signUpLink.style.visibility = 'visible';
+          }
+          if (profileBtn) {
+            profileBtn.style.display = 'none';
+            profileBtn.style.visibility = 'hidden';
+            profileBtn.classList.remove('show');
+          }
+        }
+      }
+      
+      // Run immediately
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateHeaderAuth);
+      } else {
+        updateHeaderAuth();
+      }
+      
+      // Also run on load to be safe
+      window.addEventListener('load', updateHeaderAuth);
+    })();
+  </script>
+</body>
+</html>
+

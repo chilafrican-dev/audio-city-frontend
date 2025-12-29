@@ -1,0 +1,55 @@
+# Cloudflare Worker Setup - Complete Guide
+
+## ✅ What's Ready:
+- worker.js (API proxy)
+- wrangler.workers.toml (config)
+- DEPLOY_WORKER.md (instructions)
+
+## 🚀 Deploy Options:
+
+### Option 1: Via Cloudflare Dashboard (Easiest)
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → Create → Create Worker
+3. Name: `audio-city-api-proxy`
+4. Copy entire contents of `worker.js` into editor
+5. Click "Save and Deploy"
+
+### Option 2: Via CLI (After fixing SSL)
+```bash
+npx wrangler login
+npx wrangler deploy --config wrangler.workers.toml
+```
+
+## ⚙️ After Deployment:
+
+### 1. Set Backend URL
+In Cloudflare Dashboard:
+- Workers & Pages → audio-city-api-proxy
+- Settings → Variables
+- Add: `BACKEND_URL` = `https://api.audiocity-ug.com`
+  (or your backend HTTPS URL)
+
+### 2. Custom Domain (Optional)
+- Triggers → Custom Domains
+- Add: `api.audiocity-ug.com`
+
+### 3. Update Frontend
+Change API URL in HTML files:
+```javascript
+const API_BASE_URL = 'https://audio-city-api-proxy.YOUR_SUB.workers.dev';
+// Or with custom domain:
+const API_BASE_URL = 'https://api.audiocity-ug.com';
+```
+
+## ⚠️ Important:
+- Worker needs HTTPS backend (not HTTP)
+- Backend must be accessible via HTTPS
+- Use Cloudflare Tunnel if backend is HTTP
+
+## 📝 Next Steps:
+1. Deploy worker (dashboard or CLI)
+2. Set BACKEND_URL variable
+3. Deploy backend with HTTPS
+4. Update frontend API URLs
+5. Test connection
+

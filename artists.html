@@ -556,7 +556,11 @@
       let avatar = null;
       
       // Try to fetch from backend API first
-      if (userId && typeof API_BASE_URL !== 'undefined') {
+      // Use local API for development, production API for deployed site
+      const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3002'
+        : 'http://api.audiocity-ug.com';
+      if (userId) {
         try {
           const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
         if (response.ok) {
@@ -816,7 +820,7 @@
         // Use local API for development, production API for deployed site
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
           ? 'http://localhost:3002'
-          : 'https://audio-city-api.chilafrican.workers.dev';
+          : 'http://api.audiocity-ug.com';
         // Fetch all users (backend doesn't support select parameter, returns all fields)
         const response = await fetch(`${API_BASE_URL}/api/users?_t=${Date.now()}`);
         

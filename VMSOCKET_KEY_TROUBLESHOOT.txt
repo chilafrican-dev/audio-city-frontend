@@ -1,0 +1,32 @@
+# VMSocket SSH Key Troubleshooting
+
+## Issue:
+SSH connection works, but key authentication fails.
+
+## Possible Solutions:
+
+### 1. Check Key Format in VMSocket
+- Go to vmsocket.com/keys
+- Verify the key was added correctly
+- Some systems require key WITHOUT the comment (last part)
+- Try adding just: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHzLTUgcZovbKKpH55SmCi8/aO74yxomMIGmCTOMGVy/
+
+### 2. Verify Key is Active
+- Check if key shows as "active" or "enabled" in VMSocket
+- Some providers need to "activate" keys after adding
+
+### 3. Check VMSocket Documentation
+- Look for SSH key setup instructions
+- Some providers have specific requirements
+
+### 4. Contact VMSocket Support
+- Ask them to verify the key was added correctly
+- Request root password as temporary solution
+- Ask for alternative deployment method
+
+### 5. Alternative: Use Existing Key
+If you have the private key file matching:
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINf+lrHy+LXSnqO9ZaYaNEhG4D/buGYHsvwn3SJ9RHFY
+
+I can use that instead.
+

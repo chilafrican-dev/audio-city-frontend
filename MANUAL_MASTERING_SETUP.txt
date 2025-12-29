@@ -1,0 +1,73 @@
+# Manual Mastering Setup on VPS (via Web Console)
+
+## Step 1: Access VPS Web Console
+- Go to VMSocket dashboard
+- Access web console for "audio-city-server"
+
+## Step 2: Upload server.js
+- Upload backend/server.js to /opt/backend/server.js
+
+## Step 3: Install FFmpeg
+```bash
+apt-get update
+apt-get install -y ffmpeg
+ffmpeg -version  # Verify installation
+```
+
+## Step 4: Install Node.js Dependencies
+```bash
+cd /opt/backend
+
+# Create package.json if it doesn't exist
+cat > package.json << 'PKG'
+{
+  "name": "audio-city-mastering",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.22.1",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  }
+}
+PKG
+
+npm install
+```
+
+## Step 5: Setup PM2
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start mastering service
+cd /opt/backend
+pm2 start server.js --name mastering -- --port 3001
+
+# Save PM2 configuration
+pm2 save
+
+# Setup PM2 to start on boot
+pm2 startup
+```
+
+## Step 6: Verify
+```bash
+# Check status
+pm2 status
+
+# Check logs
+pm2 logs mastering
+
+# Test endpoint
+curl http://localhost:3001/api/health
+```
+
+## Endpoint
+POST http://168.119.241.59:3001/api/quick-master
+
+## What This Does
+- Only handles audio mastering
+- Uses FFmpeg for processing
+- Stores temporary files (auto-deleted after 2 hours)
+- NO user data, tracks, or profiles

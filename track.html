@@ -1094,7 +1094,7 @@
     if (typeof API_BASE_URL === 'undefined') {
       var API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3002'
-        : 'https://audio-city-api.chilafrican.workers.dev';
+        : 'https://api.audiocity-ug.com';
     }
     const SAMPLE_SC_TRACK_URL = 'https://soundcloud.com/forss/flickermood';
     
@@ -1325,7 +1325,52 @@
         // Set audio source
         if (!audioPlayer) audioPlayer = document.getElementById('audioPlayer');
         if (audioPlayer && trackData.audio_url) {
-          audioPlayer.src = trackData.audio_url;
+          // Validate and set audio URL
+          const audioUrl = trackData.audio_url;
+          console.log('Setting audio URL:', audioUrl);
+          
+          // Validate URL format
+          if (!audioUrl || (typeof audioUrl === 'string' && !audioUrl.trim())) {
+            console.error('Invalid audio URL (empty or null):', audioUrl);
+            return;
+          }
+          
+          if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('data:')) {
+            console.error('Invalid audio URL format (must start with http://, https://, or data:):', audioUrl);
+            return;
+          }
+          
+          // Add error handling for audio loading
+          const handleError = (e) => {
+            console.error('Audio loading error:', e);
+            console.error('Audio URL:', audioUrl);
+            console.error('Error code:', audioPlayer.error?.code);
+            console.error('Error message:', audioPlayer.error?.message);
+            
+            // Try to provide helpful error message
+            if (audioPlayer.error) {
+              const errorMsg = {
+                1: 'MEDIA_ERR_ABORTED - User aborted',
+                2: 'MEDIA_ERR_NETWORK - Network error (likely CORS issue)',
+                3: 'MEDIA_ERR_DECODE - Decode error',
+                4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - Source not supported or CORS blocked'
+              }[audioPlayer.error.code] || 'Unknown error';
+              console.error('Audio error:', errorMsg);
+              
+              // Show user-friendly message
+              const errorContainer = document.querySelector('.track-container');
+              if (errorContainer) {
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'padding: 20px; background: rgba(255,0,0,0.1); border: 1px solid red; border-radius: 8px; margin: 20px 0;';
+                errorDiv.innerHTML = `<strong>Audio Error:</strong> ${errorMsg}<br><small>URL: ${audioUrl}</small>`;
+                errorContainer.insertBefore(errorDiv, errorContainer.firstChild);
+              }
+            }
+          };
+          
+          audioPlayer.addEventListener('error', handleError, { once: true });
+          
+          audioPlayer.src = audioUrl;
           audioPlayer.load();
           // Play button removed - using cover play button instead
           
@@ -2081,14 +2126,69 @@
         alert('Audio not available yet.');
         return;
       }
+      
+      // Check if audio source is valid
+      if (!audioPlayer.src || audioPlayer.src === window.location.href) {
+        console.error('Audio source not set or invalid:', trackData.audio_url);
+        alert('Audio file not available. Please check if the file exists.');
+        return;
+      }
+      
+      // Check if audio can play
+      if (audioPlayer.error) {
+        console.error('Audio error:', audioPlayer.error);
+        const errorMsg = {
+          1: 'Audio loading was aborted',
+          2: 'Network error loading audio',
+          3: 'Audio decoding error',
+          4: 'Audio format not supported or source not found'
+        }[audioPlayer.error.code] || 'Unknown audio error';
+        alert(`Cannot play audio: ${errorMsg}`);
+        return;
+      }
+      
       if (!isPlaying) {
-        audioPlayer.play();
-        incrementPlays();
-        isPlaying = true;
-        updateButtonLabels();
-        updateMiniPlayer();
-        updateCoverPlayButton();
-        startWaveformAnimation();
+        // Check if audio is ready to play
+        if (audioPlayer.readyState < 2) {
+          // Audio not ready, wait for it to load
+          console.log('Audio not ready, waiting for canplay event...');
+          const playWhenReady = () => {
+            audioPlayer.removeEventListener('canplay', playWhenReady);
+            audioPlayer.play().catch(err => {
+              console.error('Play error:', err);
+              console.error('Audio URL:', trackData.audio_url);
+              console.error('Audio readyState:', audioPlayer.readyState);
+              console.error('Audio error code:', audioPlayer.error?.code);
+              alert('Cannot play audio. Please check if the file is accessible and CORS is configured.');
+            });
+            incrementPlays();
+            isPlaying = true;
+            updateButtonLabels();
+            updateMiniPlayer();
+            updateCoverPlayButton();
+            startWaveformAnimation();
+          };
+          audioPlayer.addEventListener('canplay', playWhenReady);
+          // Also try to load if not already loading
+          if (audioPlayer.readyState === 0) {
+            audioPlayer.load();
+          }
+        } else {
+          // Audio is ready, play immediately
+          audioPlayer.play().catch(err => {
+            console.error('Play error:', err);
+            console.error('Audio URL:', trackData.audio_url);
+            console.error('Audio readyState:', audioPlayer.readyState);
+            console.error('Audio error code:', audioPlayer.error?.code);
+            alert('Cannot play audio. Please check if the file is accessible and CORS is configured.');
+          });
+          incrementPlays();
+          isPlaying = true;
+          updateButtonLabels();
+          updateMiniPlayer();
+          updateCoverPlayButton();
+          startWaveformAnimation();
+        }
       }
     }
     

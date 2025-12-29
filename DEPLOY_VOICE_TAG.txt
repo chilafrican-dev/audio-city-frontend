@@ -1,0 +1,53 @@
+═══════════════════════════════════════════════════════════════
+  🚀 DEPLOY VOICE TAG TO VPS
+═══════════════════════════════════════════════════════════════
+
+✅ FILES READY:
+───────────────────
+✅ deploy-package/api-server.js - Code updated
+✅ deploy-package/voice-tags/Audio City Mastered. By Racheal.mp3
+✅ voice-tag-deploy.tar.gz - Deployment archive created
+
+📋 DEPLOYMENT OPTIONS:
+──────────────────────
+
+OPTION 1: Upload via Web Console/SFTP
+──────────────────────────────────────
+1. Connect to your VPS (api.audiocity-ug.com)
+2. Navigate to: /opt/backend/
+3. Upload the voice-tags/ folder from deploy-package/
+   OR extract voice-tag-deploy.tar.gz
+4. Ensure file is at: /opt/backend/voice-tags/Audio City Mastered. By Racheal.mp3
+
+OPTION 2: Using SCP (if you have SSH access)
+────────────────────────────────────────────
+scp -r deploy-package/voice-tags/ root@api.audiocity-ug.com:/opt/backend/
+
+OPTION 3: Extract Archive on VPS
+─────────────────────────────────
+1. Upload voice-tag-deploy.tar.gz to VPS
+2. SSH into VPS: ssh root@api.audiocity-ug.com
+3. Extract: cd /opt/backend && tar -xzf voice-tag-deploy.tar.gz
+
+🔄 AFTER UPLOADING:
+───────────────────
+1. SSH into VPS (or use web console terminal)
+2. Verify file exists:
+   ls -la /opt/backend/voice-tags/
+   
+3. Restart mastering service:
+   pm2 restart audio-city-api
+   # OR
+   pm2 restart all
+   
+4. Check logs:
+   pm2 logs audio-city-api --lines 50
+   # Look for: "✅ Found new voice tag: ...Audio City Mastered. By Racheal.mp3"
+
+✅ VERIFY:
+──────────
+After restart, test mastering and check logs for:
+   ✅ Found new voice tag: .../Audio City Mastered. By Racheal.mp3
+   ✅ Voice tag added before track ends
+
+═══════════════════════════════════════════════════════════════

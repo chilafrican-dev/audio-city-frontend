@@ -1137,7 +1137,7 @@
     if (typeof API_BASE_URL === 'undefined') {
       var API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'http://localhost:3002'
-        : 'https://audio-city-api.chilafrican.workers.dev';
+        : 'https://api.audiocity-ug.com';
     }
     
     // Normalize image URLs (allows data URIs for base64 images)
@@ -1453,6 +1453,17 @@
         
         const tracks = await tracksResponse.json();
         console.log(`Loaded ${tracks.length} tracks for feed`);
+        
+        // If no tracks, show empty state immediately
+        if (tracks.length === 0) {
+          const container = document.getElementById('feedPosts');
+          if (container) {
+            container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">🎵 No tracks yet</p><p style="font-size: 14px;">Be the first to upload music!</p><a href="artist-corner.html" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: var(--accent); color: white; text-decoration: none; border-radius: 8px;">Upload Your First Track</a></div>';
+            container.style.display = 'block';
+          }
+          console.log('No tracks found, showing empty state');
+          return;
+        }
         
         // For Hot 100, sort by engagement score (views + likes + recency factor)
         if (currentFilter === 'hot' && tracks.length > 0) {

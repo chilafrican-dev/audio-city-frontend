@@ -1,0 +1,9 @@
+backend/uploads/
+backend/output/
+backend/data/
+backend/node_modules/
+*.tar.gz
+*.base64
+*.base64.new
+node_modules/
+.git/
