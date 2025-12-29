@@ -1,26 +1,6 @@
 # Cloudflare Pages Redirects and Headers
-# This file handles routing for single-page application
-
-# IMPORTANT: sw.js and manifest.json must exist as actual files in deployment
-# They are excluded from redirects by NOT matching the catch-all pattern
-
-# Redirect HTML routes to index.html for client-side routing
-# Exclude static files (.js, .json, .ico, .png, .jpg, .css, etc.)
-/feed.html    /feed.html   200
-/discover.html    /discover.html   200
-/artists.html    /artists.html   200
-/login.html    /login.html   200
-/signup.html    /signup.html   200
-/profile.html    /profile.html   200
-/mastering.html    /mastering.html   200
-/artist-corner.html    /artist-corner.html   200
-/inbox.html    /inbox.html   200
-/settings.html    /settings.html   200
-/admin.html    /admin.html   200
-/track.html    /track.html   200
-/reset-password.html    /reset-password.html   200
-/index.html    /index.html   200
-/    /index.html   200
+# Static files are served directly, no redirects needed
+# Only redirect HTML routes that don't match actual files
 
 # API proxy (if needed)
 # /api/*  https://your-vps-domain.com/api/:splat  200
