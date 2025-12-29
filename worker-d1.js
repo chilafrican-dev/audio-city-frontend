@@ -275,7 +275,18 @@ export default {
           params.push(artistId.replace(/^(eq|neq)\./, ''));
         }
         
-        if (orderBy.includes('.')) {
+        // Handle multiple order fields (e.g., "views_count.desc,likes_count.desc")
+        if (orderBy.includes(',')) {
+          const orderParts = orderBy.split(',').map(part => {
+            const trimmed = part.trim();
+            if (trimmed.includes('.')) {
+              const [field, direction] = trimmed.split('.');
+              return `t.${field} ${direction.toUpperCase()}`;
+            }
+            return `t.${trimmed} DESC`;
+          });
+          query += ` ORDER BY ${orderParts.join(', ')}`;
+        } else if (orderBy.includes('.')) {
           const [field, direction] = orderBy.split('.');
           query += ` ORDER BY t.${field} ${direction.toUpperCase()}`;
         } else {
