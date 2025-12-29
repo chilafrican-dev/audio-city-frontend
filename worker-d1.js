@@ -365,6 +365,155 @@ export default {
       return Response.redirect(`${url.origin}/login.html?error=oauth_not_implemented`, 302);
     }
 
+    // POST /api/tracks - Upload/create a new track (with audio file and optional cover art)
+    if (url.pathname === '/api/tracks' && request.method === 'POST') {
+      try {
+        // Check authentication
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+
+        if (!env.DB || !env.MEDIA_BUCKET) {
+          return Response.json({ error: 'Database or R2 not configured' }, 
+            { status: 500, headers: corsHeaders });
+        }
+
+        // Parse multipart form data
+        const formData = await request.formData();
+        const audioFile = formData.get('audioFile');
+        const coverArtFile = formData.get('coverArt');
+        const title = formData.get('title');
+        const description = formData.get('description') || '';
+        const genre = formData.get('genre') || 'Unknown';
+        const artistId = formData.get('artist_id') || user.id;
+        const artistName = formData.get('artist_name') || user.name || user.username;
+        const coverArtUrl = formData.get('cover_art_url'); // Existing URL (from frontend)
+        const duration = formData.get('duration') ? parseInt(formData.get('duration')) : null;
+
+        if (!title || !artistId) {
+          return Response.json({ error: 'Title and artist_id are required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+
+        if (!audioFile || !(audioFile instanceof File)) {
+          return Response.json({ error: 'Audio file is required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+
+        // Check audio file size (50MB limit)
+        if (audioFile.size > 50 * 1024 * 1024) {
+          return Response.json({ error: 'Audio file too large (max 50MB)' }, 
+            { status: 400, headers: corsHeaders });
+        }
+
+        // Check audio file type
+        const allowedAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac', 'audio/x-m4a'];
+        if (!allowedAudioTypes.includes(audioFile.type)) {
+          return Response.json({ error: 'Invalid audio file type' }, 
+            { status: 400, headers: corsHeaders });
+        }
+
+        const trackId = uuid();
+        let audioUrl = null;
+        let finalCoverArtUrl = coverArtUrl || null;
+
+        // Upload audio file to R2
+        try {
+          const audioExt = audioFile.name.split('.').pop() || 'mp3';
+          const audioR2Key = `tracks/${trackId}.${audioExt}`;
+          const audioBuffer = await audioFile.arrayBuffer();
+          
+          await env.MEDIA_BUCKET.put(audioR2Key, audioBuffer, {
+            httpMetadata: {
+              contentType: audioFile.type,
+            },
+          });
+
+          const r2PublicUrl = env.R2_PUBLIC_URL || `https://pub-${env.MEDIA_BUCKET.accountId}.r2.dev`;
+          audioUrl = `${r2PublicUrl}/${audioR2Key}`;
+        } catch (error) {
+          console.error('Audio upload error:', error);
+          return Response.json({ error: 'Failed to upload audio file' }, 
+            { status: 500, headers: corsHeaders });
+        }
+
+        // Upload cover art file to R2 (if provided as file)
+        if (coverArtFile && coverArtFile instanceof File) {
+          try {
+            // Check cover art file size (5MB limit)
+            if (coverArtFile.size > 5 * 1024 * 1024) {
+              return Response.json({ error: 'Cover art file too large (max 5MB)' }, 
+                { status: 400, headers: corsHeaders });
+            }
+
+            // Check cover art file type
+            const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedImageTypes.includes(coverArtFile.type)) {
+              return Response.json({ error: 'Invalid cover art file type. Only images allowed.' }, 
+                { status: 400, headers: corsHeaders });
+            }
+
+            const coverExt = coverArtFile.name.split('.').pop() || 'jpg';
+            const coverR2Key = `cover-art/${trackId}.${coverExt}`;
+            const coverBuffer = await coverArtFile.arrayBuffer();
+            
+            await env.MEDIA_BUCKET.put(coverR2Key, coverBuffer, {
+              httpMetadata: {
+                contentType: coverArtFile.type,
+              },
+            });
+
+            const r2PublicUrl = env.R2_PUBLIC_URL || `https://pub-${env.MEDIA_BUCKET.accountId}.r2.dev`;
+            finalCoverArtUrl = `${r2PublicUrl}/${coverR2Key}`;
+          } catch (error) {
+            console.error('Cover art upload error:', error);
+            // Don't fail the whole upload if cover art fails, just log it
+          }
+        }
+
+        // Create track in database
+        await env.DB.prepare(`
+          INSERT INTO tracks (
+            id, artist_id, title, description, audio_url, cover_art_url,
+            genre, duration, views_count, likes_count, shares_count, plays_count,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
+        `).bind(
+          trackId,
+          artistId,
+          title,
+          description,
+          audioUrl,
+          finalCoverArtUrl,
+          genre,
+          duration
+        ).run();
+
+        // Update user's track count
+        await env.DB.prepare(
+          'UPDATE users SET tracks_count = tracks_count + 1, updated_at = datetime("now") WHERE id = ?'
+        ).bind(artistId).run();
+
+        // Get the created track
+        const track = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(trackId).first();
+
+        return Response.json({
+          success: true,
+          message: 'Track uploaded successfully',
+          track: track
+        }, { headers: corsHeaders });
+
+      } catch (error) {
+        console.error('Track upload error:', error);
+        return Response.json({ 
+          error: 'Upload failed',
+          message: error.message 
+        }, { status: 500, headers: corsHeaders });
+      }
+    }
+
     // POST /api/users/:id/profile-picture - Upload profile picture to R2
     if (url.pathname.startsWith('/api/users/') && url.pathname.endsWith('/profile-picture') && request.method === 'POST') {
       const userId = url.pathname.split('/api/users/')[1]?.replace('/profile-picture', '');
