@@ -365,6 +365,84 @@ export default {
       return Response.redirect(`${url.origin}/login.html?error=oauth_not_implemented`, 302);
     }
 
+    // POST /api/users/:id/profile-picture - Upload profile picture to R2
+    if (url.pathname.startsWith('/api/users/') && url.pathname.endsWith('/profile-picture') && request.method === 'POST') {
+      const userId = url.pathname.split('/api/users/')[1]?.replace('/profile-picture', '');
+      if (!userId) {
+        return Response.json({ error: 'User ID required' }, { status: 400, headers: corsHeaders });
+      }
+
+      try {
+        // Check authentication
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user || user.id !== userId) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+
+        // Parse multipart form data
+        const formData = await request.formData();
+        const file = formData.get('profilePicture');
+        
+        if (!file || !(file instanceof File)) {
+          return Response.json({ error: 'No file uploaded' }, { status: 400, headers: corsHeaders });
+        }
+
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          return Response.json({ error: 'File too large (max 5MB)' }, { status: 400, headers: corsHeaders });
+        }
+
+        // Check file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          return Response.json({ error: 'Invalid file type. Only images allowed.' }, { status: 400, headers: corsHeaders });
+        }
+
+        // Upload to R2
+        if (!env.MEDIA_BUCKET) {
+          return Response.json({ error: 'R2 bucket not configured' }, { status: 500, headers: corsHeaders });
+        }
+
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const r2Key = `profiles/${userId}.${fileExt}`;
+        const fileBuffer = await file.arrayBuffer();
+        
+        // Upload to R2
+        await env.MEDIA_BUCKET.put(r2Key, fileBuffer, {
+          httpMetadata: {
+            contentType: file.type,
+          },
+        });
+
+        // Get public URL (assuming R2 public URL is configured)
+        // If you have a custom domain for R2, use that. Otherwise, use the R2 public URL
+        const r2PublicUrl = env.R2_PUBLIC_URL || `https://pub-${env.MEDIA_BUCKET.accountId}.r2.dev`;
+        const avatarUrl = `${r2PublicUrl}/${r2Key}`;
+
+        // Update user in database
+        if (env.DB) {
+          await env.DB.prepare(
+            'UPDATE users SET avatar_url = ?, profile_image = ?, updated_at = datetime("now") WHERE id = ?'
+          ).bind(avatarUrl, avatarUrl, userId).run();
+        }
+
+        return Response.json({
+          success: true,
+          message: 'Profile picture uploaded successfully',
+          avatar_url: avatarUrl,
+          profile_image: avatarUrl,
+        }, { headers: corsHeaders });
+
+      } catch (error) {
+        console.error('Profile picture upload error:', error);
+        return Response.json({ 
+          error: 'Upload failed',
+          message: error.message 
+        }, { status: 500, headers: corsHeaders });
+      }
+    }
+
     // Default: 404
     return Response.json({ 
       error: 'Not Found',
