@@ -260,11 +260,16 @@ export default {
         }
         const tracks = await stmt.all();
         
-        // Enrich with like counts
+        // Enrich with like counts, share counts, and comment counts
         const enrichedTracks = await Promise.all((tracks.results || []).map(async (track) => {
           const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM likes WHERE track_id = ?')
             .bind(track.id).first();
+          const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
+            .bind(track.id).first();
+          
           track.likes_count = likes?.count || 0;
+          track.comments_count = comments?.count || 0;
+          track.shares_count = track.shares_count || 0;
           track.artist_is_verified = track.artist_is_verified === 1;
           return track;
         }));
@@ -294,7 +299,33 @@ export default {
         
         const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM likes WHERE track_id = ?')
           .bind(trackId).first();
+        const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
+          .bind(trackId).first();
+        
+        // Get comments with user info
+        const commentsData = await env.DB.prepare(`
+          SELECT c.*, u.username as author, u.name as author_name, u.profile_image as author_avatar
+          FROM comments c
+          LEFT JOIN users u ON c.user_id = u.id
+          WHERE c.track_id = ?
+          ORDER BY c.created_at DESC
+        `).bind(trackId).all();
+        
+        // Get comment likes for each comment
+        const commentsWithLikes = await Promise.all((commentsData.results || []).map(async (comment) => {
+          const commentLikes = await env.DB.prepare('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = ?')
+            .bind(comment.id).first();
+          return {
+            ...comment,
+            likes: commentLikes?.count || 0,
+            liked_by: [] // Will be populated if needed
+          };
+        }));
+        
         track.likes_count = likes?.count || 0;
+        track.comments_count = comments?.count || 0;
+        track.comments = commentsWithLikes;
+        track.shares_count = track.shares_count || 0;
         track.artist_is_verified = track.artist_is_verified === 1;
         
         return Response.json(track, { headers: corsHeaders });
@@ -356,15 +387,20 @@ export default {
     if (url.pathname.includes('/share') && request.method === 'POST') {
       const trackId = url.pathname.split('/api/tracks/')[1]?.split('/')[0];
       if (!trackId || !env.DB) {
-        return Response.json({ success: true }, { headers: corsHeaders });
+        return Response.json({ success: true, shares_count: 0 }, { headers: corsHeaders });
       }
       
       try {
         await env.DB.prepare('UPDATE tracks SET shares_count = shares_count + 1 WHERE id = ?')
           .bind(trackId).run();
-        return Response.json({ success: true }, { headers: corsHeaders });
+        
+        const track = await env.DB.prepare('SELECT shares_count FROM tracks WHERE id = ?').bind(trackId).first();
+        return Response.json({ 
+          success: true,
+          shares_count: track?.shares_count || 0
+        }, { headers: corsHeaders });
       } catch (error) {
-        return Response.json({ success: true }, { headers: corsHeaders });
+        return Response.json({ success: true, shares_count: 0 }, { headers: corsHeaders });
       }
     }
 
@@ -864,9 +900,187 @@ export default {
       return Response.json({ violations: [] }, { headers: corsHeaders });
     }
 
-    // POST /api/tracks/:id/comment - Add comment (stub)
-    if (url.pathname.includes('/comment') && request.method === 'POST') {
-      return Response.json({ success: true, message: 'Comment added' }, { headers: corsHeaders });
+    // POST /api/tracks/:id/comment - Add comment
+    if (url.pathname.includes('/comment') && request.method === 'POST' && !url.pathname.includes('comments/')) {
+      const trackId = url.pathname.split('/api/tracks/')[1]?.split('/')[0];
+      const body = await parseBody(request);
+      const text = body?.text;
+      const userId = body?.user_id || body?.author_id;
+      
+      if (!trackId || !text || !env.DB) {
+        return Response.json({ error: 'Track ID and comment text are required' }, 
+          { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        // Check if track exists
+        const track = await env.DB.prepare('SELECT id FROM tracks WHERE id = ?').bind(trackId).first();
+        if (!track) {
+          return Response.json({ error: 'Track not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        // Get user info if userId provided
+        let author = 'User';
+        let authorName = 'User';
+        let authorAvatar = null;
+        if (userId) {
+          const user = await env.DB.prepare('SELECT username, name, profile_image FROM users WHERE id = ?')
+            .bind(userId).first();
+          if (user) {
+            author = user.username || 'User';
+            authorName = user.name || user.username || 'User';
+            authorAvatar = user.profile_image || null;
+          }
+        }
+        
+        // Create comment
+        const commentId = uuid();
+        await env.DB.prepare(`
+          INSERT INTO comments (id, track_id, user_id, content, likes, created_at)
+          VALUES (?, ?, ?, ?, 0, datetime('now'))
+        `).bind(commentId, trackId, userId, text.trim()).run();
+        
+        // Get comment count
+        const commentsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
+          .bind(trackId).first();
+        
+        const comment = {
+          id: commentId,
+          track_id: trackId,
+          user_id: userId,
+          author: author,
+          author_name: authorName,
+          author_avatar: authorAvatar,
+          text: text.trim(),
+          content: text.trim(),
+          likes: 0,
+          liked_by: [],
+          time: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        };
+        
+        return Response.json({
+          success: true,
+          comment: comment,
+          comments_count: commentsCount?.count || 0
+        }, { headers: corsHeaders });
+        
+      } catch (error) {
+        console.error('Comment error:', error);
+        return Response.json({ error: 'Failed to add comment' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // DELETE /api/tracks/:id/comments/:commentId - Delete comment
+    if (url.pathname.includes('/comments/') && request.method === 'DELETE') {
+      const parts = url.pathname.split('/');
+      const trackIdIndex = parts.indexOf('tracks') + 1;
+      const commentIdIndex = parts.indexOf('comments') + 1;
+      const trackId = parts[trackIdIndex];
+      const commentId = parts[commentIdIndex];
+      
+      if (!trackId || !commentId || !env.DB) {
+        return Response.json({ error: 'Track ID and comment ID required' }, 
+          { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        // Check if comment exists
+        const comment = await env.DB.prepare('SELECT id FROM comments WHERE id = ? AND track_id = ?')
+          .bind(commentId, trackId).first();
+        if (!comment) {
+          return Response.json({ error: 'Comment not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        // Delete comment
+        await env.DB.prepare('DELETE FROM comments WHERE id = ?').bind(commentId).run();
+        await env.DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?').bind(commentId).run();
+        
+        // Get updated comment count
+        const commentsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
+          .bind(trackId).first();
+        
+        return Response.json({
+          success: true,
+          comments_count: commentsCount?.count || 0
+        }, { headers: corsHeaders });
+        
+      } catch (error) {
+        console.error('Delete comment error:', error);
+        return Response.json({ error: 'Failed to delete comment' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // POST /api/tracks/:id/comments/:commentId/like - Like/unlike comment
+    if (url.pathname.includes('/comments/') && url.pathname.includes('/like') && request.method === 'POST') {
+      const parts = url.pathname.split('/');
+      const trackIdIndex = parts.indexOf('tracks') + 1;
+      const commentIdIndex = parts.indexOf('comments') + 1;
+      const trackId = parts[trackIdIndex];
+      const commentId = parts[commentIdIndex];
+      const body = await parseBody(request);
+      const userId = body?.user_id || url.searchParams.get('user_id');
+      
+      if (!trackId || !commentId || !userId || !env.DB) {
+        return Response.json({ error: 'Track ID, comment ID, and user ID required' }, 
+          { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        // Check if comment exists
+        const comment = await env.DB.prepare('SELECT id FROM comments WHERE id = ? AND track_id = ?')
+          .bind(commentId, trackId).first();
+        if (!comment) {
+          return Response.json({ error: 'Comment not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        // Check if already liked
+        const existing = await env.DB.prepare(
+          'SELECT id FROM comment_likes WHERE user_id = ? AND comment_id = ?'
+        ).bind(userId, commentId).first();
+        
+        if (existing) {
+          // Unlike
+          await env.DB.prepare('DELETE FROM comment_likes WHERE user_id = ? AND comment_id = ?')
+            .bind(userId, commentId).run();
+          
+          // Update comment likes count
+          await env.DB.prepare('UPDATE comments SET likes = likes - 1 WHERE id = ?')
+            .bind(commentId).run();
+          
+          const updatedComment = await env.DB.prepare('SELECT likes FROM comments WHERE id = ?')
+            .bind(commentId).first();
+          
+          return Response.json({
+            success: true,
+            likes: Math.max(0, updatedComment?.likes || 0),
+            is_liked: false
+          }, { headers: corsHeaders });
+        } else {
+          // Like
+          await env.DB.prepare('INSERT INTO comment_likes (id, user_id, comment_id, created_at) VALUES (?, ?, ?, datetime("now"))')
+            .bind(uuid(), userId, commentId).run();
+          
+          // Update comment likes count
+          await env.DB.prepare('UPDATE comments SET likes = likes + 1 WHERE id = ?')
+            .bind(commentId).run();
+          
+          const updatedComment = await env.DB.prepare('SELECT likes FROM comments WHERE id = ?')
+            .bind(commentId).first();
+          
+          return Response.json({
+            success: true,
+            likes: updatedComment?.likes || 0,
+            is_liked: true
+          }, { headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error('Comment like error:', error);
+        return Response.json({ error: 'Failed to update comment like' }, 
+          { status: 500, headers: corsHeaders });
+      }
     }
 
     // POST /api/tracks/:id/repost - Repost track (stub)
