@@ -616,8 +616,125 @@ export default {
       if (!code) {
         return Response.redirect(`${url.origin}/login.html?error=oauth_failed`, 302);
       }
-      // TODO: Implement full OAuth flow
-      return Response.redirect(`${url.origin}/login.html?error=oauth_not_implemented`, 302);
+      
+      const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
+      const GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
+      
+      if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+        return Response.redirect(`${url.origin}/login.html?error=oauth_not_configured`, 302);
+      }
+      
+      try {
+        // Exchange code for access token
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code: code,
+            client_id: GOOGLE_CLIENT_ID,
+            client_secret: GOOGLE_CLIENT_SECRET,
+            redirect_uri: `${url.origin}/auth/google/callback`,
+            grant_type: 'authorization_code'
+          })
+        });
+        
+        if (!tokenResponse.ok) {
+          console.error('Token exchange failed:', await tokenResponse.text());
+          return Response.redirect(`${url.origin}/login.html?error=oauth_token_failed`, 302);
+        }
+        
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+        
+        // Get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        if (!userInfoResponse.ok) {
+          console.error('User info fetch failed:', await userInfoResponse.text());
+          return Response.redirect(`${url.origin}/login.html?error=oauth_userinfo_failed`, 302);
+        }
+        
+        const googleUser = await userInfoResponse.json();
+        
+        if (!env.DB) {
+          return Response.redirect(`${url.origin}/login.html?error=database_not_configured`, 302);
+        }
+        
+        // Find or create user
+        let user = await env.DB.prepare('SELECT * FROM users WHERE email = ? OR google_id = ?')
+          .bind(googleUser.email.toLowerCase(), googleUser.id).first();
+        
+        if (!user) {
+          // Create new user
+          const userId = uuid();
+          const baseUsername = googleUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+          let username = baseUsername;
+          let counter = 1;
+          
+          // Ensure unique username
+          while (true) {
+            const existing = await env.DB.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
+            if (!existing) break;
+            username = `${baseUsername}${counter}`;
+            counter++;
+          }
+          
+          await env.DB.prepare(`
+            INSERT INTO users (
+              id, username, email, name, avatar_url, profile_image,
+              auth_provider, google_id, password, followers_count, following_count, tracks_count,
+              verified, is_admin, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'google', ?, NULL, 0, 0, 0, 0, 0, datetime('now'), datetime('now'))
+          `).bind(
+            userId,
+            username,
+            googleUser.email.toLowerCase(),
+            googleUser.name || username,
+            googleUser.picture || null,
+            googleUser.picture || null,
+            googleUser.id
+          ).run();
+          
+          user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+        } else {
+          // Update existing user with Google info if needed
+          if (!user.google_id) {
+            await env.DB.prepare('UPDATE users SET google_id = ?, auth_provider = ?, updated_at = datetime("now") WHERE id = ?')
+              .bind(googleUser.id, 'google', user.id).run();
+          }
+          if (googleUser.picture && !user.avatar_url) {
+            await env.DB.prepare('UPDATE users SET avatar_url = ?, profile_image = ?, updated_at = datetime("now") WHERE id = ?')
+              .bind(googleUser.picture, googleUser.picture, user.id).run();
+          }
+        }
+        
+        // Create session
+        const token = 'google_token_' + Date.now() + '_' + uuid();
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        await env.DB.prepare(`
+          INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+          VALUES (?, ?, ?, ?, datetime('now'))
+        `).bind(uuid(), user.id, token, expiresAt).run();
+        
+        // Redirect to frontend with token
+        const frontendOrigin = url.origin.replace('api.', 'www.') || url.origin;
+        const redirectUrl = `${frontendOrigin}/login.html?` +
+          `google_auth=success&` +
+          `token=${token}&` +
+          `user_id=${user.id}&` +
+          `user_name=${encodeURIComponent(user.name || user.username)}&` +
+          `username=${encodeURIComponent(user.username)}&` +
+          `user_email=${encodeURIComponent(user.email)}&` +
+          `is_admin=${user.is_admin || 0}`;
+        
+        return Response.redirect(redirectUrl, 302);
+        
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        return Response.redirect(`${url.origin}/login.html?error=oauth_error`, 302);
+      }
     }
 
     // POST /api/users/:id/profile-picture - Upload profile picture
