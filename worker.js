@@ -130,6 +130,22 @@ export default {
             });
           }
           
+          // Handle auth routes 404s - redirect to error page or return helpful message
+          if (url.pathname.startsWith('/auth/')) {
+            return new Response(JSON.stringify({
+              error: 'Authentication endpoint not found',
+              message: `Backend auth route ${url.pathname} not available`,
+              backendUrl: cleanBackendUrl,
+              hint: 'Backend may not have OAuth routes deployed. Check backend server configuration.'
+            }), {
+              status: 404,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json',
+              },
+            });
+          }
+          
           // For other 404s, return the error but with helpful message
           return new Response(JSON.stringify({
             error: 'Not Found',
