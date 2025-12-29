@@ -142,8 +142,21 @@ export default {
             tracks_count: 0
           }, { headers: corsHeaders });
         }
+        
+        // Get actual counts from database
+        const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
+          .bind(userId).first();
+        const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
+          .bind(userId).first();
+        const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+          .bind(userId).first();
+        
         user.verified = user.verified === 1;
         user.is_admin = user.is_admin === 1;
+        user.followers_count = followersCount?.count || 0;
+        user.following_count = followingCount?.count || 0;
+        user.tracks_count = tracksCount?.count || 0;
+        
         return Response.json(user, { headers: corsHeaders });
       } catch (error) {
         console.error('Error fetching user:', error);
