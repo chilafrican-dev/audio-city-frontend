@@ -120,7 +120,7 @@ export default {
     }
 
     // GET /api/users/:id - Get single user
-    if (url.pathname.startsWith('/api/users/') && request.method === 'GET' && !url.pathname.includes('/')) {
+    if (url.pathname.startsWith('/api/users/') && request.method === 'GET' && !url.pathname.includes('/follow') && !url.pathname.includes('/profile-picture') && !url.pathname.includes('/messages') && !url.pathname.includes('/notifications') && !url.pathname.includes('/requests')) {
       const userId = url.pathname.split('/api/users/')[1]?.split('?')[0]?.split('/')[0];
       if (!userId) {
         return Response.json({
