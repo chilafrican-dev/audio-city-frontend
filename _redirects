@@ -1,9 +1,10 @@
 # Cloudflare Pages Redirects and Headers
 # This file handles routing for single-page application
 
-# Exclude service worker and manifest from redirects
+# Exclude service worker and manifest from redirects - must come BEFORE catch-all
 /sw.js    /sw.js   200
 /manifest.json    /manifest.json   200
+/favicon.ico    /favicon.ico   200
 
 # Redirect all other routes to index.html for client-side routing
 /*    /index.html   200
