@@ -1,0 +1,13 @@
+# Cloudflare Pages Headers Configuration
+# Ensures correct MIME types for service worker
+
+/sw.js
+  Content-Type: application/javascript
+  Service-Worker-Allowed: /
+
+/*.js
+  Content-Type: application/javascript
+
+/*.json
+  Content-Type: application/json
+
