@@ -820,6 +820,25 @@
         // Fetch all users (backend doesn't support select parameter, returns all fields)
         const response = await fetch(`${API_BASE_URL}/api/users?_t=${Date.now()}`);
         
+        // Handle 404 or other errors gracefully
+        if (!response.ok) {
+          console.warn('Failed to load artists:', response.status, response.statusText);
+          // Return empty array to prevent errors
+          const artistsGrid = document.getElementById('artistsGrid');
+          if (artistsGrid) {
+            artistsGrid.innerHTML = '';
+            artistsGrid.style.display = 'none';
+          }
+          const mainContent = document.querySelector('main');
+          if (mainContent) {
+            const pageTitle = mainContent.querySelector('.page-title');
+            const searchSection = mainContent.querySelector('.search-filters');
+            if (pageTitle) pageTitle.style.display = 'none';
+            if (searchSection) searchSection.style.display = 'none';
+          }
+          return;
+        }
+        
         if (response.ok) {
           const artists = await response.json();
           const artistsGrid = document.getElementById('artistsGrid');

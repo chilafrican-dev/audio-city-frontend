@@ -119,6 +119,17 @@ export default {
             });
           }
           
+          if (url.pathname === '/api/users' || url.pathname.startsWith('/api/users?')) {
+            // Return empty array for /api/users to prevent frontend errors
+            return new Response(JSON.stringify([]), {
+              status: 200,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json',
+              },
+            });
+          }
+          
           // For other 404s, return the error but with helpful message
           return new Response(JSON.stringify({
             error: 'Not Found',
@@ -171,6 +182,17 @@ export default {
         }
         
         if (url.pathname === '/api/feed/trending-artists') {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+            },
+          });
+        }
+        
+        if (url.pathname === '/api/users' || url.pathname.startsWith('/api/users?')) {
+          // Return empty array for /api/users when backend is unavailable
           return new Response(JSON.stringify([]), {
             status: 200,
             headers: {
