@@ -1,13 +1,18 @@
 /sw.js
   Content-Type: application/javascript
   Service-Worker-Allowed: /
+  Access-Control-Allow-Origin: *
 
 /manifest.json
   Content-Type: application/manifest+json
+  Access-Control-Allow-Origin: *
+  X-Content-Type-Options: nosniff
 
 /*.js
   Content-Type: application/javascript
+  Access-Control-Allow-Origin: *
 
 /*.json
   Content-Type: application/json
+  Access-Control-Allow-Origin: *
 

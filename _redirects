@@ -5,7 +5,14 @@
 # API proxy (if needed)
 # /api/*  https://your-vps-domain.com/api/:splat  200
 
-# Security headers
+# Security headers (exclude manifest.json and sw.js from strict headers)
+/manifest.json
+  Access-Control-Allow-Origin: *
+
+/sw.js
+  Access-Control-Allow-Origin: *
+
+# Security headers for other files
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
