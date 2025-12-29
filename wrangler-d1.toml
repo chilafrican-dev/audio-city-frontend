@@ -1,0 +1,27 @@
+# Cloudflare Worker with D1 Database Configuration
+# For Audio City API
+
+name = "audio-city-api-d1"
+main = "worker-d1.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "audio-city-db"
+database_id = "" # Will be set after creating the database
+
+# R2 Bucket binding (for media files)
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "audio-city-media"
+
+# Environment variables
+[vars]
+# Set these in Cloudflare Dashboard or use secrets:
+# GOOGLE_CLIENT_ID = "your-google-client-id"
+
+# Production environment
+[env.production]
+name = "audio-city-api-d1"
+
