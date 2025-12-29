@@ -94,7 +94,25 @@ export default {
           return Response.json([], { headers: corsHeaders });
         }
         const users = await env.DB.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
-        return Response.json(users.results || [], { headers: corsHeaders });
+        
+        // Enrich with accurate counts
+        const enrichedUsers = await Promise.all((users.results || []).map(async (user) => {
+          const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
+            .bind(user.id).first();
+          const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
+            .bind(user.id).first();
+          const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+            .bind(user.id).first();
+          
+          user.followers_count = followersCount?.count || 0;
+          user.following_count = followingCount?.count || 0;
+          user.tracks_count = tracksCount?.count || 0;
+          user.verified = user.verified === 1;
+          user.is_admin = user.is_admin === 1;
+          return user;
+        }));
+        
+        return Response.json(enrichedUsers, { headers: corsHeaders });
       } catch (error) {
         console.error('Error fetching users:', error);
         return Response.json([], { headers: corsHeaders });
