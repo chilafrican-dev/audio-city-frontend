@@ -713,6 +713,15 @@
         <div id="userPostsContainer" class="empty-state">No posts yet</div>
       </div>
       
+      <!-- Producers Section (appears if user is a producer) -->
+      <div class="section" id="producersSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">🎛️ Producers</h3>
+          <a href="#" class="section-link">View All →</a>
+        </div>
+        <div class="tracks-grid" id="producersGrid"></div>
+      </div>
+      
       <!-- Activity Section (always visible) -->
       <div class="section" id="activitySection">
         <div class="section-header">
@@ -760,6 +769,11 @@
         <div style="margin-bottom: 20px;">
           <label for="editLocation" style="display: block; margin-bottom: 8px; font-weight: 600;">Location</label>
           <input type="text" id="editLocation" name="editLocation" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="City, Country" />
+        </div>
+        <div style="margin-bottom: 20px; display: none;" id="phoneNumberField">
+          <label for="editPhoneNumber" style="display: block; margin-bottom: 8px; font-weight: 600;">📱 Phone Number (For Producers)</label>
+          <input type="tel" id="editPhoneNumber" name="editPhoneNumber" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="+256 700 000 000" />
+          <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Add your phone number so buyers can contact you for beats</p>
         </div>
         <div style="display: flex; gap: 12px;">
           <button type="submit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer;">Save Changes</button>
@@ -841,17 +855,23 @@
       const followBtn = document.getElementById('followBtn');
       const reportBtn = document.getElementById('reportBtn');
       const messageBtn = document.getElementById('messageBtn');
+      const settingsBtn = document.getElementById('settingsBtn');
+      
+      // Check if user is admin
+      const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
       
       if (isOwnProfile) {
-        // Own profile: Show edit, hide follow/report/message
+        // Own profile: Show edit and settings, hide follow/report/message
         if (editProfileBtn) editProfileBtn.style.display = 'block';
+        if (settingsBtn) settingsBtn.style.display = 'flex';
         if (followBtn) followBtn.style.display = 'none';
         if (reportBtn) reportBtn.style.display = 'none';
         if (messageBtn) messageBtn.style.display = 'none';
       } else {
-        // Other user's profile: Show follow/report/message, hide edit
+        // Other user's profile: Show follow/report/message, hide edit and settings
         if (followBtn) followBtn.style.display = 'block';
         if (editProfileBtn) editProfileBtn.style.display = 'none';
+        if (settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none'; // Only admins can see settings on other profiles
         if (reportBtn) reportBtn.style.display = 'block';
         if (messageBtn) messageBtn.style.display = 'inline-flex';
       }
@@ -894,12 +914,22 @@
       const currentUsername = document.getElementById('profileHandle')?.textContent?.replace('@', '') || localStorage.getItem('username') || '';
       const currentBio = document.getElementById('profileBio')?.textContent?.trim() || localStorage.getItem('bio') || '';
       const currentLocation = document.getElementById('locationText')?.textContent?.trim() || localStorage.getItem('location') || '';
+      const currentPhone = localStorage.getItem('phone_number') || '';
+      
+      // Check if user is a producer
+      const userType = localStorage.getItem('user_type') || '';
+      const isProducer = userType === 'producer' || userType === 'Producer';
+      const phoneField = document.getElementById('phoneNumberField');
+      if (phoneField) {
+        phoneField.style.display = isProducer ? 'block' : 'none';
+      }
       
       // Set form values
       if (document.getElementById('editName')) document.getElementById('editName').value = currentName;
       if (document.getElementById('editUsername')) document.getElementById('editUsername').value = currentUsername;
       if (document.getElementById('editBio')) document.getElementById('editBio').value = currentBio;
       if (document.getElementById('editLocation')) document.getElementById('editLocation').value = currentLocation;
+      if (document.getElementById('editPhoneNumber')) document.getElementById('editPhoneNumber').value = currentPhone;
       
       const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || '';
       if (existingAvatar) {
@@ -1053,12 +1083,17 @@
         const location = document.getElementById('editLocation').value;
         const name = document.getElementById('editName')?.value;
         const username = document.getElementById('editUsername')?.value;
+        const phoneNumber = document.getElementById('editPhoneNumber')?.value;
         
         const profileData = {};
         if (bio) profileData.bio = bio;
         if (location) profileData.location = location;
         if (name) profileData.name = name;
         if (username) profileData.username = username;
+        if (phoneNumber) {
+          profileData.phone_number = phoneNumber;
+          localStorage.setItem('phone_number', phoneNumber);
+        }
         
         if (Object.keys(profileData).length > 0) {
           const updateResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile`, {
@@ -1364,21 +1399,29 @@
         if (tracks.length > 0) {
           document.getElementById('tracksSection').style.display = 'block';
           
-          // Check if user is admin
+          // Check if user is admin or track creator
           const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+          const currentUserId = localStorage.getItem('user_id');
           
           document.getElementById('tracksGrid').innerHTML = tracks.map(track => {
-            const adminDeleteBtn = (isAdmin && track.id) ? `<button class="admin-delete-track-btn" data-track-id="${track.id}" title="Admin: Delete track" onclick="event.stopPropagation(); deleteTrackAsAdmin('${track.id}');" style="position: absolute; top: 8px; right: 8px; z-index: 20; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🗑️</button>` : '';
+            // Show delete button if user is admin OR if user is the track creator
+            const canDelete = (isAdmin || track.artist_id === currentUserId) && track.id;
+            const deleteBtn = canDelete ? `<button class="admin-delete-track-btn" data-track-id="${track.id}" title="${isAdmin ? 'Admin: ' : ''}Delete track" onclick="event.stopPropagation(); deleteTrack('${track.id}', ${isAdmin});" style="position: absolute; top: 8px; right: 8px; z-index: 20; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🗑️</button>` : '';
+            // Check if track is for sale (has price or for_sale flag)
+            const isForSale = track.price > 0 || track.for_sale === true || track.for_sale === 1;
+            const previewBadge = isForSale ? `<div style="position: absolute; top: 8px; left: 8px; z-index: 10; background: rgba(34, 197, 94, 0.9); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">🎧 20s Preview</div>` : '';
+            
             return `
             <div class="track-card" onclick="window.location.href='track.html?id=${track.id}'" style="position: relative;">
-              ${adminDeleteBtn}
+              ${deleteBtn}
+              ${previewBadge}
               <div class="track-cover">
                 ${track.cover_art_url ? `<img src="${escapeHtml(track.cover_art_url)}" alt="${escapeHtml(track.title)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
                 <div style="${track.cover_art_url ? 'display: none;' : 'display: flex;'}">🎵</div>
               </div>
               <div class="track-info">
                 <div class="track-title">${escapeHtml(track.title || 'Untitled')}</div>
-                <div class="track-stats">👁️ ${(track.views_count || 0).toLocaleString()}</div>
+                <div class="track-stats">👁️ ${(track.views_count || 0).toLocaleString()} ${isForSale ? '💰' : ''}</div>
               </div>
             </div>
           `;
@@ -1419,15 +1462,11 @@
       }
     }
     
-    // Admin delete track function
-    async function deleteTrackAsAdmin(trackId) {
-      const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
-      if (!isAdmin) {
-        alert('Admin access required');
-        return;
-      }
-      
-      const confirmMessage = `⚠️ ADMIN DELETE: Are you sure you want to delete this track? This action cannot be undone and will remove the content permanently.`;
+    // Delete track function (for admins and track creators)
+    async function deleteTrack(trackId, isAdmin) {
+      const confirmMessage = isAdmin 
+        ? `⚠️ ADMIN DELETE: Are you sure you want to delete this track? This action cannot be undone and will remove the content permanently.`
+        : `⚠️ Are you sure you want to delete this track? This action cannot be undone and will remove the content permanently.`;
       
       if (!confirm(confirmMessage)) {
         return;
@@ -1449,10 +1488,10 @@
         });
         
         if (response.ok || response.status === 404) {
-          alert('✅ Admin: Track deleted successfully.');
+          alert(isAdmin ? '✅ Admin: Track deleted successfully.' : '✅ Track deleted successfully.');
           // Reload the page to refresh tracks
           window.location.reload();
-    } else {
+        } else {
           const error = await response.json().catch(() => ({ error: 'Failed to delete track' }));
           alert(error.error || 'Failed to delete track. Please try again.');
         }
