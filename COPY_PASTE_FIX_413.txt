@@ -1,0 +1,43 @@
+# COPY-PASTE THESE COMMANDS TO FIX 413 ERROR
+
+## Run these commands on the VPS (43.245.227.33)
+
+### Step 1: SSH into VPS
+ssh root@43.245.227.33
+
+### Step 2: Find and edit nginx config
+# Find the config file
+CONFIG_FILE=$(ls /etc/nginx/sites-available/mastering.audiocity-ug.com 2>/dev/null || ls /etc/nginx/sites-available/default 2>/dev/null || echo "")
+
+if [ -z "$CONFIG_FILE" ]; then
+    echo "Available configs:"
+    ls -la /etc/nginx/sites-available/
+    echo "Please edit the correct file manually"
+    exit 1
+fi
+
+echo "Using config: $CONFIG_FILE"
+
+# Backup
+cp "$CONFIG_FILE" "${CONFIG_FILE}.backup"
+
+# Add client_max_body_size to server block
+if ! grep -q "client_max_body_size" "$CONFIG_FILE"; then
+    sed -i '/server_name.*mastering/a\    client_max_body_size 500M;' "$CONFIG_FILE"
+fi
+
+# Add client_max_body_size to location /api block
+if grep -q "location /api" "$CONFIG_FILE"; then
+    if ! grep -A 5 "location /api" "$CONFIG_FILE" | grep -q "client_max_body_size"; then
+        sed -i '/location \/api {/a\        client_max_body_size 500M;' "$CONFIG_FILE"
+    fi
+fi
+
+# Test config
+nginx -t
+
+# Reload nginx
+systemctl reload nginx
+
+echo "✅ Done! Upload limit increased to 500MB"
+

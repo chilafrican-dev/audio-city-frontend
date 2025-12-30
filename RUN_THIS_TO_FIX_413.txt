@@ -1,0 +1,62 @@
+# RUN THIS TO FIX 413 ERROR
+
+## Quick Method (Copy-Paste These Commands)
+
+### Step 1: Copy the script to VPS
+On YOUR computer, run:
+```bash
+scp fix-nginx-413.sh root@43.245.227.33:/root/
+```
+
+### Step 2: SSH into VPS and run the script
+```bash
+ssh root@43.245.227.33
+chmod +x /root/fix-nginx-413.sh
+/root/fix-nginx-413.sh
+```
+
+## OR Manual Method (If script doesn't work)
+
+### Step 1: SSH into VPS
+```bash
+ssh root@43.245.227.33
+```
+
+### Step 2: Find config file
+```bash
+ls -la /etc/nginx/sites-available/
+```
+
+### Step 3: Edit config
+```bash
+nano /etc/nginx/sites-available/mastering.audiocity-ug.com
+# OR
+nano /etc/nginx/sites-available/default
+```
+
+### Step 4: Add these lines
+Inside `server { }` block, add:
+```nginx
+client_max_body_size 500M;
+```
+
+Inside `location /api { }` block, add:
+```nginx
+client_max_body_size 500M;
+```
+
+### Step 5: Save and reload
+```bash
+# Save: Ctrl+X, Y, Enter
+
+# Test
+nginx -t
+
+# Reload
+systemctl reload nginx
+```
+
+## Done! ✅
+
+Try uploading your audio file again.
+
