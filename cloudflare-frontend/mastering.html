@@ -2866,8 +2866,16 @@ masterBtn.addEventListener('click', async () => {
       // Use API base URL for downloads (remove /api suffix for static file serving)
       const baseUrl = API.replace('/api', '');
       // Use 'audioFile' instead of 'wav' - NO .wav access
-      downloadUrls['audioFile'] = `${baseUrl}${data.downloads.wav || data.downloads.audioFile || data.downloads.audioUrl}`;
-      downloadUrls.mp3 = `${baseUrl}${data.downloads.mp3}`;
+      // SAFE: Check if data.downloads exists before accessing
+      if (data && data.downloads && typeof data.downloads === 'object') {
+        const wavValue = data.downloads['wav'] || data.downloads['audioFile'] || data.downloads['audioUrl'];
+        if (wavValue) {
+          downloadUrls['audioFile'] = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
+        }
+        if (data.downloads.mp3) {
+          downloadUrls.mp3 = data.downloads.mp3.startsWith('http') ? data.downloads.mp3 : `${baseUrl}${data.downloads.mp3}`;
+        }
+      }
       
       // Update meters
       inputLufs.textContent = `${data.input.lufs.toFixed(1)}`;
