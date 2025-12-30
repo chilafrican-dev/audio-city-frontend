@@ -2732,10 +2732,17 @@ masterBtn.addEventListener('click', async () => {
         throw new Error(errorMsg);
       }
       
-      // ✅ Start polling instead of trying to access wav
-      // Use the existing checkJob function but call it pollMastering for clarity
+      // ✅ 3. Respect async job-based APIs
+      // Step 1: submit job (already done)
+      // Step 2: poll /api/master-status/:jobId (starting now)
+      // Step 3: retrieve wav URL once ready (in pollMastering)
       const jobId = data.jobId;
+      console.log("✅ Job submitted, starting polling for jobId:", jobId);
       statusText.textContent = '🔄 Starting mastering process...';
+      
+      // 🚫 CRITICAL: DO NOT access data.wav or result.wav here - it doesn't exist!
+      // ❌ THIS WOULD CRASH: const wavUrl = data.wav; audio.src = wavUrl;
+      // ✅ CORRECT: Start polling instead
       
       // Start polling immediately
       pollMastering(jobId);
