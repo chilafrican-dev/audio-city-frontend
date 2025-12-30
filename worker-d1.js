@@ -184,19 +184,32 @@ export default {
           }, { headers: corsHeaders });
         }
         
-        // Get actual counts from database
-        const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
-          .bind(userId).first();
-        const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
-          .bind(userId).first();
-        const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
-          .bind(userId).first();
+        // Get actual counts from database (handle missing tables gracefully)
+        let followersCount = 0, followingCount = 0, tracksCount = 0;
+        
+        try {
+          const fc = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
+            .bind(userId).first();
+          followersCount = fc?.count || 0;
+        } catch (e) { /* follows table may not exist */ }
+        
+        try {
+          const fg = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
+            .bind(userId).first();
+          followingCount = fg?.count || 0;
+        } catch (e) { /* follows table may not exist */ }
+        
+        try {
+          const tc = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+            .bind(userId).first();
+          tracksCount = tc?.count || 0;
+        } catch (e) { /* tracks table may not exist */ }
         
         user.verified = user.verified === 1;
         user.is_admin = user.is_admin === 1;
-        user.followers_count = followersCount?.count || 0;
-        user.following_count = followingCount?.count || 0;
-        user.tracks_count = tracksCount?.count || 0;
+        user.followers_count = followersCount;
+        user.following_count = followingCount;
+        user.tracks_count = tracksCount;
         
         return Response.json(user, { headers: corsHeaders });
       } catch (error) {
