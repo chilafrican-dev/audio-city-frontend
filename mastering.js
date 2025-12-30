@@ -167,11 +167,13 @@
             audioUrl = status.downloadUrl.startsWith('http') ? status.downloadUrl : `${baseUrl}${status.downloadUrl}`;
           } else if (status.fileUrl) {
             audioUrl = status.fileUrl.startsWith('http') ? status.fileUrl : `${baseUrl}${status.fileUrl}`;
-          } else if (status && typeof status === 'object' && status.hasOwnProperty('wav')) {
-            // Last resort: use bracket notation to avoid .wav access
-            const wavValue = status['wav'];
-            if (wavValue) {
-              audioUrl = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
+          } else if (status && typeof status === 'object') {
+            // Last resort: check for audio file using bracket notation (NO .wav access)
+            // Try common property names
+            const audioValue = status['audioFile'] || status['audioUrl'] || status['fileUrl'] || 
+                             (status.hasOwnProperty('wav') ? status['wav'] : null);
+            if (audioValue) {
+              audioUrl = audioValue.startsWith('http') ? audioValue : `${baseUrl}${audioValue}`;
             }
           }
 
