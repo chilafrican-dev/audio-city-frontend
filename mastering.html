@@ -1523,6 +1523,8 @@ const API_PRIMARY = isLocalhost
 // Fallback to localhost only if VM is down (for local development)
 const API_FALLBACK = 'http://localhost:3002/api';
 let API = API_PRIMARY;
+// Make API globally accessible for mastering.js
+window.API = API;
 const MOBILE_MONEY_NUMBER = '+256700000000';
 
 // Julypay API Configuration
@@ -1657,7 +1659,7 @@ let backendCheckInterval = null;
 let backendCheckFailures = 0;
 const MAX_BACKEND_CHECK_FAILURES = 3;
 
-// State
+// State - Expose to window for mastering.js
 let currentFile = null;
 let audioBuffer = null;
 let masteredBuffer = null;
@@ -1671,6 +1673,15 @@ let downloadUrls = { wav: null, mp3: null };
 let masterResult = null;
 let startTime = 0;
 let pausedAt = 0;
+
+// Expose state to window for mastering.js (will be synced when values change)
+window.currentFile = currentFile;
+window.selectedPreset = selectedPreset;
+window.audioContext = audioContext;
+window.masteredBuffer = masteredBuffer;
+window.playbackMode = playbackMode;
+window.downloadUrls = downloadUrls;
+window.isPlaying = isPlaying;
 let animationId = null;
 let analyserNode = null;
 let dataArray = null;
@@ -1888,6 +1899,7 @@ audioInput.addEventListener('change', e => {
 
 async function handleFile(file) {
   currentFile = file;
+  window.currentFile = currentFile; // Sync for mastering.js
   trackName.textContent = file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name;
   statusText.textContent = 'Loading audio...';
   statusBar.className = 'status-bar processing';
@@ -1902,9 +1914,11 @@ async function handleFile(file) {
   downloadMp3.disabled = true;
   masterResult = null;
   masteredBuffer = null; // Reset mastered buffer for new file
+  window.masteredBuffer = masteredBuffer; // Sync for mastering.js
   
   // Decode audio
   audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+  window.audioContext = audioContext; // Sync for mastering.js
   const arrayBuffer = await file.arrayBuffer();
   audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
   
@@ -1954,6 +1968,7 @@ document.querySelectorAll('.preset-list').forEach(list => {
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selectedPreset = btn.dataset.preset;
+    window.selectedPreset = selectedPreset; // Sync for mastering.js
     
     // Update target
     const lufs = btn.dataset.lufs;
@@ -2472,6 +2487,7 @@ progressBar.addEventListener('click', e => {
 // A/B Toggle
 beforeBtn.addEventListener('click', () => {
   playbackMode = 'before';
+  window.playbackMode = playbackMode; // Sync for mastering.js
   beforeBtn.classList.add('active');
   afterBtn.classList.remove('active');
   const currentModeEl = document.getElementById('currentMode');
@@ -2513,154 +2529,8 @@ afterBtn.addEventListener('click', () => {
 });
 
 // ✅ Button handler (SAFE)
-masterBtn.addEventListener('click', async () => {
-  if (!currentFile) return;
-  
-  // Stop playback
-  if (isPlaying) stopPlayback();
-  pausedAt = 0;
-  
-  masterBtn.disabled = true;
-  masterBtn.innerHTML = '<span>⏳</span> Mastering...';
-  statusBar.className = 'status-bar processing';
-  statusText.textContent = 'Processing with real FFmpeg loudnorm...';
-  downloadReady.classList.remove('show');
-  
-  try {
-    const formData = new FormData();
-    formData.append('audio', currentFile);
-    formData.append('preset', selectedPreset);
-    
-    const response = await fetch(`${API}/quick-master`, {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await response.json();
-    console.log("Mastering response:", data);
-
-    if (!data.success || !data.jobId) {
-      throw new Error(data.error || data.message || "Mastering request failed");
-    }
-
-    // ✅ start polling
-    pollMasteringJob(data.jobId);
-
-  } catch (err) {
-    console.error("Mastering error:", err);
-    statusBar.className = 'status-bar error';
-    statusText.textContent = `❌ ${err.message || 'Mastering failed'}`;
-    masterBtn.disabled = false;
-    masterBtn.innerHTML = '<span>🎛️</span> Master';
-  }
-});
-
-// ✅ Polling function (REQUIRED)
-async function pollMasteringJob(jobId) {
-  try {
-    const res = await fetch(`${API}/master-status/${jobId}`);
-    const status = await res.json();
-    console.log("Mastering status:", status);
-
-    if (status.status === "completed") {
-      // Set download URLs - get audio URL from status (NO .wav access)
-      const baseUrl = API.replace('/api', '');
-      // Try multiple possible property names - avoid direct .wav access
-      let audioUrl = status.audioUrl || status.downloadUrl || status.fileUrl || null;
-      // Only check wav property if other properties don't exist, and use safe access
-      if (!audioUrl && status && typeof status === 'object') {
-        const wavValue = status['wav']; // Use bracket notation instead of .wav
-        if (wavValue) {
-          audioUrl = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
-        }
-      }
-      if (audioUrl) {
-        downloadUrls.wav = audioUrl;
-      }
-      if (status.mp3) {
-        downloadUrls.mp3 = status.mp3.startsWith('http') ? status.mp3 : `${baseUrl}${status.mp3}`;
-      }
-      
-      // Update meters if available
-      if (status.input && status.input.lufs !== undefined) {
-        inputLufs.textContent = `${status.input.lufs.toFixed(1)}`;
-      }
-      if (status.output && status.output.lufs !== undefined) {
-        outputLufs.textContent = `${status.output.lufs.toFixed(1)}`;
-        lufsDisplay.textContent = `${status.output.lufs.toFixed(1)} LUFS`;
-      }
-      if (status.output && status.output.truePeak !== undefined) {
-        peakDisplay.textContent = `${status.output.truePeak.toFixed(1)} dB`;
-        const peakPercent = Math.min(100, Math.max(0, (status.output.truePeak + 10) * 10));
-        peakBar.style.width = `${peakPercent}%`;
-      }
-      if (status.gain !== undefined) {
-        gainDisplay.textContent = `${status.gain > 0 ? '+' : ''}${status.gain.toFixed(1)} dB`;
-      }
-      
-      if (audioUrl) {
-        playWav(audioUrl);
-      }
-      
-      statusBar.className = 'status-bar';
-      statusText.textContent = `✅ Mastered with ${selectedPreset} preset`;
-      downloadReady.classList.add('show');
-      downloadWav.disabled = false;
-      downloadMp3.disabled = false;
-      
-      setTimeout(() => {
-        loadUsageStats();
-      }, 500);
-      
-      masterBtn.disabled = false;
-      masterBtn.innerHTML = '<span>🎛️</span> Master';
-      return;
-    }
-
-    if (status.status === "failed") {
-      statusBar.className = 'status-bar error';
-      statusText.textContent = `❌ ${status.error || 'Mastering failed'}`;
-      masterBtn.disabled = false;
-      masterBtn.innerHTML = '<span>🎛️</span> Master';
-      alert("❌ Mastering failed");
-      return;
-    }
-
-    // ⏳ still processing
-    statusText.textContent = status.message || '🔄 Processing...';
-    setTimeout(() => pollMasteringJob(jobId), 3000);
-
-  } catch (err) {
-    console.error("Polling error:", err);
-    statusText.textContent = '🔄 Checking status... (retrying)';
-    setTimeout(() => pollMasteringJob(jobId), 3000);
-  }
-}
-
-// ✅ Play audio (ONLY WHEN READY)
-function playWav(audioUrl) {
-  try {
-    // Load mastered audio for playback
-    fetch(audioUrl)
-      .then(response => response.arrayBuffer())
-      .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer.slice(0)))
-      .then(buffer => {
-        masteredBuffer = buffer;
-        if (playbackMode === 'after') {
-          drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-        }
-        console.log('✅ Mastered audio loaded for preview');
-      })
-      .catch(audioErr => {
-        console.warn('Could not load mastered audio for preview:', audioErr);
-      });
-  } catch (err) {
-    console.warn('Error playing audio:', err);
-  }
-}
-
-// OLD CODE REMOVED - All code that accessed data.wav, result.wav, or response.wav has been removed
-// The button handler now only starts polling and never accesses wav directly
+// ✅ Mastering logic moved to mastering.js (clean async implementation)
+// Old mastering code removed - see mastering.js for the clean rewrite
 
 // Download with progress
 async function downloadFile(url, filename, progressEl, button) {
