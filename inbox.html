@@ -1205,8 +1205,9 @@
         const currentUserId = getCurrentUserId();
         const token = getAuthToken();
 
-        // POST /api/messages - Backend expects sender_id, recipient_id, content
-        const response = await fetch(`${API_BASE_URL}/api/messages`, {
+        // Use the same endpoint format as loadConversationMessages
+        // POST /api/conversations/:userId1/:userId2/messages
+        const response = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${currentConversationUserId}/messages`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1215,7 +1216,8 @@
           body: JSON.stringify({
             sender_id: currentUserId,
             recipient_id: currentConversationUserId,
-            content: messageText
+            content: messageText,
+            conversation_id: currentConversationId
           })
         });
 
@@ -1225,8 +1227,8 @@
           if (newMessage.sender_id && !newMessage.senderId) {
             newMessage.senderId = newMessage.sender_id;
           }
-          conversationMessages.push(newMessage);
-          renderConversationMessages();
+          
+          // Clear input immediately for better UX
           input.value = '';
           input.style.height = 'auto';
           
@@ -1237,6 +1239,7 @@
           loadMessages();
         } else {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Send message error:', errorData);
           alert(`Failed to send message: ${errorData.error || response.statusText}`);
         }
       } catch (error) {
