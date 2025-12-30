@@ -4,7 +4,7 @@
   "description": "Audio City - Music Community & Mastering Platform",
   "main": "index.html",
   "scripts": {
-    "build": "npm run sync",
+    "build": "echo 'Static site - no build needed'",
     "sync": "npx cap sync",
     "android": "npx cap open android",
     "android:build": "npx cap sync && cd android && ./gradlew assembleDebug",
