@@ -2671,6 +2671,9 @@ masterBtn.addEventListener('click', async () => {
     // Start polling for progress if progressId or jobId is provided
     if (data.progressId || data.jobId) {
       progressId = data.progressId || data.jobId;
+      statusText.textContent = '🔄 Starting mastering process...';
+      // Start polling immediately, then continue every 500ms
+      pollProgress(progressId).catch(err => console.warn('Initial poll error:', err));
       progressInterval = setInterval(async () => {
         const progress = await pollProgress(progressId);
         if (progress && progress.status === 'complete') {
@@ -2679,12 +2682,16 @@ masterBtn.addEventListener('click', async () => {
             const resultRes = await fetch(`${API}/mastering-result/${progressId}`);
             if (resultRes.ok) {
               const result = await resultRes.json();
-              if (result.success) {
+              if (result.success && result.downloads) {
                 masterResult = result;
                 // Use API base URL for downloads (remove /api suffix for static file serving)
                 const baseUrl = API.replace('/api', '');
-                downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
-                downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
+                if (result.downloads.wav) {
+                  downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
+                }
+                if (result.downloads.mp3) {
+                  downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
+                }
                 // Use 16-bit preview WAV for browser playback (if available)
                 if (result.downloads.preview) {
                   downloadUrls.preview = `${baseUrl}${result.downloads.preview}`;
@@ -2826,6 +2833,8 @@ masterBtn.addEventListener('click', async () => {
           }
         }
       }, 500); // Poll every 500ms
+      // Return early - don't try to access downloads yet, polling will handle it
+      return;
     } else if (data.downloads && data.downloads.wav) {
       // Old format - direct response (backward compatibility)
       masterResult = data;
