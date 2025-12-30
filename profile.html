@@ -1204,6 +1204,9 @@
     // Helper function to update profile picture display
     function updateProfilePicture(imageSrc) {
       if (imageSrc) {
+        // Force HTTPS to avoid mixed-content blocks
+        imageSrc = imageSrc.replace(/^http:\/\//i, 'https://');
+        
         // Update main profile avatar
         const avatarEl = document.querySelector('#profileAvatar img');
         const placeholder = document.querySelector('#profileAvatar > div');

@@ -1205,6 +1205,10 @@
             if (avatar && avatar.startsWith('/uploads/')) {
               avatar = `${API_BASE_URL}${avatar}`;
             }
+            // Force HTTPS for any http avatar URLs to avoid mixed-content blocks
+            if (avatar && avatar.startsWith('http://')) {
+              avatar = avatar.replace('http://', 'https://');
+            }
           }
       } catch (error) {
           console.error('Failed to load profile picture from API:', error);
@@ -1214,6 +1218,10 @@
       // Fallback to localStorage if API didn't return an avatar
       if (!avatar) {
         avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+      }
+      // Upgrade any cached http avatar URLs to https (avoid mixed content)
+      if (avatar && avatar.startsWith('http://')) {
+        avatar = avatar.replace('http://', 'https://');
       }
       
       // Update header image
