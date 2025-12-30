@@ -1,0 +1,176 @@
+# VERIFY CACHE FIX - How to Check if Correct Files are Loaded
+
+## The Problem
+Even after fixing the code, you might still see the `.wav` error because:
+1. Browser is serving cached JavaScript
+2. Cloudflare is serving cached files
+3. Rocket Loader is caching/transforming scripts
+4. You're editing the wrong file
+
+## Solution: Verification Logs
+
+I've added verification logs to confirm the correct files are loaded.
+
+### What to Look For
+
+When you load the page, open browser console (F12) and you should see:
+
+```
+🔥 ACTIVE FILE CONFIRMED - mastering.html loaded
+🔥 ACTIVE FILE CONFIRMED - mastering.js v20241230-4 loaded
+🎛️ Mastering module initialized
+```
+
+### If You DON'T See These Logs:
+
+❌ **Wrong file is being loaded** - Check:
+1. Are you editing the correct file?
+2. Is the file deployed to the server?
+3. Is Cloudflare serving cached files?
+
+### If You DO See These Logs:
+
+✅ **Correct file is loaded** - But error still appears:
+1. Check for other `.wav` accesses in console
+2. Look at the exact line number in the error
+3. Check if there's inline JavaScript in HTML causing issues
+
+---
+
+## Step-by-Step Verification
+
+### Step 1: Hard Refresh
+1. Open browser console (F12)
+2. Go to **Network** tab
+3. **CHECK** "Disable cache" checkbox
+4. Hard refresh: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows)
+
+### Step 2: Check Console
+Look for these messages in order:
+1. `🔥 ACTIVE FILE CONFIRMED - mastering.html loaded`
+2. `🔥 ACTIVE FILE CONFIRMED - mastering.js v20241230-4 loaded`
+3. `🎛️ Mastering module initialized`
+
+### Step 3: Check Network Tab
+1. Look for `mastering.js?v=20241230-4` in the Network tab
+2. Click on it
+3. Check **Response** tab - should show the verification log at the top
+4. If you see old code without the log → **CACHED FILE**
+
+### Step 4: Check File Version
+In the Network tab, the URL should be:
+```
+mastering.js?v=20241230-4
+```
+
+If you see:
+- `mastering.js` (no version) → **CACHED**
+- `mastering.js?v=20241230-3` → **OLD VERSION**
+- `mastering.js?v=20241230-4` → **CORRECT VERSION** ✅
+
+---
+
+## If Still Seeing Error After Verification Logs
+
+### Check 1: Inline JavaScript
+Even though we moved code to `mastering.js`, there might be inline code in HTML:
+1. Search `mastering.html` for any remaining `.wav` access
+2. Check for any `<script>` tags with inline code
+3. Look for event handlers that access `.wav`
+
+### Check 2: Other JavaScript Files
+Check if other JS files are loaded:
+1. Network tab → Filter by "JS"
+2. Look for other `.js` files
+3. Check if any of them access `.wav`
+
+### Check 3: Rocket Loader
+Rocket Loader can transform scripts:
+1. Disable Rocket Loader in Cloudflare dashboard
+2. Test again
+3. If error disappears → Rocket Loader is the issue
+
+---
+
+## Quick Test Commands
+
+### In Browser Console:
+```javascript
+// Check if mastering.js is loaded
+console.log(typeof window.getWavUrl); // Should be "function"
+
+// Check if old code exists
+console.log(typeof window.pollMasteringJob); // Should be "function" (new code)
+
+// Check downloadUrls structure
+console.log(window.downloadUrls); // Should have 'audioFile', not 'wav'
+```
+
+### Expected Results:
+- ✅ `getWavUrl` exists → New code loaded
+- ✅ `pollMasteringJob` exists → New code loaded
+- ✅ `downloadUrls` has `audioFile` property → New code loaded
+- ❌ `downloadUrls.wav` exists → OLD CODE STILL LOADED
+
+---
+
+## Force Fresh Load
+
+### Method 1: Clear All Caches
+1. Cloudflare Dashboard → Caching → Purge Everything
+2. Browser → Clear browsing data → All time
+3. Hard refresh: `Cmd+Shift+R`
+
+### Method 2: Incognito Mode
+1. Open incognito/private window
+2. Load the page
+3. Check console for verification logs
+
+### Method 3: Add Random Parameter
+Add to URL:
+```
+https://audiocity-ug.com/mastering?nocache=1234567890
+```
+
+---
+
+## What the Verification Logs Do
+
+1. **`🔥 ACTIVE FILE CONFIRMED - mastering.html loaded`**
+   - Confirms HTML file is loaded
+   - Shows in console immediately when HTML loads
+
+2. **`🔥 ACTIVE FILE CONFIRMED - mastering.js v20241230-4 loaded`**
+   - Confirms JavaScript file is loaded
+   - Shows version number to verify correct file
+   - Appears when `mastering.js` executes
+
+3. **`🎛️ Mastering module initialized`**
+   - Confirms the mastering module initialized correctly
+   - Appears when the module's `init()` function runs
+
+---
+
+## If Verification Logs Don't Appear
+
+This means:
+- ❌ File is not being loaded
+- ❌ Wrong file is being loaded
+- ❌ Cache is serving old file
+- ❌ File path is incorrect
+
+**Fix:**
+1. Check file exists on server
+2. Purge Cloudflare cache
+3. Verify file path in HTML
+4. Check browser console for 404 errors
+
+---
+
+## Summary
+
+✅ **If you see all 3 verification logs** → Correct files loaded
+❌ **If you don't see verification logs** → Wrong/cached files loaded
+
+The verification logs are your **smoke test** - if they don't appear, the fix hasn't been deployed yet!
+
