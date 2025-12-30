@@ -21,7 +21,30 @@
         var token = localStorage.getItem('auth_token');
         var userId = localStorage.getItem('user_id');
         var isLoggedIn = !!(token && userId);
-        console.log('🔍 [Feed] Early auth check - token:', !!token, 'userId:', userId, 'isLoggedIn:', isLoggedIn);
+        
+        // DEBUG: Log ALL localStorage items
+        console.log('🔍 [Feed] Early auth check:', {
+          token: !!token,
+          tokenValue: token ? token.substring(0, 20) + '...' : null,
+          userId: userId,
+          isLoggedIn: isLoggedIn,
+          allLocalStorage: {
+            auth_token: !!localStorage.getItem('auth_token'),
+            user_id: localStorage.getItem('user_id'),
+            user_name: localStorage.getItem('user_name'),
+            username: localStorage.getItem('username'),
+            user_email: localStorage.getItem('user_email'),
+            is_admin: localStorage.getItem('is_admin')
+          }
+        });
+        
+        if (!token) {
+          console.error('❌ [Feed] NO TOKEN in localStorage!');
+        }
+        if (!userId) {
+          console.error('❌ [Feed] NO USER_ID in localStorage! This is why you appear logged out!');
+          console.error('❌ [Feed] Fix: Login must set user_id. Check login.html response handling.');
+        }
         
         if (isLoggedIn) {
           document.documentElement.classList.add('user-logged-in');

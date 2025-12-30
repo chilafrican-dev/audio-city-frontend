@@ -376,16 +376,52 @@
         statusEl.className = 'status success';
         statusEl.textContent = '✅ Login successful! Redirecting...';
         
-        // Save session - store ALL user data
-        if (data.token) {
-          localStorage.setItem('auth_token', data.token);
-          console.log('✅ Token stored:', data.token.substring(0, 20) + '...');
+        // CRITICAL: Save token FIRST
+        if (!data.token) {
+          throw new Error('No token received from server');
         }
-        if (data.user) {
-          if (data.user.id) {
-            localStorage.setItem('user_id', data.user.id);
-            console.log('✅ User ID stored:', data.user.id);
+        localStorage.setItem('auth_token', data.token);
+        console.log('✅ Token stored:', data.token.substring(0, 20) + '...');
+        
+        // CRITICAL: Save user_id - MUST exist for auth to work
+        let userId = null;
+        if (data.user && data.user.id) {
+          userId = data.user.id;
+        } else if (data.user_id) {
+          userId = data.user_id;
+        } else {
+          // Fallback: Try to get user_id from token validation
+          console.warn('⚠️ No user_id in response, attempting to fetch from /api/auth/validate');
+          try {
+            const validateRes = await fetch(`${API_BASE_URL}/api/auth/validate`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${data.token}`
+              }
+            });
+            if (validateRes.ok) {
+              const validateData = await validateRes.json();
+              if (validateData.user && validateData.user.id) {
+                userId = validateData.user.id;
+                console.log('✅ User ID fetched from validate endpoint:', userId);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to fetch user_id from validate:', e);
           }
+        }
+        
+        if (!userId) {
+          console.error('❌ CRITICAL: No user_id available! Response was:', data);
+          throw new Error('Login successful but user ID not available. Please contact support.');
+        }
+        
+        // Save user_id - CRITICAL for auth to work
+        localStorage.setItem('user_id', userId);
+        console.log('✅ User ID stored:', userId);
+        
+        // Save other user data
+        if (data.user) {
           if (data.user.user_type) localStorage.setItem('user_type', data.user.user_type);
           if (data.user.name) localStorage.setItem('user_name', data.user.name);
           if (data.user.username) localStorage.setItem('username', data.user.username);
@@ -398,10 +434,18 @@
           }
         }
         
-        // Verify storage
+        // Verify storage - BOTH must exist
         const storedToken = localStorage.getItem('auth_token');
         const storedUserId = localStorage.getItem('user_id');
         console.log('✅ Verification - Token:', !!storedToken, 'User ID:', storedUserId);
+        
+        if (!storedToken || !storedUserId) {
+          console.error('❌ CRITICAL: Storage verification failed!', {
+            token: !!storedToken,
+            userId: !!storedUserId
+          });
+          throw new Error('Failed to save login credentials. Please try again.');
+        }
         
         // Redirect based on user type
         setTimeout(() => {
