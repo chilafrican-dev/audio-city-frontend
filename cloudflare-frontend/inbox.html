@@ -576,6 +576,11 @@
 
     // Open chat with user
     async function openChat(userId) {
+      if (!userId) {
+        console.error('No user ID provided to openChat');
+        return;
+      }
+      
       currentChatUserId = userId;
       currentConversationId = getConversationId(currentUserId, userId);
 
@@ -586,34 +591,48 @@
 
       // Mark conversation as active
       document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
-      event.target.closest('.conversation-item')?.classList.add('active');
+      if (event && event.target) {
+        event.target.closest('.conversation-item')?.classList.add('active');
+      }
+
+      // Set loading state
+      document.getElementById('chatName').textContent = 'Loading...';
+      document.getElementById('chatAvatar').innerHTML = '👤';
 
       // Load user info
       try {
+        console.log('Fetching user data for:', userId);
         const res = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+        console.log('User API response status:', res.status);
+        
         if (res.ok) {
           const user = await res.json();
-          console.log('Loaded user data:', user); // Debug log
+          console.log('Loaded user data:', user);
+          console.log('Available fields:', Object.keys(user));
           
-          // Try all possible name fields
-          const userName = user.name || user.full_name || user.username || user.display_name || 'User';
+          // Try all possible name fields (check in order of preference)
+          const userName = user.name || user.full_name || user.display_name || user.username || 'User';
+          console.log('Selected user name:', userName);
           document.getElementById('chatName').textContent = userName;
           
           // Try all possible avatar fields and force HTTPS
           const avatar = document.getElementById('chatAvatar');
           let avatarUrl = user.profile_image_url || user.avatar_url || user.profile_image || user.avatar || null;
+          console.log('Avatar URL:', avatarUrl);
           
           if (avatarUrl) {
             // Force HTTPS for avatar URLs
             if (avatarUrl.startsWith('http://')) {
               avatarUrl = avatarUrl.replace('http://', 'https://');
             }
-            avatar.innerHTML = `<img src="${avatarUrl}" alt="${userName}" onerror="this.parentElement.innerHTML='👤'">`;
+            avatar.innerHTML = `<img src="${avatarUrl}" alt="${userName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="console.error('Avatar load failed'); this.parentElement.innerHTML='👤'">`;
           } else {
+            console.log('No avatar URL found for user');
             avatar.innerHTML = '👤';
           }
         } else {
-          console.error('Failed to load user:', res.status, res.statusText);
+          const errorText = await res.text();
+          console.error('Failed to load user:', res.status, res.statusText, errorText);
           document.getElementById('chatName').textContent = 'User';
         }
       } catch (e) {
