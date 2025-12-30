@@ -1492,7 +1492,7 @@ export default {
     if (url.pathname === '/api/quick-master' && request.method === 'POST') {
       try {
         // Proxy request to VPS mastering server
-        // Note: If VPS is only HTTP, Cloudflare Workers can still connect, but HTTPS is preferred
+        // Note: Cloudflare Workers can make HTTP requests, but may have connectivity issues
         const MASTERING_SERVER_URL = env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001';
         const formData = await request.formData();
         
@@ -1501,13 +1501,24 @@ export default {
         const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15 minutes timeout
         
         try {
+          console.log('Proxying mastering request to:', MASTERING_SERVER_URL);
           const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/quick-master`, {
             method: 'POST',
             body: formData,
-            signal: controller.signal
+            signal: controller.signal,
+            // Add headers to help with connection
+            headers: {
+              'User-Agent': 'AudioCity-Worker/1.0'
+            }
           });
           
           clearTimeout(timeoutId);
+          
+          if (!masteringResponse.ok) {
+            const errorText = await masteringResponse.text().catch(() => 'Unknown error');
+            console.error('Mastering server error:', masteringResponse.status, errorText);
+            throw new Error(`Mastering server returned ${masteringResponse.status}: ${errorText.substring(0, 200)}`);
+          }
           
           // Get response data
           const contentType = masteringResponse.headers.get('content-type') || '';
@@ -1533,9 +1544,17 @@ export default {
           );
         } catch (fetchError) {
           clearTimeout(timeoutId);
+          console.error('Mastering fetch error:', fetchError.name, fetchError.message);
+          
           if (fetchError.name === 'AbortError') {
             throw new Error('Mastering request timed out. The file may be too large or the server is taking too long.');
           }
+          
+          // Check for specific network errors
+          if (fetchError.message.includes('fetch failed') || fetchError.message.includes('network') || fetchError.message.includes('ECONNREFUSED')) {
+            throw new Error('Cannot connect to mastering server. The server may be offline or unreachable from Cloudflare Workers. Please ensure the VPS server is accessible.');
+          }
+          
           throw fetchError;
         }
       } catch (error) {
@@ -1543,7 +1562,8 @@ export default {
         return Response.json({
           success: false,
           error: 'Failed to connect to mastering server',
-          message: error.message || 'Mastering service is temporarily unavailable. Please try again later.'
+          message: error.message || 'Mastering service is temporarily unavailable. Please try again later.',
+          details: error.name || 'Unknown error'
         }, { status: 503, headers: corsHeaders });
       }
     }

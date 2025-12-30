@@ -20,6 +20,7 @@ bucket_name = "audio-city-tracks"
 [vars]
 # Set these in Cloudflare Dashboard or use secrets:
 # GOOGLE_CLIENT_ID = "your-google-client-id"
+# MASTERING_SERVER_URL = "https://xxxx-xxxx.trycloudflare.com"  # Cloudflare Tunnel URL for mastering server
 
 # Routes - handle all requests to api.audiocity-ug.com
 routes = [

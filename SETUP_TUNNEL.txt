@@ -1,0 +1,38 @@
+# Quick Setup: Cloudflare Tunnel for Mastering Server
+# Run these commands on your VPS (168.119.241.59)
+
+# Step 1: Install cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+chmod +x /usr/local/bin/cloudflared
+
+# Step 2: Start tunnel (quick method - temporary URL)
+# Run this and copy the URL it gives you:
+cloudflared tunnel --url http://localhost:3001
+
+# The output will show something like:
+# +--------------------------------------------------------------------------------------------+
+# |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+# |  https://xxxx-xxxx.trycloudflare.com                                                      |
+# +--------------------------------------------------------------------------------------------+
+
+# Step 3: Copy that URL and set it in Cloudflare Dashboard:
+# 1. Go to: https://dash.cloudflare.com
+# 2. Workers & Pages → audio-city-api-d1
+# 3. Settings → Variables and Secrets
+# 4. Add Environment Variable:
+#    Name: MASTERING_SERVER_URL
+#    Value: https://xxxx-xxxx.trycloudflare.com (use the URL from step 2)
+
+# Step 4: Keep tunnel running (use screen or tmux):
+screen -S tunnel
+cloudflared tunnel --url http://localhost:3001
+# Press Ctrl+A then D to detach
+
+# OR run in background:
+nohup cloudflared tunnel --url http://localhost:3001 > /var/log/tunnel.log 2>&1 &
+
+# To check if it's running:
+ps aux | grep cloudflared
+
+# To view logs:
+tail -f /var/log/tunnel.log
