@@ -13,6 +13,21 @@
     // PWA functionality is optional, app works fine without it
     // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
+  <script>
+    // CRITICAL: Check auth state IMMEDIATELY and add class to html element
+    // This runs SYNCHRONOUSLY before CSS is applied, so visibility is correct from the start
+    (function() {
+      var token = localStorage.getItem('auth_token');
+      var userId = localStorage.getItem('user_id');
+      if (token && userId) {
+        // User is logged in - add class to document element immediately
+        document.documentElement.classList.add('user-logged-in');
+        console.log('🔐 Auth: User logged in (token + userId found)');
+      } else {
+        console.log('🔓 Auth: User NOT logged in');
+      }
+    })();
+  </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -40,6 +55,17 @@
       --shadow: rgba(0, 0, 0, 0.4);
       --glass: rgba(255, 255, 255, 0.05);
     }
+    
+    /* AUTH UI - CSS-based visibility control (faster than JavaScript) */
+    /* Default state: show logged-out buttons, hide logged-in buttons */
+    .auth-logged-out { display: inline-block !important; }
+    .auth-logged-in { display: none !important; }
+    
+    /* When html has 'user-logged-in' class, flip visibility */
+    html.user-logged-in .auth-logged-out { display: none !important; }
+    html.user-logged-in .auth-logged-in { display: inline-block !important; }
+    html.user-logged-in .profile-btn.auth-logged-in { display: flex !important; }
+    html.user-logged-in #inboxNavLink { display: inline-block !important; }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -1067,16 +1093,16 @@
             <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
       </div>
         </div>
-        <a href="inbox.html" class="nav-item" id="inboxNavLink" style="display: none !important;">Inbox</a>
+        <a href="inbox.html" class="nav-item auth-logged-in" id="inboxNavLink">Inbox</a>
       </nav>
       <div class="nav-right">
         <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
         <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
-        <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
-        <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
-        <a href="artist-corner.html" class="header-btn btn-upload" id="uploadBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s;">🎵 Create</a>
-        <button id="signOutBtn" style="display: none; padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
-        <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative;">
+        <a href="login.html" class="header-btn btn-signin auth-logged-out" id="signInBtn" style="padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create auth-logged-out" id="signUpBtn" style="padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <a href="artist-corner.html" class="header-btn btn-upload auth-logged-in" id="uploadBtn" style="padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s;">🎵 Create</a>
+        <button id="signOutBtn" class="auth-logged-in" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
+        <div class="profile-btn auth-logged-in" id="profileBtn" style="position: relative;">
           <a href="profile.html" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer;">
             <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
             <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px; pointer-events: none;">👤</div>
