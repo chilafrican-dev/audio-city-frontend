@@ -57,7 +57,7 @@
       audioContext: window.audioContext,
       masteredBuffer: window.masteredBuffer,
       playbackMode: window.playbackMode || 'after',
-      downloadUrls: window.downloadUrls || { wav: null, mp3: null },
+      downloadUrls: window.downloadUrls || { audioFile: null, mp3: null }, // Use 'audioFile' instead of 'wav'
       isPlaying: window.isPlaying,
       stopPlayback: window.stopPlayback,
       drawWaveform: window.drawWaveform,
