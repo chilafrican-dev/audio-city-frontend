@@ -2687,9 +2687,15 @@ masterBtn.addEventListener('click', async () => {
       console.log('Mastering response received:', data);
       
       // 🚫 GUARD: Prevent any wav access if data or data.wav doesn't exist
+      // This catches the case where wav is accessed before it's available
       if (!data || !data.wav) {
         console.log("🎵 Mastering in progress...");
-        // Don't return here - continue to check for jobId
+        // If we have jobId, this is expected (async flow) - continue
+        // If we don't have jobId, return early to prevent errors
+        if (!data || !data.jobId) {
+          return;
+        }
+        // If we have jobId, continue with async flow
       }
       
       // 🚫 ABSOLUTE RULE: If we have jobId, wav DOES NOT EXIST - DO NOT ACCESS IT
