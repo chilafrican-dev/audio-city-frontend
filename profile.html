@@ -808,9 +808,9 @@
       }
       
       // Settings button
-      const settingsBtn = document.getElementById('settingsBtn');
-      if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
+      const settingsButton = document.getElementById('settingsBtn'); // Renamed variable
+      if (settingsButton) {
+        settingsButton.addEventListener('click', () => {
           window.location.href = 'settings.html';
         });
       }
@@ -828,7 +828,7 @@
       const followBtn = document.getElementById('followBtn');
       const reportBtn = document.getElementById('reportBtn');
       const messageBtn = document.getElementById('messageBtn');
-      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsButton = document.getElementById('settingsBtn');
       
       // Check if user is admin
       const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
@@ -836,7 +836,7 @@
       if (isOwnProfile) {
         // Own profile: Show edit and settings, hide follow/report/message
         if (editProfileBtn) editProfileBtn.style.display = 'block';
-        if (settingsBtn) settingsBtn.style.display = 'flex';
+        if (settingsButton) settingsButton.style.display = 'flex';
         if (followBtn) followBtn.style.display = 'none';
         if (reportBtn) reportBtn.style.display = 'none';
         if (messageBtn) messageBtn.style.display = 'none';
@@ -844,7 +844,7 @@
         // Other user's profile: Show follow/report/message, hide edit and settings
         if (followBtn) followBtn.style.display = 'block';
         if (editProfileBtn) editProfileBtn.style.display = 'none';
-        if (settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none'; // Only admins can see settings on other profiles
+        if (settingsButton) settingsButton.style.display = isAdmin ? 'flex' : 'none'; // Only admins can see settings on other profiles
         if (reportBtn) reportBtn.style.display = 'block';
         if (messageBtn) messageBtn.style.display = 'inline-flex';
       }
