@@ -629,7 +629,11 @@ export default {
         }, { headers: corsHeaders });
       } catch (error) {
         console.error('Login error:', error);
-        return Response.json({ error: 'Login failed' }, 
+        console.error('Error details:', error.message, error.stack);
+        return Response.json({ 
+          error: 'Login failed',
+          details: error.message || 'Unknown error'
+        }, 
           { status: 500, headers: corsHeaders });
       }
     }
