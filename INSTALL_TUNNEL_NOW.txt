@@ -1,0 +1,43 @@
+# INSTALL CLOUDFLARE TUNNEL - COPY & PASTE THIS ON VPS
+
+# Method 1: Direct install (if you have terminal access)
+curl -L https://raw.githubusercontent.com/chilafrican-dev/audio-city-frontend/main/install-tunnel.sh | bash
+
+# Method 2: Manual install (copy each command)
+# ============================================
+
+# Install cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+chmod +x /usr/local/bin/cloudflared
+
+# Create service
+cat > /etc/systemd/system/mastering-tunnel.service << 'EOF'
+[Unit]
+Description=Cloudflare Tunnel for Mastering Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:3001
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Start service
+systemctl daemon-reload
+systemctl enable mastering-tunnel.service
+systemctl start mastering-tunnel.service
+
+# Wait and get URL
+sleep 5
+journalctl -u mastering-tunnel.service -n 50 | grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1
+
+# ============================================
+# The URL will be shown above - copy it and set in Cloudflare Dashboard
+

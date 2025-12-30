@@ -1,0 +1,37 @@
+# ============================================
+# COPY AND PASTE THESE COMMANDS ON YOUR VPS
+# Server: 168.119.241.59
+# ============================================
+
+# 1. Install cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
+
+# 2. Create systemd service
+cat > /etc/systemd/system/mastering-tunnel.service << 'SERVICE_EOF'
+[Unit]
+Description=Cloudflare Tunnel for Mastering Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:3001
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+# 3. Start the service
+systemctl daemon-reload && systemctl enable mastering-tunnel.service && systemctl start mastering-tunnel.service
+
+# 4. Wait 5 seconds and get the tunnel URL
+sleep 5 && journalctl -u mastering-tunnel.service -n 50 | grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1
+
+# ============================================
+# The URL above is your tunnel URL
+# Copy it and set MASTERING_SERVER_URL in Cloudflare Dashboard
+# ============================================
