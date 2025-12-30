@@ -2559,14 +2559,34 @@ masterBtn.addEventListener('click', async () => {
     let progressInterval = null; // Declare at function scope
     
     // ✅ Polling function - replaces direct wav access
+    // Step 2: poll /api/master-status/:jobId
+    // Step 3: retrieve wav URL once ready
     const pollMastering = async (jobId) => {
       try {
         const res = await fetch(`${API}/master-status/${jobId}`);
         const status = await res.json();
         console.log("Mastering status:", status);
+        
+        // ✅ 2. Log the exact object that's being checked
+        console.log("Mastering result object:", status);
+        console.log("Status properties:", {
+          status: status?.status,
+          wav: status?.wav,
+          hasWav: !!status?.wav,
+          fullObject: status
+        });
 
-        if (status.status === "completed" && status.wav) {
-          // ✅ NOW we have wav - set download URLs and play
+        // ✅ 1. Validate objects before access
+        if (status.status === "completed") {
+          if (!status || !status.wav) {
+            console.error("❌ Mastered WAV file not available yet:", status);
+            statusText.textContent = '⏳ WAV file is being prepared...';
+            // Retry after 3 seconds
+            setTimeout(() => pollMastering(jobId), 3000);
+            return;
+          }
+          
+          // ✅ NOW we have validated wav - set download URLs and play
           const baseUrl = API.replace('/api', '');
           downloadUrls.wav = status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`;
           if (status.mp3) {
@@ -2590,8 +2610,14 @@ masterBtn.addEventListener('click', async () => {
             gainDisplay.textContent = `${status.gain > 0 ? '+' : ''}${status.gain.toFixed(1)} dB`;
           }
           
-          // ✅ Play or download WAV only when ready
-          playWav(downloadUrls.wav);
+          // ✅ 4. Fail gracefully in UI code
+          try {
+            // ✅ Play or download WAV only when ready
+            playWav(downloadUrls.wav);
+          } catch (playErr) {
+            console.error("Playback failed:", playErr);
+            statusText.textContent = "✅ Mastering complete (playback unavailable)";
+          }
           
           statusBar.className = 'status-bar';
           statusText.textContent = `✅ Mastered with ${selectedPreset} preset`;
@@ -2624,6 +2650,8 @@ masterBtn.addEventListener('click', async () => {
 
       } catch (err) {
         console.error("Polling error:", err);
+        // ✅ 4. Fail gracefully - show user message instead of crashing
+        statusText.textContent = '🔄 Checking status... (retrying)';
         // Retry on error
         setTimeout(() => pollMastering(jobId), 3000);
       }
