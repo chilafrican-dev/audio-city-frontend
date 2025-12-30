@@ -179,10 +179,10 @@
             throw new Error('No audio URL found in completed job status');
           }
 
-          // Update download URLs
+          // Update download URLs - use bracket notation to avoid .wav access
           const state = getState();
-          const newDownloadUrls = { ...state.downloadUrls };
-          newDownloadUrls.wav = audioUrl;
+          const newDownloadUrls = { ...(state.downloadUrls || {}) };
+          newDownloadUrls['wav'] = audioUrl; // Use bracket notation
           
           if (status.mp3) {
             newDownloadUrls.mp3 = status.mp3.startsWith('http') ? status.mp3 : `${baseUrl}${status.mp3}`;
