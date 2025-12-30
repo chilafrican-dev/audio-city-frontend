@@ -1,0 +1,237 @@
+# MANUAL DEPLOYMENT GUIDE - Step by Step
+
+## Option 1: Cloudflare Pages - Direct Upload (FASTEST - 5 minutes)
+
+### Step 1: Prepare Files
+```bash
+cd "/Users/nicopan/online master"
+
+# Make sure all files are committed
+git status
+
+# If not committed, commit them:
+git add .
+git commit -m "Deploy latest changes with mastering.js fix"
+git push
+```
+
+### Step 2: Go to Cloudflare Dashboard
+1. Visit: https://dash.cloudflare.com
+2. Log in to your account
+3. Select domain: **audiocity-ug.com** (or your account)
+4. Click **"Pages"** in left sidebar
+
+### Step 3: Create/Update Project
+**If project doesn't exist:**
+1. Click **"Create a project"**
+2. Choose **"Upload assets"** (direct upload)
+3. Name: `audio-city` or `audiocity-ug`
+
+**If project exists:**
+1. Click on your project name
+2. Go to **"Deployments"** tab
+3. Click **"Upload assets"** button
+
+### Step 4: Upload Files
+**Method A: Drag & Drop (Easiest)**
+1. Open Finder
+2. Navigate to: `/Users/nicopan/online master`
+3. Select ALL files and folders (Cmd+A)
+4. Drag and drop into Cloudflare upload area
+5. Click **"Deploy site"**
+
+**Method B: Zip Upload**
+```bash
+# Create zip file
+cd "/Users/nicopan/online master"
+zip -r audio-city-deploy.zip . -x "*.git*" -x "*.DS_Store" -x "node_modules/*"
+```
+Then upload the zip file to Cloudflare Pages.
+
+### Step 5: Wait for Deployment
+- Wait 30-60 seconds
+- You'll see deployment status
+- When complete, site is live!
+
+### Step 6: Purge Cache
+1. Go to **"Caching"** → **"Configuration"**
+2. Click **"Purge Everything"**
+3. Wait 2-3 minutes
+
+---
+
+## Option 2: Cloudflare Pages - GitHub Integration (AUTO-DEPLOY)
+
+### Step 1: Push to GitHub
+```bash
+cd "/Users/nicopan/online master"
+
+# Check if already connected
+git remote -v
+
+# If not connected, add remote:
+git remote add origin https://github.com/chilafrican-dev/audio-city-frontend.git
+
+# Push latest code
+git push origin main
+```
+
+### Step 2: Connect Cloudflare to GitHub
+1. Go to Cloudflare Pages
+2. Click **"Create a project"**
+3. Choose **"Connect to Git"**
+4. Authorize GitHub
+5. Select repository: **audio-city-frontend**
+6. Configure:
+   - **Framework preset**: None
+   - **Build command**: (leave empty)
+   - **Build output directory**: `/` (root)
+7. Click **"Save and Deploy"**
+
+### Step 3: Auto-Deploy Setup
+- Every `git push` will auto-deploy
+- Check deployment status in Cloudflare dashboard
+- Each deployment gets a unique URL
+
+---
+
+## Option 3: Wrangler CLI (Command Line)
+
+### Step 1: Install Wrangler
+```bash
+npm install -g wrangler
+```
+
+### Step 2: Login
+```bash
+wrangler login
+```
+This opens browser to authorize.
+
+### Step 3: Deploy
+```bash
+cd "/Users/nicopan/online master"
+
+# Deploy to Pages
+wrangler pages deploy . --project-name=audio-city
+
+# Or if using config file:
+wrangler pages deploy . --project-name=audio-city --compatibility-date=2024-01-01
+```
+
+### Step 4: Verify
+```bash
+# Check deployment status
+wrangler pages deployment list --project-name=audio-city
+```
+
+---
+
+## Option 4: Manual File Upload via FTP/SFTP
+
+### Step 1: Get FTP Credentials
+If you have FTP access to your hosting:
+- Host: (from your hosting provider)
+- Username: (from your hosting provider)
+- Password: (from your hosting provider)
+- Port: 21 (FTP) or 22 (SFTP)
+
+### Step 2: Upload Files
+**Using FileZilla (Free):**
+1. Download: https://filezilla-project.org
+2. Connect using credentials
+3. Navigate to web root (usually `/public_html` or `/www`)
+4. Upload all files from `/Users/nicopan/online master`
+
+**Using Terminal (SFTP):**
+```bash
+cd "/Users/nicopan/online master"
+sftp username@your-server.com
+# Enter password when prompted
+put -r * /path/to/web/root/
+```
+
+---
+
+## Option 5: Netlify (Alternative - Also Free)
+
+### Step 1: Go to Netlify
+1. Visit: https://www.netlify.com
+2. Sign up/Log in (free)
+
+### Step 2: Deploy
+1. Click **"Add new site"** → **"Deploy manually"**
+2. Drag & drop your `online master` folder
+3. Wait 30 seconds
+4. Done! Get URL like: `https://your-site-123.netlify.app`
+
+### Step 3: Custom Domain (Optional)
+1. Go to **"Domain settings"**
+2. Add custom domain: `audiocity-ug.com`
+3. Update DNS as instructed
+
+---
+
+## VERIFICATION CHECKLIST
+
+After deployment, verify:
+
+✅ [ ] Site loads at your domain
+✅ [ ] `mastering.js` file is accessible (check Network tab)
+✅ [ ] Console shows: `🎛️ Mastering module initialized`
+✅ [ ] No `.wav` errors in console
+✅ [ ] Mastering feature works
+✅ [ ] Cloudflare cache purged
+
+---
+
+## TROUBLESHOOTING
+
+### Files Not Updating?
+1. **Purge Cloudflare cache** (Caching → Purge Everything)
+2. **Hard refresh browser** (Cmd+Shift+R)
+3. **Check deployment logs** in Cloudflare dashboard
+4. **Verify files uploaded** (check Network tab for file requests)
+
+### 404 Errors?
+- Make sure `mastering.js` is in root directory
+- Check file paths in HTML (should be `mastering.js` not `/mastering.js`)
+- Verify all files uploaded correctly
+
+### Still Seeing Old Code?
+1. Clear browser cache completely
+2. Test in incognito mode
+3. Check Cloudflare cache TTL settings
+4. Wait 5-10 minutes for CDN propagation
+
+---
+
+## QUICK DEPLOY COMMAND (All-in-One)
+
+```bash
+cd "/Users/nicopan/online master"
+
+# Commit and push
+git add .
+git commit -m "Deploy latest with mastering.js fix"
+git push origin main
+
+# If using Wrangler CLI:
+wrangler pages deploy . --project-name=audio-city
+
+# Then purge cache in Cloudflare dashboard
+```
+
+---
+
+## RECOMMENDED: Use GitHub + Cloudflare Pages
+
+This gives you:
+- ✅ Auto-deploy on every push
+- ✅ Version history
+- ✅ Easy rollbacks
+- ✅ Free hosting
+- ✅ Global CDN
+
+Just connect your GitHub repo to Cloudflare Pages once, then every `git push` auto-deploys!
+
