@@ -1720,21 +1720,28 @@
       }
     }
     
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializePage);
-    } else {
-      // DOM already loaded
+    // Wait for DOM to be ready - only initialize once
+    let initialized = false;
+    function initOnce() {
+      if (initialized) return;
+      initialized = true;
       initializePage();
     }
     
-    // Also listen for window load as backup
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initOnce);
+    } else {
+      // DOM already loaded
+      initOnce();
+    }
+    
+    // Also listen for window load as backup - but only if not already initialized
     window.addEventListener('load', () => {
-      if (!profileUserId) {
+      if (!initialized && !profileUserId) {
         // Retry loading if profileUserId wasn't set yet
         profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
         if (profileUserId) {
-          loadProfile();
+          initOnce();
         }
       }
     });
