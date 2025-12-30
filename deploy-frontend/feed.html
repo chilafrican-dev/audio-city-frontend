@@ -1075,6 +1075,7 @@
         <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
         <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
         <a href="artist-corner.html" class="header-btn btn-upload" id="uploadBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s;">🎵 Create</a>
+        <button id="signOutBtn" style="display: none; padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
         <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative;">
           <a href="profile.html" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer;">
             <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
@@ -1243,6 +1244,7 @@
       const profileBtn = document.getElementById('profileBtn');
       const uploadBtn = document.getElementById('uploadBtn');
       const inboxNavLink = document.getElementById('inboxNavLink');
+      const signOutBtn = document.getElementById('signOutBtn');
       
       console.log('Auth state:', { authToken: !!authToken, userId });
       
@@ -1266,6 +1268,9 @@
           inboxNavLink.style.cssText = 'display: inline-block !important; visibility: visible !important;';
           inboxNavLink.classList.add('show');
         }
+        if (signOutBtn) {
+          signOutBtn.style.cssText = 'display: inline-block !important; visibility: visible !important;';
+        }
         // Update profile picture
         updateHeaderProfilePicture();
       } else {
@@ -1287,6 +1292,9 @@
         if (inboxNavLink) {
           inboxNavLink.style.cssText = 'display: none !important; visibility: hidden !important;';
           inboxNavLink.classList.remove('show');
+        }
+        if (signOutBtn) {
+          signOutBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
         }
       }
     }
@@ -1332,12 +1340,14 @@
         const profileBtn = document.getElementById('profileBtn');
         const uploadBtn = document.getElementById('uploadBtn');
         const inboxNavLink = document.getElementById('inboxNavLink');
+        const signOutBtn = document.getElementById('signOutBtn');
         if (hasToken && hasUser) {
           if (signInBtn) signInBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
           if (signUpBtn) signUpBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
           if (profileBtn) profileBtn.style.cssText = 'display: flex !important; visibility: visible !important; position: relative;';
           if (uploadBtn) uploadBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;';
           if (inboxNavLink) inboxNavLink.style.cssText = 'display: inline-block !important; visibility: visible !important;';
+          if (signOutBtn) signOutBtn.style.cssText = 'display: inline-block !important; visibility: visible !important;';
         }
       } catch (e) {
         console.warn('forceAuthUI fallback failed', e);
