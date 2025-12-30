@@ -1590,7 +1590,7 @@
         }
         
         // Check authentication before upload
-        const authToken = localStorage.getItem('auth_token');
+        let authToken = localStorage.getItem('auth_token');
         const userId = localStorage.getItem('user_id');
         
         // Get API base URL
@@ -1601,6 +1601,40 @@
         if (!authToken || !userId) {
           showAuthModal();
           return;
+        }
+        
+        // Validate and auto-renew token before upload
+        try {
+          const validateUrl = `${API_BASE_URL}/api/auth/validate${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`;
+          const validateResponse = await fetch(validateUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            }
+          });
+          
+          if (validateResponse.ok) {
+            const validateData = await validateResponse.json();
+            if (validateData.valid && validateData.user) {
+              // If token was renewed, update it
+              if (validateData.token && validateData.renewed) {
+                console.log('🔄 Token auto-renewed before upload');
+                authToken = validateData.token;
+                localStorage.setItem('auth_token', authToken);
+              }
+            } else {
+              // Token invalid - show auth modal
+              console.warn('Token validation failed, showing auth modal');
+              showAuthModal();
+              return;
+            }
+          } else {
+            // Validation request failed - try upload anyway (might be network issue)
+            console.warn('Token validation request failed, proceeding with upload');
+          }
+        } catch (validateError) {
+          // Validation request failed - try upload anyway (might be network issue)
+          console.warn('Token validation error, proceeding with upload:', validateError);
         }
         
         if (!audioFile.files || !audioFile.files[0]) {
@@ -3193,6 +3227,11 @@
   
   <!-- Moderation System -->
   <script src="js/moderation-system.js"></script>
+  <script src="js/moderation-ui.js"></script>
+  <script src="js/moderation-integration.js"></script>
+</body>
+</html>
+
   <script src="js/moderation-ui.js"></script>
   <script src="js/moderation-integration.js"></script>
 </body>
