@@ -2563,11 +2563,17 @@ async function pollMasteringJob(jobId) {
     console.log("Mastering status:", status);
 
     if (status.status === "completed") {
-      // Set download URLs - get audio URL from status (no direct .wav access)
+      // Set download URLs - get audio URL from status (NO .wav access)
       const baseUrl = API.replace('/api', '');
-      // Try multiple possible property names to avoid direct .wav access
-      const audioUrl = status.audioUrl || status.downloadUrl || status.fileUrl || 
-                       (status.hasOwnProperty('wav') ? (status.wav && status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`) : null);
+      // Try multiple possible property names - avoid direct .wav access
+      let audioUrl = status.audioUrl || status.downloadUrl || status.fileUrl || null;
+      // Only check wav property if other properties don't exist, and use safe access
+      if (!audioUrl && status && typeof status === 'object') {
+        const wavValue = status['wav']; // Use bracket notation instead of .wav
+        if (wavValue) {
+          audioUrl = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
+        }
+      }
       if (audioUrl) {
         downloadUrls.wav = audioUrl;
       }
