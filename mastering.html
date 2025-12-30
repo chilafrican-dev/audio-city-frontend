@@ -2007,14 +2007,14 @@ function updatePlayhead() {
 
 function startPlayback() {
   // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
-  // Prefer preview WAV (16-bit), then MP3, then 24-bit WAV
+  // Prefer preview, then MP3, then mastered file
   if (playbackMode === 'after' && !masteredBuffer) {
     const audioUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
     console.log('Using HTML5 audio for mastered playback:', audioUrl);
     console.log('Available URLs:', downloadUrls);
     
     if (audioUrl) {
-      // Use HTML5 audio element for mastered playback (Web Audio API can't decode 24-bit WAV)
+      // Use HTML5 audio element for mastered playback
       if (!masteredAudioElement || masteredAudioElement.src !== audioUrl) {
         masteredAudioElement = new Audio(audioUrl);
         masteredAudioElement.preload = 'auto';
@@ -2539,7 +2539,6 @@ masterBtn.addEventListener('click', async () => {
     const data = await response.json();
     console.log("Mastering response:", data);
 
-    // 🚫 DO NOT TOUCH data.wav
     if (!data.success || !data.jobId) {
       throw new Error(data.error || data.message || "Mastering request failed");
     }
@@ -2566,7 +2565,8 @@ async function pollMasteringJob(jobId) {
     if (status.status === "completed" && status.wav) {
       // Set download URLs
       const baseUrl = API.replace('/api', '');
-      downloadUrls.wav = status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`;
+      const wavUrl = status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`;
+      downloadUrls.wav = wavUrl;
       if (status.mp3) {
         downloadUrls.mp3 = status.mp3.startsWith('http') ? status.mp3 : `${baseUrl}${status.mp3}`;
       }
@@ -2588,7 +2588,7 @@ async function pollMasteringJob(jobId) {
         gainDisplay.textContent = `${status.gain > 0 ? '+' : ''}${status.gain.toFixed(1)} dB`;
       }
       
-      playWav(status.wav);
+      playWav(wavUrl);
       
       statusBar.className = 'status-bar';
       statusText.textContent = `✅ Mastered with ${selectedPreset} preset`;
@@ -2626,10 +2626,10 @@ async function pollMasteringJob(jobId) {
 }
 
 // ✅ Play audio (ONLY WHEN READY)
-function playWav(wavUrl) {
+function playWav(audioUrl) {
   try {
     // Load mastered audio for playback
-    fetch(wavUrl)
+    fetch(audioUrl)
       .then(response => response.arrayBuffer())
       .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer.slice(0)))
       .then(buffer => {
@@ -2643,7 +2643,7 @@ function playWav(wavUrl) {
         console.warn('Could not load mastered audio for preview:', audioErr);
       });
   } catch (err) {
-    console.warn('Error playing WAV:', err);
+    console.warn('Error playing audio:', err);
   }
 }
 
