@@ -513,11 +513,17 @@
         if (!otherUserId || otherUserId === currentUserId) continue;
         
         if (!grouped.has(otherUserId)) {
+          // Only show unread if message was received by logged-in user (not sent by them)
+          // Check API's is_unread flag, or fallback to checking receiver_id
+          const isUnread = conv.is_unread === true || 
+            (conv.read === 0 && conv.receiver_id === currentUserId);
+          
           grouped.set(otherUserId, {
             otherId: otherUserId,
             lastMessage: conv.last_message || conv.text || conv.content || '',
             lastTime: conv.created_at || conv.updated_at || '',
-            unread: conv.read === 0 || conv.read === false,
+            unread: isUnread,
+            unreadCount: conv.unread_count || (isUnread ? 1 : 0),
             name: conv.sender_name || conv.name || null,
             avatar: conv.sender_avatar || conv.avatar || conv.profile_image_url || null
           });
@@ -567,7 +573,7 @@
           </div>
           <div style="text-align: right;">
             <div class="conversation-time">${formatTime(conv.lastTime)}</div>
-            ${conv.unread ? '<span class="unread-badge">1</span>' : ''}
+            ${conv.unread && conv.unreadCount > 0 ? `<span class="unread-badge">${conv.unreadCount > 99 ? '99+' : conv.unreadCount}</span>` : ''}
           </div>
         </div>
       `;

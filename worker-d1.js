@@ -1328,6 +1328,8 @@ export default {
         for (const msg of (messages.results || [])) {
           const otherUserId = msg.other_user_id;
           if (!conversationsMap.has(otherUserId)) {
+            // Only mark as unread if the message was received by the logged-in user (not sent by them)
+            const isUnread = msg.read === 0 && msg.receiver_id === userId;
             conversationsMap.set(otherUserId, {
               id: otherUserId,
               conversation_id: msg.conversation_id || `${[userId, otherUserId].sort().join('_')}`,
@@ -1335,6 +1337,7 @@ export default {
               receiver_id: msg.receiver_id,
               last_message: msg.last_message,
               read: msg.read,
+              is_unread: isUnread, // Only true if received by logged-in user and unread
               created_at: msg.created_at,
               sender_name: msg.sender_name,
               sender_avatar: msg.sender_avatar,
@@ -1344,7 +1347,19 @@ export default {
           }
         }
         
+        // Count unread messages for each conversation
         const conversations = Array.from(conversationsMap.values());
+        for (const conv of conversations) {
+          const convId = conv.conversation_id || `${[userId, conv.id].sort().join('_')}`;
+          const unreadCount = await env.DB.prepare(`
+            SELECT COUNT(*) as count 
+            FROM messages 
+            WHERE conversation_id = ? AND receiver_id = ? AND read = 0
+          `).bind(convId, userId).first();
+          conv.unread_count = unreadCount?.count || 0;
+          conv.is_unread = conv.unread_count > 0;
+        }
+        
         console.log(`Found ${conversations.length} conversations for user ${userId}`);
         return Response.json(conversations, { headers: corsHeaders });
       } catch (e) {
