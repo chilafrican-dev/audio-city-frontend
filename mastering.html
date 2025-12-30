@@ -2757,7 +2757,7 @@ masterBtn.addEventListener('click', async () => {
     console.log('⏳ WAV will be available after polling - DO NOT access it now!');
     console.log('🚫 Safety check - data.wav:', data.wav, 'data.downloads:', data.downloads);
     
-    // 🚫 FINAL SAFETY: Double-check no wav properties exist
+    // 🚫 FINAL SAFETY: Double-check no wav properties exist and remove them
     if (data.wav !== undefined) {
       console.error('❌ CRITICAL ERROR: data.wav exists when it should not! Removing...');
       delete data.wav;
@@ -2766,10 +2766,17 @@ masterBtn.addEventListener('click', async () => {
       console.error('❌ CRITICAL ERROR: data.downloads exists when it should not! Removing...');
       delete data.downloads;
     }
+    // Also check for result.wav
+    if (data.result && data.result.wav !== undefined) {
+      console.error('❌ CRITICAL ERROR: data.result.wav exists when it should not! Removing...');
+      delete data.result;
+    }
     
-    // Start polling for job status - jobId is guaranteed to exist here
-    // This MUST return immediately - no code below should execute
-    if (jobId) {
+    // 🚫 ABSOLUTE RULE: If we have jobId, we MUST start polling and return
+    // NO CODE BELOW THIS POINT SHOULD EXECUTE WHEN jobId EXISTS
+    // Wrap in try-catch to catch any accidental wav access
+    try {
+      if (jobId) {
       statusText.textContent = '🔄 Starting mastering process...';
       
       // Start checking job status immediately, then continue every 5 seconds
