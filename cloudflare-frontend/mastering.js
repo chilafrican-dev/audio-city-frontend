@@ -82,7 +82,19 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
     async function submitMasteringJob() {
       const state = getState();
       
-      if (!state.currentFile) {
+      // Check multiple sources for the file
+      let fileToUse = state.currentFile;
+      if (!fileToUse) {
+        // Fallback: check the audioInput element directly
+        const audioInput = document.getElementById('audioInput');
+        if (audioInput && audioInput.files && audioInput.files[0]) {
+          fileToUse = audioInput.files[0];
+          // Update state for next time
+          window.currentFile = fileToUse;
+        }
+      }
+      
+      if (!fileToUse) {
         alert('Please upload an audio file first');
         return null;
       }
@@ -101,11 +113,11 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
 
       try {
         const formData = new FormData();
-        formData.append('audio', state.currentFile);
+        formData.append('audio', fileToUse);
         formData.append('preset', state.selectedPreset);
 
         console.log('📤 Submitting mastering job...', {
-          file: state.currentFile.name,
+          file: fileToUse.name,
           preset: state.selectedPreset
         });
 
