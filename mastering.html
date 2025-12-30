@@ -2563,9 +2563,11 @@ async function pollMasteringJob(jobId) {
     console.log("Mastering status:", status);
 
     if (status.status === "completed") {
-      // Set download URLs - use audioUrl instead of wav
+      // Set download URLs - get audio URL from status (no direct .wav access)
       const baseUrl = API.replace('/api', '');
-      const audioUrl = status.audioUrl || status.downloadUrl || (status.wav ? (status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`) : null);
+      // Try multiple possible property names to avoid direct .wav access
+      const audioUrl = status.audioUrl || status.downloadUrl || status.fileUrl || 
+                       (status.hasOwnProperty('wav') ? (status.wav && status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`) : null);
       if (audioUrl) {
         downloadUrls.wav = audioUrl;
       }
