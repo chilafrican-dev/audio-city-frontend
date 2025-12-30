@@ -2516,6 +2516,9 @@ afterBtn.addEventListener('click', () => {
 masterBtn.addEventListener('click', async () => {
   if (!currentFile) return;
   
+  // 🚫 GLOBAL SAFETY: Flag to prevent any wav access before polling completes
+  let jobIdReceived = false;
+  
   const backendOk = await checkBackend();
   if (!backendOk) {
     statusBar.className = 'status-bar error';
