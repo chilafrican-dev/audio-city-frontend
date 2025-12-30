@@ -1622,15 +1622,16 @@
                 authToken = validateData.token;
                 localStorage.setItem('auth_token', authToken);
               }
+              console.log('✅ Token validated successfully');
             } else {
-              // Token invalid - show auth modal
-              console.warn('Token validation failed, showing auth modal');
-              showAuthModal();
-              return;
+              // Token validation returned invalid, but user might still be logged in
+              // Don't block upload - let the backend decide if token is valid
+              console.warn('⚠️ Token validation returned invalid, but proceeding with upload (backend will validate)');
+              // Continue with upload - backend will return 401 if token is truly invalid
             }
           } else {
             // Validation request failed - try upload anyway (might be network issue)
-            console.warn('Token validation request failed, proceeding with upload');
+            console.warn('⚠️ Token validation request failed, proceeding with upload (backend will validate)');
           }
         } catch (validateError) {
           // Validation request failed - try upload anyway (might be network issue)
