@@ -3,8 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Inbox — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script data-cfasync="false">
+    // CRITICAL: Check auth state IMMEDIATELY - data-cfasync="false" prevents Cloudflare Rocket Loader from deferring this
+    (function() {
+      function checkAuth() {
+        var token = localStorage.getItem('auth_token');
+        var userId = localStorage.getItem('user_id');
+        var isLoggedIn = !!(token && userId);
+        console.log('🔍 [Inbox] Early auth check - token:', !!token, 'userId:', userId, 'isLoggedIn:', isLoggedIn);
+        
+        if (isLoggedIn) {
+          document.documentElement.classList.add('user-logged-in');
+          console.log('🔐 [Inbox] Auth: User logged in - added user-logged-in class');
+        } else {
+          document.documentElement.classList.remove('user-logged-in');
+          console.log('🔓 [Inbox] Auth: User NOT logged in - removed class');
+        }
+      }
+      
+      // Run immediately
+      checkAuth();
+      
+      // Run again after tiny delays to catch race conditions
+      setTimeout(checkAuth, 10);
+      setTimeout(checkAuth, 100);
+    })();
+  </script>
   <style>
     * {
       margin: 0;
@@ -432,9 +461,14 @@
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
 
-    let currentUserId = localStorage.getItem('user_id');
+    // Check auth - must have BOTH token and user_id
+    const authToken = localStorage.getItem('auth_token');
+    const userId = localStorage.getItem('user_id');
+    let currentUserId = (authToken && userId) ? userId : null;
     let currentChatUserId = null;
     let currentConversationId = null;
+    
+    console.log('🔍 [Inbox] Auth check on load:', { hasToken: !!authToken, hasUserId: !!userId, currentUserId });
 
     // Generate conversation ID (sorted for consistency)
     function getConversationId(userId1, userId2) {
@@ -463,7 +497,13 @@
 
     // Load conversations
     async function loadConversations() {
+      // Re-check auth on every load (in case it changed)
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      currentUserId = (authToken && userId) ? userId : null;
+      
       if (!currentUserId) {
+        console.log('❌ [Inbox] No auth - showing login prompt');
         document.getElementById('conversationsList').innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">🔒</div>
@@ -473,6 +513,8 @@
         `;
         return;
       }
+      
+      console.log('✅ [Inbox] Auth OK, loading conversations for user:', currentUserId);
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/users/${currentUserId}/messages`, {

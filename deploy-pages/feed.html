@@ -16,16 +16,27 @@
   <script data-cfasync="false">
     // CRITICAL: Check auth state IMMEDIATELY - data-cfasync="false" prevents Cloudflare Rocket Loader from deferring this
     (function() {
-      var token = localStorage.getItem('auth_token');
-      var userId = localStorage.getItem('user_id');
-      console.log('🔍 Early auth check - token:', !!token, 'userId:', userId);
-      if (token && userId) {
-        document.documentElement.classList.add('user-logged-in');
-        console.log('🔐 Auth: User logged in - added user-logged-in class to <html>');
-      } else {
-        document.documentElement.classList.remove('user-logged-in');
-        console.log('🔓 Auth: User NOT logged in - no class added');
+      function checkAuth() {
+        var token = localStorage.getItem('auth_token');
+        var userId = localStorage.getItem('user_id');
+        var isLoggedIn = !!(token && userId);
+        console.log('🔍 [Feed] Early auth check - token:', !!token, 'userId:', userId, 'isLoggedIn:', isLoggedIn);
+        
+        if (isLoggedIn) {
+          document.documentElement.classList.add('user-logged-in');
+          console.log('🔐 [Feed] Auth: User logged in - added user-logged-in class');
+        } else {
+          document.documentElement.classList.remove('user-logged-in');
+          console.log('🔓 [Feed] Auth: User NOT logged in - removed class');
+        }
       }
+      
+      // Run immediately
+      checkAuth();
+      
+      // Run again after a tiny delay to catch any race conditions
+      setTimeout(checkAuth, 10);
+      setTimeout(checkAuth, 100);
     })();
   </script>
   <meta name="theme-color" content="#8b5cf6" />
@@ -1475,6 +1486,10 @@
         localStorage.removeItem('profile_image_url');
         localStorage.removeItem('bio');
         localStorage.removeItem('location');
+        // Remove the class immediately
+        document.documentElement.classList.remove('user-logged-in');
+        // Force UI update
+        forceAuthUI();
         window.location.href = 'index.html';
       }
     };
