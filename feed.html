@@ -1329,35 +1329,145 @@
       updateAuthUI();
     }
     
-    // Auth UI updated on page load - no need for polling
-    // Fallback: force auth UI after load to avoid any Rocket Loader timing issues
+    // Aggressive auth UI update with multiple fallbacks
     function forceAuthUI() {
       try {
         const hasToken = !!localStorage.getItem('auth_token');
         const hasUser = !!localStorage.getItem('user_id');
+        console.log('forceAuthUI running:', { hasToken, hasUser });
+        
         const signInBtn = document.getElementById('signInBtn');
         const signUpBtn = document.getElementById('signUpBtn');
         const profileBtn = document.getElementById('profileBtn');
         const uploadBtn = document.getElementById('uploadBtn');
         const inboxNavLink = document.getElementById('inboxNavLink');
         const signOutBtn = document.getElementById('signOutBtn');
+        
+        console.log('Elements found:', { signInBtn: !!signInBtn, signUpBtn: !!signUpBtn, profileBtn: !!profileBtn, uploadBtn: !!uploadBtn, signOutBtn: !!signOutBtn });
+        
         if (hasToken && hasUser) {
-          if (signInBtn) signInBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
-          if (signUpBtn) signUpBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
-          if (profileBtn) profileBtn.style.cssText = 'display: flex !important; visibility: visible !important; position: relative;';
-          if (uploadBtn) uploadBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;';
-          if (inboxNavLink) inboxNavLink.style.cssText = 'display: inline-block !important; visibility: visible !important;';
-          if (signOutBtn) signOutBtn.style.cssText = 'display: inline-block !important; visibility: visible !important;';
+          // User is logged in - hide sign in/up, show everything else
+          if (signInBtn) {
+            signInBtn.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+            signInBtn.setAttribute('hidden', 'true');
+          }
+          if (signUpBtn) {
+            signUpBtn.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+            signUpBtn.setAttribute('hidden', 'true');
+          }
+          if (profileBtn) {
+            profileBtn.style.cssText = 'display: flex !important; visibility: visible !important; position: relative;';
+            profileBtn.removeAttribute('hidden');
+          }
+          if (uploadBtn) {
+            uploadBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;';
+            uploadBtn.removeAttribute('hidden');
+          }
+          if (inboxNavLink) {
+            inboxNavLink.style.cssText = 'display: inline-block !important; visibility: visible !important;';
+            inboxNavLink.removeAttribute('hidden');
+          }
+          if (signOutBtn) {
+            signOutBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;';
+            signOutBtn.removeAttribute('hidden');
+            // Ensure click handler is attached
+            if (!signOutBtn.dataset.listenerAttached) {
+              signOutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.signOut) {
+                  window.signOut();
+                } else {
+                  // Fallback if signOut not defined yet
+                  if (confirm('Are you sure you want to sign out?')) {
+                    localStorage.clear();
+                    window.location.href = 'feed.html';
+                  }
+                }
+              });
+              signOutBtn.dataset.listenerAttached = 'true';
+            }
+            console.log('Sign out button shown');
+          }
+        } else {
+          // User is NOT logged in - show sign in/up, hide everything else
+          if (signInBtn) {
+            signInBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;';
+            signInBtn.removeAttribute('hidden');
+          }
+          if (signUpBtn) {
+            signUpBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;';
+            signUpBtn.removeAttribute('hidden');
+          }
+          if (profileBtn) {
+            profileBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
+            profileBtn.setAttribute('hidden', 'true');
+          }
+          if (uploadBtn) {
+            uploadBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
+            uploadBtn.setAttribute('hidden', 'true');
+          }
+          if (inboxNavLink) {
+            inboxNavLink.style.cssText = 'display: none !important; visibility: hidden !important;';
+            inboxNavLink.setAttribute('hidden', 'true');
+          }
+          if (signOutBtn) {
+            signOutBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
+            signOutBtn.setAttribute('hidden', 'true');
+          }
         }
       } catch (e) {
-        console.warn('forceAuthUI fallback failed', e);
+        console.error('forceAuthUI failed', e);
       }
     }
+    
+    // Run immediately
+    forceAuthUI();
+    
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        forceAuthUI();
+        setTimeout(forceAuthUI, 100);
+        setTimeout(forceAuthUI, 500);
+      });
+    } else {
+      forceAuthUI();
+      setTimeout(forceAuthUI, 100);
+      setTimeout(forceAuthUI, 500);
+    }
+    
+    // Run on window load
     if (document.readyState === 'complete') {
       setTimeout(forceAuthUI, 150);
+      setTimeout(forceAuthUI, 1000);
     } else {
-      window.addEventListener('load', () => setTimeout(forceAuthUI, 150));
+      window.addEventListener('load', () => {
+        setTimeout(forceAuthUI, 150);
+        setTimeout(forceAuthUI, 1000);
+      });
     }
+    
+    // Watch for DOM changes (Rocket Loader might inject scripts)
+    if (typeof MutationObserver !== 'undefined') {
+      const observer = new MutationObserver(() => {
+        forceAuthUI();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+      // Stop observing after 5 seconds to avoid performance issues
+      setTimeout(() => observer.disconnect(), 5000);
+    }
+    
+    // Last resort: check every 2 seconds for first 10 seconds
+    let checkCount = 0;
+    const intervalId = setInterval(() => {
+      forceAuthUI();
+      checkCount++;
+      if (checkCount >= 5) {
+        clearInterval(intervalId);
+      }
+    }, 2000);
     
     // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
