@@ -2686,41 +2686,27 @@ masterBtn.addEventListener('click', async () => {
       data = await res.json();
       console.log('Mastering response received:', data);
       
-      // 🚫 GUARD: Prevent any wav access if data or data.wav doesn't exist
-      // This catches the case where wav is accessed before it's available
-      if (!data || !data.wav) {
-        console.log("🎵 Mastering in progress...");
-        // If we have jobId, this is expected (async flow) - continue
-        // If we don't have jobId, return early to prevent errors
-        if (!data || !data.jobId) {
-          return;
-        }
-        // If we have jobId, continue with async flow
+      // ✅ CORRECT: After quick-master response
+      // 🚫 DO NOT TOUCH data.wav here - it doesn't exist yet!
+      console.log("Mastering response:", data);
+      
+      // Validate response - must have success and jobId
+      if (!data.success || !data.jobId) {
+        throw new Error(data.error || data.message || "Mastering request failed");
       }
       
-      // 🚫 ABSOLUTE RULE: If we have jobId, wav DOES NOT EXIST - DO NOT ACCESS IT
-      // This prevents ANY code from trying to access data.wav, data.downloads.wav, or any wav property
-      if (data && data.jobId) {
-        // This is an async job - wav will come later via polling
-        // DO NOT access data.wav or data.downloads.wav here - it will crash!
-        console.log('✅ Async job detected, jobId:', data.jobId);
-        console.log('⏳ WAV will be available after polling - DO NOT access it now!');
-        
-        // Remove any wav-related properties to prevent accidental access
-        if (data.wav) {
-          console.warn('⚠️ WARNING: data.wav exists but we have jobId - removing to prevent crash');
-          delete data.wav;
-        }
-        if (data.downloads) {
-          console.warn('⚠️ WARNING: data.downloads exists but we have jobId - removing to prevent crash');
-          delete data.downloads;
-        }
-        // Also check for any nested wav properties
-        if (data.result && data.result.wav) {
-          console.warn('⚠️ WARNING: data.result.wav exists but we have jobId - removing to prevent crash');
-          delete data.result;
-        }
-      }
+      // ✅ Start polling instead of trying to access wav
+      // Use the existing checkJob function but call it pollMastering for clarity
+      const jobId = data.jobId;
+      statusText.textContent = '🔄 Starting mastering process...';
+      
+      // Start polling immediately
+      pollMastering(jobId);
+      
+      // Return immediately - polling handles everything
+      masterBtn.disabled = false;
+      masterBtn.innerHTML = '<span>🎛️</span> Master';
+      return;
     } else {
       // If not JSON, try to parse anyway but handle errors
       const text = await res.text();
@@ -2764,71 +2750,9 @@ masterBtn.addEventListener('click', async () => {
       throw new Error(data.error || data.message || 'Mastering job failed');
     }
     
-    // ✅ CRITICAL: We have jobId - wav will come later via polling
-    // DO NOT access data.wav, data.downloads.wav, or any wav property here
-    // It will crash because wav doesn't exist yet!
-    const jobId = data.jobId;
-    jobIdReceived = true; // Set flag to prevent any wav access
-    console.log('✅ Job submitted successfully, jobId:', jobId);
-    console.log('⏳ WAV will be available after polling - DO NOT access it now!');
-    console.log('🚫 Safety check - data.wav:', data.wav, 'data.downloads:', data.downloads);
-    console.log('🚫 jobIdReceived flag set to true - any wav access will be blocked');
-    
-    // 🚫 FINAL SAFETY: Double-check no wav properties exist and remove them
-    if (data.wav !== undefined) {
-      console.error('❌ CRITICAL ERROR: data.wav exists when it should not! Removing...');
-      delete data.wav;
-    }
-    if (data.downloads !== undefined) {
-      console.error('❌ CRITICAL ERROR: data.downloads exists when it should not! Removing...');
-      delete data.downloads;
-    }
-    // Also check for result.wav
-    if (data.result && data.result.wav !== undefined) {
-      console.error('❌ CRITICAL ERROR: data.result.wav exists when it should not! Removing...');
-      delete data.result;
-    }
-    
-    // 🚫 ABSOLUTE RULE: If we have jobId, we MUST start polling and return
-    // NO CODE BELOW THIS POINT SHOULD EXECUTE WHEN jobId EXISTS
-    // Wrap in try-catch to catch any accidental wav access
-    try {
-      if (jobId) {
-      statusText.textContent = '🔄 Starting mastering process...';
-      
-      // Start checking job status immediately, then continue every 5 seconds
-      checkJob(jobId).catch(err => {
-        console.warn('Initial job check error:', err);
-        statusText.textContent = '🔄 Checking status...';
-      });
-      
-      progressInterval = setInterval(async () => {
-        try {
-          const result = await checkJob(jobId);
-          if (result && result.complete) {
-            // Job is complete, interval will be cleared in checkJob
-            clearInterval(progressInterval);
-            progressInterval = null;
-          }
-        } catch (err) {
-          console.error('Job polling error:', err);
-          clearInterval(progressInterval);
-          progressInterval = null;
-          statusBar.className = 'status-bar error';
-          statusText.textContent = `❌ ${err.message || 'Mastering failed'}`;
-          masterBtn.disabled = false;
-          masterBtn.innerHTML = '<span>🎛️</span> Master';
-        }
-      }, 4000); // Poll every 4 seconds
-      
-      // 🚫 CRITICAL: Return immediately - do NOT execute any code below
-      // The polling will handle setting downloadUrls when the job completes
-      // If we continue, code below might try to access data.wav which DOES NOT EXIST
-      masterBtn.disabled = false;
-      masterBtn.innerHTML = '<span>🎛️</span> Master';
-      console.log('✅ Returning immediately - polling will handle wav when ready');
-      return; // Exit function immediately - polling handles completion
-    }
+    // ✅ We already handled the response above and started polling
+    // This code should never execute - we returned above
+    // But keeping it here for safety/backward compatibility
     
     // 🚫 SAFETY: Only execute this block if we DON'T have a jobId (old sync format)
     // If we have jobId, we should have returned above - this should NEVER execute with jobId
