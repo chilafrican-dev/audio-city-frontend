@@ -2682,13 +2682,31 @@ masterBtn.addEventListener('click', async () => {
           try {
             const resultRes = await fetch(`${API}/mastering-result/${progressId}`);
             if (resultRes.ok) {
-              const result = await resultRes.json();
-              console.log('Mastering result received:', result);
+              let result;
+              try {
+                result = await resultRes.json();
+                console.log('Mastering result received:', result);
+              } catch (parseErr) {
+                console.error('Failed to parse result JSON:', parseErr);
+                const text = await resultRes.text();
+                console.error('Response text:', text);
+                throw new Error('Invalid response from mastering server');
+              }
+              
+              if (!result) {
+                console.error('Result is null or undefined');
+                throw new Error('Empty result from mastering server');
+              }
+              
               if (result.success) {
                 // Check if downloads exist before accessing
                 if (!result.downloads) {
-                  console.error('Result missing downloads:', result);
+                  console.error('Result missing downloads object. Full result:', JSON.stringify(result, null, 2));
                   statusText.textContent = '⚠️ Mastering complete but downloads not available. Please try again.';
+                  clearInterval(progressInterval);
+                  progressInterval = null;
+                  masterBtn.disabled = false;
+                  masterBtn.innerHTML = '<span>🎛️</span> Master';
                   return;
                 }
                 masterResult = result;
@@ -2696,13 +2714,15 @@ masterBtn.addEventListener('click', async () => {
                 const baseUrl = API.replace('/api', '');
                 if (result.downloads && result.downloads.wav) {
                   downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
+                  console.log('WAV URL set:', downloadUrls.wav);
                 } else {
-                  console.warn('WAV download URL missing in result');
+                  console.warn('WAV download URL missing in result.downloads:', result.downloads);
                 }
                 if (result.downloads && result.downloads.mp3) {
                   downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
+                  console.log('MP3 URL set:', downloadUrls.mp3);
                 } else {
-                  console.warn('MP3 download URL missing in result');
+                  console.warn('MP3 download URL missing in result.downloads:', result.downloads);
                 }
                 // Use 16-bit preview WAV for browser playback (if available)
                 if (result.downloads && result.downloads.preview) {
