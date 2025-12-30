@@ -184,7 +184,7 @@
           // Update download URLs - use bracket notation to avoid .wav access
           const state = getState();
           const newDownloadUrls = { ...(state.downloadUrls || {}) };
-          newDownloadUrls['wav'] = audioUrl; // Use bracket notation
+          newDownloadUrls['audioFile'] = audioUrl; // Use 'audioFile' property name, NOT 'wav'
           
           if (status.mp3) {
             newDownloadUrls.mp3 = status.mp3.startsWith('http') ? status.mp3 : `${baseUrl}${status.mp3}`;
