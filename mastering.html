@@ -2507,6 +2507,7 @@ beforeBtn.addEventListener('click', () => {
 
 afterBtn.addEventListener('click', () => {
   playbackMode = 'after';
+  window.playbackMode = playbackMode; // Sync for mastering.js
   afterBtn.classList.add('active');
   beforeBtn.classList.remove('active');
   const currentModeEl = document.getElementById('currentMode');
