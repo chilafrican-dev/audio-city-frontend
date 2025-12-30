@@ -2562,7 +2562,8 @@ masterBtn.addEventListener('click', async () => {
           const status = await res.json();
           console.log('Job status check:', status);
           
-          if (status.success && status.wav) {
+          // Check status according to the async job pattern
+          if (status.status === "completed" && status.wav) {
             // Job is complete and WAV is available
             clearInterval(progressInterval);
             progressInterval = null;
@@ -2622,13 +2623,13 @@ masterBtn.addEventListener('click', async () => {
             masterBtn.innerHTML = '<span>🎛️</span> Master';
             
             return { success: true, complete: true };
-          } else if (status.error) {
+          } else if (status.status === "failed") {
             // Job failed
             clearInterval(progressInterval);
             progressInterval = null;
             throw new Error(status.error || 'Mastering failed');
           } else {
-            // Still processing
+            // Still processing - don't try to access wav yet
             statusText.textContent = status.message || '🔄 Processing...';
             return { success: false, complete: false };
           }
@@ -2750,7 +2751,7 @@ masterBtn.addEventListener('click', async () => {
           masterBtn.disabled = false;
           masterBtn.innerHTML = '<span>🎛️</span> Master';
         }
-      }, 5000); // Poll every 5 seconds (as per user's example)
+      }, 4000); // Poll every 4 seconds
       // Return early - don't try to access downloads yet, polling will handle it
       return;
     } else if (data.downloads && data.downloads.wav) {
