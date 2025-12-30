@@ -557,7 +557,7 @@
           ? `<img src="${conv.avatar}" alt="${escapeHtml(conv.name || 'User')}" onerror="this.parentElement.innerHTML='👤'">` 
           : '👤';
         return `
-        <div class="conversation-item" onclick="openChat('${conv.otherId}')">
+        <div class="conversation-item" data-user-id="${conv.otherId}" onclick="openChat('${conv.otherId}', event)">
           <div class="conversation-avatar">
             ${avatarHtml}
           </div>
@@ -575,7 +575,7 @@
     }
 
     // Open chat with user
-    async function openChat(userId) {
+    async function openChat(userId, clickEvent) {
       if (!userId) {
         console.error('No user ID provided to openChat');
         return;
@@ -591,8 +591,12 @@
 
       // Mark conversation as active
       document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
-      if (event && event.target) {
-        event.target.closest('.conversation-item')?.classList.add('active');
+      if (clickEvent && clickEvent.target && clickEvent.target.closest) {
+        clickEvent.target.closest('.conversation-item')?.classList.add('active');
+      } else {
+        // Find and highlight the conversation item by user ID
+        const convItem = document.querySelector(`.conversation-item[data-user-id="${userId}"]`);
+        if (convItem) convItem.classList.add('active');
       }
 
       // Set loading state
