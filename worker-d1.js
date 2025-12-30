@@ -310,7 +310,7 @@ export default {
       }
     }
 
-    // GET /api/tracks - Get tracks
+    // GET /api/tracks - Get tracks (excludes tracks from admin users)
     if (url.pathname === '/api/tracks' && request.method === 'GET') {
       try {
         if (!env.DB) {
@@ -321,11 +321,17 @@ export default {
         const limit = parseInt(url.searchParams.get('limit') || '100');
         const artistId = url.searchParams.get('artist_id');
         
-        let query = 'SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id';
+        // Filter out tracks from admin users
+        let query = `SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified 
+          FROM tracks t 
+          LEFT JOIN users u ON t.artist_id = u.id
+          WHERE (u.is_admin IS NULL OR u.is_admin = 0) 
+            AND (u.email NOT LIKE '%@chilafrican.com' AND u.email NOT LIKE '%chilafrican@%')
+            AND (u.username NOT LIKE 'admin%' OR u.username IS NULL)`;
         const params = [];
         
         if (artistId) {
-          query += ' WHERE t.artist_id = ?';
+          query += ' AND t.artist_id = ?';
           params.push(artistId.replace(/^(eq|neq)\./, ''));
         }
         

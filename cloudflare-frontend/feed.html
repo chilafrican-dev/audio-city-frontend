@@ -1236,7 +1236,7 @@
     
     // Update authentication UI
     function updateAuthUI() {
-            const authToken = localStorage.getItem('auth_token');
+      const authToken = localStorage.getItem('auth_token');
       const userId = localStorage.getItem('user_id');
       const signInBtn = document.getElementById('signInBtn');
       const signUpBtn = document.getElementById('signUpBtn');
@@ -1244,54 +1244,48 @@
       const uploadBtn = document.getElementById('uploadBtn');
       const inboxNavLink = document.getElementById('inboxNavLink');
       
+      console.log('Auth state:', { authToken: !!authToken, userId });
+      
       if (authToken && userId) {
+        console.log('User is logged in - updating UI');
         // User is logged in - hide sign in/up, show profile button, upload button, and inbox
         if (signInBtn) {
-          signInBtn.style.setProperty('display', 'none', 'important');
-          signInBtn.style.setProperty('visibility', 'hidden', 'important');
+          signInBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
         }
         if (signUpBtn) {
-          signUpBtn.style.setProperty('display', 'none', 'important');
-          signUpBtn.style.setProperty('visibility', 'hidden', 'important');
+          signUpBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
         }
         if (profileBtn) {
-          profileBtn.style.setProperty('display', 'flex', 'important');
-          profileBtn.style.setProperty('visibility', 'visible', 'important');
+          profileBtn.style.cssText = 'display: flex !important; visibility: visible !important; position: relative;';
           profileBtn.classList.add('show');
         }
         if (uploadBtn) {
-          uploadBtn.style.setProperty('display', 'inline-block', 'important');
-          uploadBtn.style.setProperty('visibility', 'visible', 'important');
+          uploadBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;';
         }
         if (inboxNavLink) {
-          inboxNavLink.style.setProperty('display', 'inline-block', 'important');
-          inboxNavLink.style.setProperty('visibility', 'visible', 'important');
+          inboxNavLink.style.cssText = 'display: inline-block !important; visibility: visible !important;';
           inboxNavLink.classList.add('show');
         }
         // Update profile picture
         updateHeaderProfilePicture();
       } else {
+        console.log('User is NOT logged in - showing sign in buttons');
         // User is not logged in - show sign in/up, hide profile button, upload button, and inbox
         if (signInBtn) {
-          signInBtn.style.setProperty('display', 'inline-block', 'important');
-          signInBtn.style.setProperty('visibility', 'visible', 'important');
+          signInBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;';
         }
         if (signUpBtn) {
-          signUpBtn.style.setProperty('display', 'inline-block', 'important');
-          signUpBtn.style.setProperty('visibility', 'visible', 'important');
+          signUpBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500;';
         }
         if (profileBtn) {
-          profileBtn.style.setProperty('display', 'none', 'important');
-          profileBtn.style.setProperty('visibility', 'hidden', 'important');
+          profileBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
           profileBtn.classList.remove('show');
         }
         if (uploadBtn) {
-          uploadBtn.style.setProperty('display', 'none', 'important');
-          uploadBtn.style.setProperty('visibility', 'hidden', 'important');
+          uploadBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
         }
         if (inboxNavLink) {
-          inboxNavLink.style.setProperty('display', 'none', 'important');
-          inboxNavLink.style.setProperty('visibility', 'hidden', 'important');
+          inboxNavLink.style.cssText = 'display: none !important; visibility: hidden !important;';
           inboxNavLink.classList.remove('show');
         }
       }
