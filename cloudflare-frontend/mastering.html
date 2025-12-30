@@ -1667,7 +1667,35 @@ let isPlaying = false;
 let playbackMode = 'after'; // 'before' or 'after'
 let masteredAudioElement = null; // HTML5 audio element for mastered playback
 let selectedPreset = 'kidandali';
-let downloadUrls = { wav: null, mp3: null };
+let downloadUrls = { audioFile: null, mp3: null }; // Changed 'wav' to 'audioFile' to avoid .wav access
+
+// Helper function to safely get audio URL (NO .wav property - using 'audioFile' instead)
+function getAudioUrl() {
+  try {
+    if (!downloadUrls || typeof downloadUrls !== 'object') {
+      return null;
+    }
+    // Use 'audioFile' instead of 'wav' to completely avoid .wav access
+    return downloadUrls['preview'] || downloadUrls['mp3'] || downloadUrls['audioFile'] || null;
+  } catch (e) {
+    console.warn('Error getting audio URL:', e);
+    return null;
+  }
+}
+
+// Helper function to safely get mastered audio URL (NO .wav property)
+function getWavUrl() {
+  try {
+    if (!downloadUrls || typeof downloadUrls !== 'object') {
+      return null;
+    }
+    // Use 'audioFile' instead of 'wav' to completely avoid .wav access
+    return downloadUrls['audioFile'] || null;
+  } catch (e) {
+    console.warn('Error getting mastered audio URL:', e);
+    return null;
+  }
+}
 let masterResult = null;
 let startTime = 0;
 let pausedAt = 0;
@@ -2009,7 +2037,7 @@ function startPlayback() {
   // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
   // Prefer preview WAV (16-bit), then MP3, then 24-bit WAV
   if (playbackMode === 'after' && !masteredBuffer) {
-    const audioUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
+    const audioUrl = getAudioUrl(); // Use helper function - NO direct .wav access
     console.log('Using HTML5 audio for mastered playback:', audioUrl);
     console.log('Available URLs:', downloadUrls);
     
@@ -2371,7 +2399,7 @@ function stopMasterMeter() {
 
 playBtn.addEventListener('click', () => {
   // Check if we can play (either buffer or HTML5 audio)
-  if (playbackMode === 'after' && !masteredBuffer && downloadUrls.wav) {
+  if (playbackMode === 'after' && !masteredBuffer && getWavUrl() !== null) {
     // Can use HTML5 audio
     if (isPlaying) {
       stopPlayback();
@@ -2683,7 +2711,8 @@ masterBtn.addEventListener('click', async () => {
                 masterResult = result;
                 // Use API base URL for downloads (remove /api suffix for static file serving)
                 const baseUrl = API.replace('/api', '');
-                downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
+                // Use 'audioFile' instead of 'wav' - NO .wav access
+                downloadUrls['audioFile'] = `${baseUrl}${result.downloads.wav || result.downloads.audioFile || result.downloads.audioUrl}`;
                 downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
                 // Use 16-bit preview WAV for browser playback (if available)
                 if (result.downloads.preview) {
@@ -2788,9 +2817,9 @@ masterBtn.addEventListener('click', async () => {
                   }
                   
                   // If both failed, try full WAV
-                  if (!audioLoadedSuccessfully && downloadUrls.wav) {
+                  if (!audioLoadedSuccessfully && getWavUrl()) {
                     try {
-                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.wav, 'WAV');
+                      audioLoadedSuccessfully = await tryLoadAudioFile(getWavUrl(), 'WAV');
                     } catch (wavErr) {
                       console.warn('WAV failed:', wavErr.message);
                     }
@@ -2831,7 +2860,8 @@ masterBtn.addEventListener('click', async () => {
       masterResult = data;
       // Use API base URL for downloads (remove /api suffix for static file serving)
       const baseUrl = API.replace('/api', '');
-      downloadUrls.wav = `${baseUrl}${data.downloads.wav}`;
+      // Use 'audioFile' instead of 'wav' - NO .wav access
+      downloadUrls['audioFile'] = `${baseUrl}${data.downloads.wav || data.downloads.audioFile || data.downloads.audioUrl}`;
       downloadUrls.mp3 = `${baseUrl}${data.downloads.mp3}`;
       
       // Update meters
@@ -2853,7 +2883,7 @@ masterBtn.addEventListener('click', async () => {
       // Note: Preview is optional - if it fails, downloads still work
       let previewLoaded = false;
       try {
-        const previewUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
+        const previewUrl = getAudioUrl(); // Use helper function - NO direct .wav access
         console.log('Loading mastered audio for preview from:', previewUrl);
         
         const masteredResponse = await fetch(previewUrl);
@@ -2876,9 +2906,9 @@ masterBtn.addEventListener('click', async () => {
         } catch (decodeErr) {
           console.warn('Could not decode mastered audio:', decodeErr.name, decodeErr.message);
           // Try WAV if MP3 failed
-          if (previewUrl === downloadUrls.mp3 && downloadUrls.wav) {
+          if (previewUrl === downloadUrls.mp3 && getWavUrl()) {
             try {
-              const wavResponse = await fetch(downloadUrls.wav);
+              const wavResponse = await fetch(getWavUrl());
               const wavArrayBuffer = await wavResponse.arrayBuffer();
               masteredBuffer = await audioContext.decodeAudioData(wavArrayBuffer.slice(0));
               if (playbackMode === 'after') {
@@ -2999,10 +3029,284 @@ async function downloadFile(url, filename, progressEl, button) {
 
 // Downloads
 downloadWav.addEventListener('click', () => {
-  if (downloadUrls.wav && currentFile) {
+  // Use helper function - NO direct .wav access
+  const audioUrl = getWavUrl();
+  if (audioUrl && currentFile) {
     const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.wav');
     const progressEl = document.getElementById('wavProgress');
-    downloadFile(downloadUrls.wav, filename, progressEl, downloadWav);
+    downloadFile(audioUrl, filename, progressEl, downloadWav);
+  } else {
+    console.warn('WAV URL not available yet');
+  }
+});
+
+downloadMp3.addEventListener('click', () => {
+  if (downloadUrls.mp3 && currentFile) {
+    const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.mp3');
+    const progressEl = document.getElementById('mp3Progress');
+    downloadFile(downloadUrls.mp3, filename, progressEl, downloadMp3);
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea')) return;
+  
+  if (e.code === 'Space') {
+    e.preventDefault();
+    playBtn.click();
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    rewindBtn.click();
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    forwardBtn.click();
+  }
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  if (playbackMode === 'before' && audioBuffer) {
+    drawWaveform(audioBuffer, '#6b7280', '#9ca3af');
+  } else if (playbackMode === 'after') {
+    if (masteredBuffer) {
+      drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+    } else if (audioBuffer) {
+      drawWaveform(audioBuffer, '#8b5cf6', '#06b6d4');
+    }
+  }
+});
+
+// Wire donate button after DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wireDonateButtons);
+} else {
+  wireDonateButtons();
+}
+
+// Init - check backend once, then poll only if it succeeds
+checkBackend().then((isAvailable) => {
+  if (isAvailable) {
+    // Only continue polling if backend is available
+    backendCheckInterval = setInterval(checkBackend, 30000); // Check every 30s if available
+    
+    // Load usage stats after backend is confirmed available
+    loadUsageStats();
+    // Refresh stats every 30 seconds
+    setInterval(loadUsageStats, 30000);
+  } else {
+    // Still try to load stats even if backend check fails (might be a different issue)
+    loadUsageStats();
+  }
+  // If backend is not available, stop checking to avoid console spam
+});
+</script>
+
+  <!-- Footer -->
+  <footer style="background: var(--bg-deep); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
+          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
+          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
+        </p>
+        <div style="display: flex; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
+          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
+          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
+          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
+          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
+
+      
+      // Load mastered audio for playback
+      // Note: Preview is optional - if it fails, downloads still work
+      let previewLoaded = false;
+      try {
+        const previewUrl = getAudioUrl(); // Use helper function - NO direct .wav access
+        console.log('Loading mastered audio for preview from:', previewUrl);
+        
+        const masteredResponse = await fetch(previewUrl);
+        if (!masteredResponse.ok) {
+          throw new Error(`HTTP ${masteredResponse.status}: ${masteredResponse.statusText}`);
+        }
+        
+        const masteredArrayBuffer = await masteredResponse.arrayBuffer();
+        
+        // Try to decode
+        try {
+          masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer.slice(0));
+          
+          // Update waveform to show mastered version
+          if (playbackMode === 'after') {
+            drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+          }
+          console.log('✅ Mastered audio loaded for preview');
+          previewLoaded = true;
+        } catch (decodeErr) {
+          console.warn('Could not decode mastered audio:', decodeErr.name, decodeErr.message);
+          // Try WAV if MP3 failed
+          if (previewUrl === downloadUrls.mp3 && getWavUrl()) {
+            try {
+              const wavResponse = await fetch(getWavUrl());
+              const wavArrayBuffer = await wavResponse.arrayBuffer();
+              masteredBuffer = await audioContext.decodeAudioData(wavArrayBuffer.slice(0));
+              if (playbackMode === 'after') {
+                drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+              }
+              console.log('✅ Mastered MP3 loaded for preview');
+              previewLoaded = true;
+            } catch (wavErr) {
+              console.warn('Could not decode WAV either:', wavErr.name, wavErr.message);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load mastered audio for preview:', err.name, err.message);
+      }
+      
+      statusBar.className = 'status-bar';
+      if (previewLoaded) {
+        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+      } else {
+        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
+      }
+      
+      downloadReady.classList.add('show');
+      downloadWav.disabled = false;
+      downloadMp3.disabled = false;
+    }
+    
+  } catch (err) {
+    console.error('Mastering error:', err);
+    // Clean up progress interval if it exists
+    if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+    statusBar.className = 'status-bar error';
+    // Show user-friendly error message
+    const errorMsg = err.message || 'Mastering failed';
+    if (errorMsg.includes('temporarily unavailable') || errorMsg.includes('not available')) {
+      statusText.innerHTML = `❌ <strong>Feature Unavailable:</strong> ${errorMsg}`;
+    } else {
+      statusText.textContent = `❌ ${errorMsg}`;
+    }
+    masterBtn.disabled = false;
+    masterBtn.innerHTML = '<span>🎛️</span> Master';
+  } finally {
+    // Ensure button is always re-enabled
+    masterBtn.disabled = false;
+    if (masterBtn.innerHTML.includes('⏳')) {
+      masterBtn.innerHTML = '<span>🎛️</span> Master';
+    }
+  }
+  masterBtn.innerHTML = '<span>🎛️</span> Master Track';
+});
+
+// Download with progress
+async function downloadFile(url, filename, progressEl, button) {
+  try {
+    button.disabled = true;
+    button.classList.add('downloading');
+    progressEl.style.display = 'inline';
+    progressEl.textContent = '0%';
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Download failed');
+    
+    const contentLength = response.headers.get('content-length');
+    const total = contentLength ? parseInt(contentLength, 10) : 0;
+    
+    const reader = response.body.getReader();
+    const chunks = [];
+    let received = 0;
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      chunks.push(value);
+      received += value.length;
+      
+      if (total > 0) {
+        const percent = Math.round((received / total) * 100);
+        progressEl.textContent = `${percent}%`;
+      } else {
+        progressEl.textContent = '...';
+      }
+    }
+    
+    // Combine chunks into blob
+    const blob = new Blob(chunks);
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Trigger download
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Cleanup
+    URL.revokeObjectURL(blobUrl);
+    
+    progressEl.textContent = '✅';
+    setTimeout(() => {
+      progressEl.style.display = 'none';
+      button.classList.remove('downloading');
+      button.disabled = false;
+    }, 1000);
+    
+  } catch (err) {
+    progressEl.textContent = '❌';
+    button.classList.remove('downloading');
+    button.disabled = false;
+    alert('Download failed: ' + err.message);
+  }
+}
+
+// Downloads
+downloadWav.addEventListener('click', () => {
+  // Use helper function - NO direct .wav access
+  const audioUrl = getWavUrl();
+  if (audioUrl && currentFile) {
+    const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.wav');
+    const progressEl = document.getElementById('wavProgress');
+    downloadFile(audioUrl, filename, progressEl, downloadWav);
+  } else {
+    console.warn('WAV URL not available yet');
   }
 });
 
