@@ -211,6 +211,17 @@ export default {
         user.following_count = followingCount;
         user.tracks_count = tracksCount;
         
+        // Privacy: Only show email to the user themselves or admins
+        const token = getAuthToken(request);
+        const currentUser = await getUserFromToken(token);
+        const isOwnProfile = currentUser && currentUser.id === userId;
+        const isAdmin = currentUser && (currentUser.is_admin === 1 || currentUser.is_admin === true);
+        
+        if (!isOwnProfile && !isAdmin) {
+          // Hide sensitive info from other users
+          delete user.email;
+        }
+        
         return Response.json(user, { headers: corsHeaders });
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -1071,39 +1082,144 @@ export default {
       }
     }
 
-    // GET /api/users/:id/messages - Get user messages (stub)
+    // ==================== MESSAGING SYSTEM ====================
+
+    // GET /api/conversations - Get user conversations
+    if (url.pathname === '/api/conversations' && request.method === 'GET') {
+      const userId = url.searchParams.get('user_id');
+      if (!userId || !env.DB) {
+        return Response.json([], { headers: corsHeaders });
+      }
+      try {
+        const conversations = await env.DB.prepare(`
+          SELECT c.*, 
+            CASE WHEN c.participant1_id = ? THEN c.participant2_id ELSE c.participant1_id END as other_user_id
+          FROM conversations c
+          WHERE c.participant1_id = ? OR c.participant2_id = ?
+          ORDER BY c.last_message_at DESC
+        `).bind(userId, userId, userId).all();
+        
+        // Enrich with user info and last message
+        const enriched = await Promise.all((conversations.results || []).map(async (conv) => {
+          const otherUser = await env.DB.prepare('SELECT id, username, name, profile_image_url FROM users WHERE id = ?')
+            .bind(conv.other_user_id).first();
+          const lastMsg = await env.DB.prepare('SELECT content, created_at, sender_id FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1')
+            .bind(conv.id).first();
+          const unreadCount = await env.DB.prepare('SELECT COUNT(*) as count FROM messages WHERE conversation_id = ? AND recipient_id = ? AND is_read = 0')
+            .bind(conv.id, userId).first();
+          return {
+            ...conv,
+            other_user: otherUser,
+            last_message: lastMsg,
+            unread_count: unreadCount?.count || 0
+          };
+        }));
+        return Response.json(enriched, { headers: corsHeaders });
+      } catch (e) {
+        console.error('Error fetching conversations:', e);
+        return Response.json([], { headers: corsHeaders });
+      }
+    }
+
+    // POST /api/conversations - Create or get conversation
+    if (url.pathname === '/api/conversations' && request.method === 'POST') {
+      const body = await parseBody(request);
+      const { participant1_id, participant2_id } = body || {};
+      if (!participant1_id || !participant2_id || !env.DB) {
+        return Response.json({ error: 'Both participant IDs required' }, { status: 400, headers: corsHeaders });
+      }
+      try {
+        // Check if conversation exists
+        let conv = await env.DB.prepare(`
+          SELECT * FROM conversations 
+          WHERE (participant1_id = ? AND participant2_id = ?) OR (participant1_id = ? AND participant2_id = ?)
+        `).bind(participant1_id, participant2_id, participant2_id, participant1_id).first();
+        
+        if (!conv) {
+          const convId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          await env.DB.prepare(`
+            INSERT INTO conversations (id, participant1_id, participant2_id, created_at, last_message_at)
+            VALUES (?, ?, ?, datetime('now'), datetime('now'))
+          `).bind(convId, participant1_id, participant2_id).run();
+          conv = { id: convId, participant1_id, participant2_id, created_at: new Date().toISOString() };
+        }
+        return Response.json(conv, { headers: corsHeaders });
+      } catch (e) {
+        console.error('Error creating conversation:', e);
+        return Response.json({ error: 'Failed to create conversation' }, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // GET /api/conversations/:id/messages - Get messages in conversation
+    if (url.pathname.match(/\/api\/conversations\/[^\/]+\/messages$/) && request.method === 'GET') {
+      const convId = url.pathname.split('/api/conversations/')[1]?.split('/')[0];
+      if (!convId || !env.DB) {
+        return Response.json([], { headers: corsHeaders });
+      }
+      try {
+        const messages = await env.DB.prepare(`
+          SELECT m.*, u.username as sender_username, u.name as sender_name, u.profile_image_url as sender_avatar
+          FROM messages m
+          LEFT JOIN users u ON m.sender_id = u.id
+          WHERE m.conversation_id = ?
+          ORDER BY m.created_at ASC
+        `).bind(convId).all();
+        return Response.json(messages.results || [], { headers: corsHeaders });
+      } catch (e) {
+        console.error('Error fetching messages:', e);
+        return Response.json([], { headers: corsHeaders });
+      }
+    }
+
+    // POST /api/conversations/:id/messages - Send message
+    if (url.pathname.match(/\/api\/conversations\/[^\/]+\/messages$/) && request.method === 'POST') {
+      const convId = url.pathname.split('/api/conversations/')[1]?.split('/')[0];
+      const body = await parseBody(request);
+      const { sender_id, recipient_id, content } = body || {};
+      if (!convId || !sender_id || !content || !env.DB) {
+        return Response.json({ error: 'Missing required fields' }, { status: 400, headers: corsHeaders });
+      }
+      try {
+        const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await env.DB.prepare(`
+          INSERT INTO messages (id, conversation_id, sender_id, recipient_id, content, is_read, created_at)
+          VALUES (?, ?, ?, ?, ?, 0, datetime('now'))
+        `).bind(msgId, convId, sender_id, recipient_id || '', content).run();
+        
+        // Update conversation last_message_at
+        await env.DB.prepare('UPDATE conversations SET last_message_at = datetime("now") WHERE id = ?').bind(convId).run();
+        
+        const msg = await env.DB.prepare('SELECT * FROM messages WHERE id = ?').bind(msgId).first();
+        return Response.json(msg, { headers: corsHeaders });
+      } catch (e) {
+        console.error('Error sending message:', e);
+        return Response.json({ error: 'Failed to send message' }, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // PUT /api/conversations/:id/messages/read - Mark messages as read
+    if (url.pathname.includes('/messages/read') && request.method === 'PUT') {
+      const convId = url.pathname.split('/api/conversations/')[1]?.split('/')[0];
+      const body = await parseBody(request);
+      const userId = body?.user_id;
+      if (!convId || !env.DB) {
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+      try {
+        await env.DB.prepare('UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND recipient_id = ?')
+          .bind(convId, userId || '').run();
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (e) {
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+    }
+
+    // Legacy message endpoints for backward compatibility
     if (url.pathname.includes('/messages') && request.method === 'GET' && !url.pathname.includes('conversations')) {
       return Response.json([], { headers: corsHeaders });
     }
-
-    // POST /api/messages - Send message (stub)
     if (url.pathname === '/api/messages' && request.method === 'POST') {
       return Response.json({ success: true, message: 'Message sent' }, { headers: corsHeaders });
-    }
-
-    // GET /api/conversations/:conversationId/:recipientId/messages - Get conversation messages (stub)
-    if (url.pathname.includes('/conversations/') && url.pathname.includes('/messages') && request.method === 'GET') {
-      return Response.json([], { headers: corsHeaders });
-    }
-
-    // PUT /api/conversations/:conversationId/:recipientId/messages/read - Mark messages as read (stub)
-    if (url.pathname.includes('/conversations/') && url.pathname.includes('/messages/read') && request.method === 'PUT') {
-      return Response.json({ success: true }, { headers: corsHeaders });
-    }
-
-    // GET /api/conversations - Get user conversations (stub)
-    if (url.pathname === '/api/conversations' && request.method === 'GET') {
-      return Response.json([], { headers: corsHeaders });
-    }
-
-    // POST /api/conversations - Create conversation (stub)
-    if (url.pathname === '/api/conversations' && request.method === 'POST') {
-      const body = await parseBody(request);
-      return Response.json({ 
-        id: `conv_${Date.now()}`,
-        participants: body?.participants || [],
-        created_at: new Date().toISOString()
-      }, { headers: corsHeaders });
     }
 
     // GET /api/users/:id/notifications - Get notifications (stub)
@@ -1197,7 +1313,7 @@ export default {
       }
     }
 
-    // DELETE /api/tracks/:id/comments/:commentId - Delete comment
+    // DELETE /api/tracks/:id/comments/:commentId - Delete comment (only author or admin)
     if (url.pathname.includes('/comments/') && request.method === 'DELETE') {
       const parts = url.pathname.split('/');
       const trackIdIndex = parts.indexOf('tracks') + 1;
@@ -1211,16 +1327,31 @@ export default {
       }
       
       try {
-        // Check if comment exists
-        const comment = await env.DB.prepare('SELECT id FROM comments WHERE id = ? AND track_id = ?')
+        // Get current user
+        const token = getAuthToken(request);
+        const currentUser = await getUserFromToken(token);
+        if (!currentUser) {
+          return Response.json({ error: 'Unauthorized - login required' }, { status: 401, headers: corsHeaders });
+        }
+        
+        // Check if comment exists and get author
+        const comment = await env.DB.prepare('SELECT id, user_id FROM comments WHERE id = ? AND track_id = ?')
           .bind(commentId, trackId).first();
         if (!comment) {
           return Response.json({ error: 'Comment not found' }, { status: 404, headers: corsHeaders });
         }
         
+        // Only allow author or admin to delete
+        const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+        if (comment.user_id !== currentUser.id && !isAdmin) {
+          return Response.json({ error: 'Not authorized to delete this comment' }, { status: 403, headers: corsHeaders });
+        }
+        
         // Delete comment
         await env.DB.prepare('DELETE FROM comments WHERE id = ?').bind(commentId).run();
-        await env.DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?').bind(commentId).run();
+        try {
+          await env.DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?').bind(commentId).run();
+        } catch (e) { /* table may not exist */ }
         
         // Get updated comment count
         const commentsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
