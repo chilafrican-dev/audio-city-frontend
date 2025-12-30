@@ -2929,7 +2929,13 @@ masterBtn.addEventListener('click', async () => {
       progressInterval = null;
     }
     statusBar.className = 'status-bar error';
-    statusText.textContent = `❌ ${err.message}`;
+    // Show user-friendly error message
+    const errorMsg = err.message || 'Mastering failed';
+    if (errorMsg.includes('temporarily unavailable') || errorMsg.includes('not available')) {
+      statusText.innerHTML = `❌ <strong>Feature Unavailable:</strong> ${errorMsg}`;
+    } else {
+      statusText.textContent = `❌ ${errorMsg}`;
+    }
     masterBtn.disabled = false;
     masterBtn.innerHTML = '<span>🎛️</span> Master';
   } finally {
