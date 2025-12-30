@@ -1,0 +1,100 @@
+# Fix API 404 Errors
+
+## Problem
+Requests to `api.audiocity-ug.com/api/tracks` and other endpoints are returning 404 errors.
+
+## Root Cause
+The Cloudflare Worker (`worker-d1.js`) is not deployed or not configured to handle requests to `api.audiocity-ug.com`.
+
+## Solution
+
+### 1. Deploy the Worker
+Deploy `worker-d1.js` using the `wrangler-d1.toml` configuration:
+
+```bash
+npx wrangler deploy --config wrangler-d1.toml
+```
+
+### 2. Configure Custom Domain
+After deployment, configure `api.audiocity-ug.com` to route to the worker:
+
+**Option A: Via Cloudflare Dashboard**
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → audio-city-api-d1
+3. Settings → Triggers → Custom Domains
+4. Add: `api.audiocity-ug.com`
+
+**Option B: Via wrangler.toml (already added)**
+The routes are now configured in `wrangler-d1.toml`:
+```toml
+routes = [
+  { pattern = "api.audiocity-ug.com/*", zone_name = "audiocity-ug.com" }
+]
+```
+
+### 3. Verify Deployment
+Test the worker:
+```bash
+curl https://api.audiocity-ug.com/api/health
+```
+
+Should return:
+```json
+{
+  "status": "ok",
+  "service": "audio-city-api-worker",
+  "database": "connected",
+  "r2": "connected"
+}
+```
+
+### 4. Check DNS
+Make sure `api.audiocity-ug.com` DNS is configured:
+- If using Cloudflare: Should be proxied (orange cloud)
+- If using external DNS: Point to Cloudflare Worker IPs
+
+## What Was Fixed
+
+1. ✅ Added `manifest.json` handler in worker (fixes 403 error)
+2. ✅ Added better error messages with available endpoints
+3. ✅ Added routes configuration to `wrangler-d1.toml`
+4. ✅ Added debugging logs for 404 errors
+
+## Current Status
+
+- ✅ Worker code is ready (`worker-d1.js`)
+- ✅ Configuration file updated (`wrangler-d1.toml`)
+- ⏳ Worker needs to be deployed
+- ⏳ Custom domain needs to be configured
+
+## Next Steps
+
+1. Deploy the worker:
+   ```bash
+   npx wrangler deploy --config wrangler-d1.toml
+   ```
+
+2. Configure D1 database binding (if not already done):
+   ```bash
+   npx wrangler d1 create audio-city-db
+   # Then update database_id in wrangler-d1.toml
+   ```
+
+3. Configure R2 bucket binding (if not already done):
+   ```bash
+   npx wrangler r2 bucket create audio-city-media
+   ```
+
+4. Set up custom domain in Cloudflare Dashboard
+
+5. Test endpoints:
+   - `/api/health` - Should return OK
+   - `/api/tracks?limit=6` - Should return tracks
+   - `/api/feed/trending-artists` - Should return artists
+
+## Alternative: Use Workers.dev Subdomain
+
+If custom domain setup is complex, you can temporarily use:
+- Worker URL: `https://audio-city-api-d1.YOUR_SUBDOMAIN.workers.dev`
+- Update frontend `API_BASE_URL` to use this URL instead
+

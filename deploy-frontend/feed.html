@@ -2687,19 +2687,11 @@
     // Development mode check (only show logs in development)
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Register service worker for PWA
+    // Service Worker DISABLED - sw.js not deployed
+    // Unregister any existing service workers
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            if (isDevelopment) {
-            console.log('✅ Service Worker registered:', registration.scope);
-            }
-          })
-          .catch(error => {
-            // Always log errors, even in production
-            console.error('❌ Service Worker registration failed:', error);
-          });
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => registration.unregister());
       });
     }
     

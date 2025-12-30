@@ -9,17 +9,22 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "audio-city-db"
-database_id = "" # Will be set after creating the database
+database_id = "19530b7f-19d0-46c7-ad6b-df0eb8b54447"
 
 # R2 Bucket binding (for media files)
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
-bucket_name = "audio-city-media"
+bucket_name = "audio-city-tracks"
 
 # Environment variables
 [vars]
 # Set these in Cloudflare Dashboard or use secrets:
 # GOOGLE_CLIENT_ID = "your-google-client-id"
+
+# Routes - handle all requests to api.audiocity-ug.com
+routes = [
+  { pattern = "api.audiocity-ug.com/*", zone_name = "audiocity-ug.com" }
+]
 
 # Production environment
 [env.production]

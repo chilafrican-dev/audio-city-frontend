@@ -9,13 +9,9 @@
   <title>Feed — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
-    if (window.location.protocol !== 'file:') {
-      var link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = 'manifest.json';
-      document.head.appendChild(link);
-    }
+    // Manifest loading disabled - Cloudflare WAF blocks JSON files
+    // PWA functionality is optional, app works fine without it
+    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -2698,9 +2694,30 @@
     // Development mode check (only show logs in development)
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
+    // Service Worker Configuration
+    // Set to false to disable service worker (useful if it's causing issues with Cloudflare Workers)
+    const ENABLE_SERVICE_WORKER = false; // Disabled to prevent conflicts with Cloudflare Worker API
+    
+    // Unregister any existing service workers if disabled
+    if (!ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          registration.unregister().then(() => {
+            if (isDevelopment) {
+              console.log('✅ Service Worker unregistered');
+            }
+          }).catch(error => {
+            if (isDevelopment) {
+              console.error('❌ Service Worker unregistration failed:', error);
+            }
+          });
+        });
+      });
+    }
+    
     // Register service worker for PWA
     // Only register if sw.js is available with correct MIME type
-    if ('serviceWorker' in navigator) {
+    if (ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         // Verify sw.js exists and has correct content type before registering
         fetch('/sw.js', { method: 'HEAD' })

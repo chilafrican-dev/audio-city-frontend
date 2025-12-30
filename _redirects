@@ -8,6 +8,9 @@
 # Security headers (exclude manifest.json and sw.js from strict headers)
 /manifest.json
   Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, OPTIONS
+  Access-Control-Allow-Headers: *
+  Content-Type: application/manifest+json
 
 /sw.js
   Access-Control-Allow-Origin: *

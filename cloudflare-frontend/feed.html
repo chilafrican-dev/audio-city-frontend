@@ -9,13 +9,8 @@
   <title>Feed — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
-    if (window.location.protocol !== 'file:') {
-      var link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = 'manifest.json';
-      document.head.appendChild(link);
-    }
+    // Manifest loading disabled - Cloudflare WAF blocks JSON files
+    // PWA functionality is optional, app works fine without it
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -2687,19 +2682,13 @@
     // Development mode check (only show logs in development)
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Register service worker for PWA
+    // Service Worker DISABLED - sw.js not deployed to Cloudflare Pages
+    // Unregister any existing service workers to prevent stale cache issues
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            if (isDevelopment) {
-            console.log('✅ Service Worker registered:', registration.scope);
-            }
-          })
-          .catch(error => {
-            // Always log errors, even in production
-            console.error('❌ Service Worker registration failed:', error);
-          });
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          registration.unregister();
+        });
       });
     }
     

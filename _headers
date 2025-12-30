@@ -6,7 +6,9 @@
 /manifest.json
   Content-Type: application/manifest+json
   Access-Control-Allow-Origin: *
-  X-Content-Type-Options: nosniff
+  Access-Control-Allow-Methods: GET, OPTIONS
+  Access-Control-Allow-Headers: *
+  Cache-Control: public, max-age=3600
 
 /*.js
   Content-Type: application/javascript

@@ -46,21 +46,39 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
+  const url = new URL(event.request.url);
+  
+  // Skip non-GET requests - let them pass through
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Skip API requests - always use network
-  if (event.request.url.includes('/api/') || event.request.url.includes('/auth/')) {
-    return;
+  // Skip ALL API requests - always use network (don't intercept)
+  if (url.pathname.startsWith('/api/') || 
+      url.pathname.startsWith('/auth/') ||
+      event.request.url.includes('/api/') || 
+      event.request.url.includes('/auth/') ||
+      event.request.url.includes('workers.dev') ||
+      event.request.url.includes('cloudflareworkers.com')) {
+    return; // Let the request pass through to network
   }
 
   // Skip audio/media files - always use network
-  if (event.request.url.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+  if (event.request.url.match(/\.(mp3|wav|ogg|m4a|aac|flac|opus)$/i)) {
     return;
   }
 
+  // Skip JSON files that might be API responses
+  if (url.pathname.endsWith('.json') && url.pathname !== '/manifest.json') {
+    return;
+  }
+
+  // Skip worker.js and other worker files
+  if (url.pathname.includes('worker') || url.pathname.includes('sw.js')) {
+    return;
+  }
+
+  // Only handle static HTML/CSS/JS/Image files
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -72,12 +90,24 @@ self.addEventListener('fetch', (event) => {
               return response;
             }
 
+            // Only cache static assets (HTML, CSS, JS, images)
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('text/html') && 
+                !contentType.includes('text/css') && 
+                !contentType.includes('application/javascript') &&
+                !contentType.includes('image/')) {
+              return response; // Don't cache other types
+            }
+
             // Clone the response
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
+              })
+              .catch(() => {
+                // Silently fail cache operations
               });
 
             return response;
@@ -85,8 +115,9 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // If fetch fails, return offline page for navigation requests
             if (event.request.mode === 'navigate') {
-              return caches.match('/feed.html');
+              return caches.match('/feed.html') || caches.match('/');
             }
+            return new Response('Offline', { status: 503 });
           });
       })
   );

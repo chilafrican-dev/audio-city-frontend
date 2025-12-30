@@ -74,6 +74,27 @@ export default {
       return env.R2_PUBLIC_URL || `https://pub-${env.MEDIA_BUCKET?.accountId || 'unknown'}.r2.dev`;
     };
 
+    // ==================== STATIC FILES ====================
+    
+    // Handle manifest.json (should be served by Pages, but handle here as fallback)
+    if (url.pathname === '/manifest.json') {
+      const manifest = {
+        name: "Audio City",
+        short_name: "Audio City",
+        description: "Uganda's music community platform",
+        start_url: "/feed.html",
+        display: "standalone",
+        background_color: "#0a0a0f",
+        theme_color: "#8b5cf6"
+      };
+      return Response.json(manifest, { 
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/manifest+json'
+        }
+      });
+    }
+
     // ==================== API ROUTES ====================
 
     // GET /api/health
@@ -83,7 +104,9 @@ export default {
         service: 'audio-city-api-worker',
         database: env.DB ? 'connected' : 'not configured',
         r2: env.MEDIA_BUCKET ? 'connected' : 'not configured',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        path: url.pathname,
+        method: request.method
       }, { headers: corsHeaders });
     }
 
@@ -260,14 +283,14 @@ export default {
     if (url.pathname === '/api/tracks' && request.method === 'GET') {
       try {
         if (!env.DB) {
-          return Response.json([], { headers: corsHeaders });
+          return Response.json({ error: 'Database not configured' }, { headers: corsHeaders });
         }
         
         const orderBy = url.searchParams.get('order') || 'created_at.desc';
         const limit = parseInt(url.searchParams.get('limit') || '100');
         const artistId = url.searchParams.get('artist_id');
         
-        let query = 'SELECT t.*, u.username as artist_username, u.profile_image as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id';
+        let query = 'SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id';
         const params = [];
         
         if (artistId) {
@@ -296,30 +319,35 @@ export default {
         query += ` LIMIT ?`;
         params.push(limit);
         
-        const stmt = env.DB.prepare(query);
-        if (params.length > 0) {
-          stmt.bind(...params);
+        // D1 bind() returns a new statement - must use the returned value
+        const tracks = await env.DB.prepare(query).bind(...params).all();
+        
+        // Return raw tracks if enrichment fails
+        const rawTracks = tracks.results || [];
+        
+        // Try to enrich with like counts (use track_likes table, not likes)
+        try {
+          const enrichedTracks = await Promise.all(rawTracks.map(async (track) => {
+            const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
+              .bind(track.id).first();
+            const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
+              .bind(track.id).first();
+            
+            track.likes_count = likes?.count || 0;
+            track.comments_count = comments?.count || 0;
+            track.shares_count = track.shares_count || 0;
+            track.artist_is_verified = track.artist_is_verified === 1;
+            return track;
+          }));
+          return Response.json(enrichedTracks, { headers: corsHeaders });
+        } catch (enrichError) {
+          // Return raw tracks without enrichment if it fails
+          console.error('Enrichment error:', enrichError);
+          return Response.json(rawTracks, { headers: corsHeaders });
         }
-        const tracks = await stmt.all();
-        
-        // Enrich with like counts, share counts, and comment counts
-        const enrichedTracks = await Promise.all((tracks.results || []).map(async (track) => {
-          const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM likes WHERE track_id = ?')
-            .bind(track.id).first();
-          const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
-            .bind(track.id).first();
-          
-          track.likes_count = likes?.count || 0;
-          track.comments_count = comments?.count || 0;
-          track.shares_count = track.shares_count || 0;
-          track.artist_is_verified = track.artist_is_verified === 1;
-          return track;
-        }));
-        
-        return Response.json(enrichedTracks, { headers: corsHeaders });
       } catch (error) {
         console.error('Error fetching tracks:', error);
-        return Response.json([], { headers: corsHeaders });
+        return Response.json({ error: error.message, stack: error.stack }, { status: 500, headers: corsHeaders });
       }
     }
 
@@ -332,7 +360,7 @@ export default {
       
       try {
         const track = await env.DB.prepare(
-          'SELECT t.*, u.username as artist_username, u.profile_image as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id WHERE t.id = ?'
+          'SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id WHERE t.id = ?'
         ).bind(trackId).first();
         
         if (!track) {
@@ -346,7 +374,7 @@ export default {
         
         // Get comments with user info
         const commentsData = await env.DB.prepare(`
-          SELECT c.*, u.username as author, u.name as author_name, u.profile_image as author_avatar
+          SELECT c.*, u.username as author, u.name as author_name, u.profile_image_url as author_avatar
           FROM comments c
           LEFT JOIN users u ON c.user_id = u.id
           WHERE c.track_id = ?
@@ -457,7 +485,7 @@ export default {
           FROM users u
           LEFT JOIN tracks t ON u.id = t.artist_id
           GROUP BY u.id
-          ORDER BY track_count DESC, u.followers_count DESC
+          ORDER BY track_count DESC, u.created_at DESC
           LIMIT 10
         `).all();
         
@@ -683,7 +711,7 @@ export default {
           
           await env.DB.prepare(`
             INSERT INTO users (
-              id, username, email, name, avatar_url, profile_image,
+              id, username, email, name, avatar_url, profile_image_url,
               auth_provider, google_id, password, followers_count, following_count, tracks_count,
               verified, is_admin, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, 'google', ?, NULL, 0, 0, 0, 0, 0, datetime('now'), datetime('now'))
@@ -705,7 +733,7 @@ export default {
               .bind(googleUser.id, 'google', user.id).run();
           }
           if (googleUser.picture && !user.avatar_url) {
-            await env.DB.prepare('UPDATE users SET avatar_url = ?, profile_image = ?, updated_at = datetime("now") WHERE id = ?')
+            await env.DB.prepare('UPDATE users SET avatar_url = ?, profile_image_url = ?, updated_at = datetime("now") WHERE id = ?')
               .bind(googleUser.picture, googleUser.picture, user.id).run();
           }
         }
@@ -783,7 +811,7 @@ export default {
 
         if (env.DB) {
           await env.DB.prepare(
-            'UPDATE users SET avatar_url = ?, profile_image = ?, updated_at = datetime("now") WHERE id = ?'
+            'UPDATE users SET avatar_url = ?, profile_image_url = ?, updated_at = datetime("now") WHERE id = ?'
           ).bind(avatarUrl, avatarUrl, userId).run();
         }
 
@@ -791,7 +819,7 @@ export default {
           success: true,
           message: 'Profile picture uploaded successfully',
           avatar_url: avatarUrl,
-          profile_image: avatarUrl,
+          profile_image_url: avatarUrl,
         }, { headers: corsHeaders });
 
       } catch (error) {
@@ -1083,12 +1111,12 @@ export default {
         let authorName = 'User';
         let authorAvatar = null;
         if (userId) {
-          const user = await env.DB.prepare('SELECT username, name, profile_image FROM users WHERE id = ?')
+          const user = await env.DB.prepare('SELECT username, name, profile_image_url FROM users WHERE id = ?')
             .bind(userId).first();
           if (user) {
             author = user.username || 'User';
             authorName = user.name || user.username || 'User';
-            authorAvatar = user.profile_image || null;
+            authorAvatar = user.profile_image_url || null;
           }
         }
         
@@ -1248,11 +1276,27 @@ export default {
     }
 
     // Default: 404 with helpful message
+    // Log for debugging
+    console.error('404 Not Found:', {
+      path: url.pathname,
+      method: request.method,
+      url: request.url,
+      host: url.hostname
+    });
+    
     return Response.json({ 
       error: 'Not Found',
       path: url.pathname,
       method: request.method,
-      hint: 'API endpoint not found. Check /api/health for available endpoints.'
+      url: request.url,
+      hint: 'API endpoint not found. Check /api/health for available endpoints.',
+      availableEndpoints: [
+        '/api/health',
+        '/api/users',
+        '/api/tracks',
+        '/api/feed/trending-artists',
+        '/api/auth/*'
+      ]
     }, { status: 404, headers: corsHeaders });
   }
 };
