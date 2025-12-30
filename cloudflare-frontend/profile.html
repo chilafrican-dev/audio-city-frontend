@@ -1027,8 +1027,12 @@
           formData.append('profilePicture', avatarFile);
           formData.append('userId', userId);
           
+          const authToken = localStorage.getItem('auth_token');
           const uploadResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-picture`, {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            },
             body: formData
           });
           
@@ -1036,12 +1040,20 @@
             const uploadData = await uploadResponse.json();
             avatarUrl = uploadData.avatar_url || uploadData.profile_image;
             // Also save to localStorage as backup
-            localStorage.setItem('profile_image_url', avatarUrl);
-      } else {
-            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
-            alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
-          }
+            if (avatarUrl) {
+              localStorage.setItem('profile_image_url', avatarUrl);
+              localStorage.setItem('profile_image_data', avatarUrl);
+            }
+            console.log('✅ Profile picture uploaded successfully:', avatarUrl);
           } else {
+            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+            console.error('❌ Profile picture upload failed:', error);
+            alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+          }
+      } else {
           // Use URL input
           const avatarUrlInput = document.getElementById('editAvatarUrl').value.trim();
           if (avatarUrlInput) {
