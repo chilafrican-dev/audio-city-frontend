@@ -1330,8 +1330,7 @@
       updateAuthUI();
     }
     
-    // Update auth UI periodically
-    setInterval(updateAuthUI, 1000);
+    // Auth UI updated on page load - no need for polling
     
     // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
