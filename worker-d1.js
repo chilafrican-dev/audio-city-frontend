@@ -1103,9 +1103,9 @@ export default {
         const enriched = await Promise.all((conversations.results || []).map(async (conv) => {
           const otherUser = await env.DB.prepare('SELECT id, username, name, profile_image_url FROM users WHERE id = ?')
             .bind(conv.other_user_id).first();
-          const lastMsg = await env.DB.prepare('SELECT content, created_at, sender_id FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1')
+          const lastMsg = await env.DB.prepare('SELECT text as content, created_at, sender_id FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1')
             .bind(conv.id).first();
-          const unreadCount = await env.DB.prepare('SELECT COUNT(*) as count FROM messages WHERE conversation_id = ? AND recipient_id = ? AND is_read = 0')
+          const unreadCount = await env.DB.prepare('SELECT COUNT(*) as count FROM messages WHERE conversation_id = ? AND receiver_id = ? AND read = 0')
             .bind(conv.id, userId).first();
           return {
             ...conv,
@@ -1166,22 +1166,24 @@ export default {
       const convId = sortedIds.join('_');
       
       try {
+        // Use existing DB column names: receiver_id, text, read
         const messages = await env.DB.prepare(`
-          SELECT m.*, u.username as sender_username, u.name as sender_name, u.profile_image_url as sender_avatar
+          SELECT m.id, m.conversation_id, m.sender_id, m.receiver_id, m.text, m.read, m.created_at,
+                 u.username as sender_username, u.name as sender_name, u.profile_image_url as sender_avatar
           FROM messages m
           LEFT JOIN users u ON m.sender_id = u.id
           WHERE m.conversation_id = ?
           ORDER BY m.created_at ASC
         `).bind(convId).all();
         
-        // Format messages for frontend
+        // Format messages for frontend (map DB columns to expected names)
         const formatted = (messages.results || []).map(msg => ({
           id: msg.id,
           conversation_id: msg.conversation_id,
           sender_id: msg.sender_id,
-          recipient_id: msg.recipient_id,
-          content: msg.content,
-          is_read: msg.is_read === 1 || msg.is_read === true,
+          recipient_id: msg.receiver_id,  // Map receiver_id to recipient_id
+          content: msg.text,               // Map text to content
+          is_read: msg.read === 1 || msg.read === true,  // Map read to is_read
           created_at: msg.created_at,
           sender: {
             id: msg.sender_id,
@@ -1235,8 +1237,9 @@ export default {
         }
         
         const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Use existing DB column names: receiver_id, text, read
         await env.DB.prepare(`
-          INSERT INTO messages (id, conversation_id, sender_id, recipient_id, content, is_read, created_at)
+          INSERT INTO messages (id, conversation_id, sender_id, receiver_id, text, read, created_at)
           VALUES (?, ?, ?, ?, ?, 0, datetime('now'))
         `).bind(msgId, convId, actualSenderId, actualRecipientId || '', content).run();
         
@@ -1278,7 +1281,8 @@ export default {
         return Response.json({ success: true }, { headers: corsHeaders });
       }
       try {
-        await env.DB.prepare('UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND recipient_id = ?')
+        // Use existing DB column names: read, receiver_id
+        await env.DB.prepare('UPDATE messages SET read = 1 WHERE conversation_id = ? AND receiver_id = ?')
           .bind(convId, userId || '').run();
         return Response.json({ success: true }, { headers: corsHeaders });
       } catch (e) {
