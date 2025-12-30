@@ -316,7 +316,8 @@
         statusEl.className = 'status success';
         statusEl.textContent = '✅ Admin access granted! Redirecting...';
         
-        // Set admin session
+        // Set admin session - MUST include user_id for auth to work
+        const adminUserId = 'admin_' + Date.now();
         const sessionData = {
           authenticated: true,
           timestamp: Date.now(),
@@ -325,8 +326,13 @@
         };
         localStorage.setItem('admin_authenticated', JSON.stringify(sessionData));
         localStorage.setItem('auth_token', 'admin_token_' + Date.now());
+        localStorage.setItem('user_id', adminUserId); // CRITICAL: This was missing!
         localStorage.setItem('user_type', 'admin');
         localStorage.setItem('user_email', ADMIN_EMAIL);
+        localStorage.setItem('user_name', 'Admin');
+        localStorage.setItem('is_admin', 'true');
+        
+        console.log('✅ Admin login - user_id set:', adminUserId);
         
         setTimeout(() => {
           window.location.href = 'admin-dashboard.html';
