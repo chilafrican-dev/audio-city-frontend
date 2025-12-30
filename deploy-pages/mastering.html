@@ -1522,8 +1522,8 @@
 // Since backend is on VM, always use VM URL unless explicitly running locally
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_PRIMARY = isLocalhost 
-  ? 'https://audio-city-api-proxy.chilafrican.workers.dev/api'  // Use Cloudflare Worker
-  : 'https://audio-city-api-proxy.chilafrican.workers.dev/api';
+  ? 'https://api.audiocity-ug.com/api'  // Use Cloudflare Worker
+  : 'https://api.audiocity-ug.com/api';
 // Fallback to localhost only if VM is down (for local development)
 const API_FALLBACK = 'http://localhost:3002/api';
 let API = API_PRIMARY;
@@ -2526,7 +2526,7 @@ masterBtn.addEventListener('click', async () => {
   // Even if checkBackend succeeded on localhost, we need to use VM for the actual request
   if (API.includes('localhost:3002')) {
     console.log('Switching from localhost to VM for mastering request');
-    API = 'https://audio-city-api-proxy.chilafrican.workers.dev/api';
+    API = 'https://api.audiocity-ug.com/api';
   }
   
   // Optional: Show confirmation (reminder is already visible)

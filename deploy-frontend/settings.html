@@ -628,7 +628,7 @@
     // Use local API for development, production API for deployed site
     const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:3002'
-      : 'http://api.audiocity-ug.com:3002';
+      : 'https://api.audiocity-ug.com';
     
     // Update header profile picture
     async function updateHeaderProfilePicture() {

@@ -383,7 +383,7 @@
     // Use local API for development, production API for deployed site
     const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:3002'
-      : 'https://audio-city-api-proxy.chilafrican.workers.dev';
+      : 'https://api.audiocity-ug.com';
     
     // Check if already logged in
     if (localStorage.getItem('auth_token')) {
@@ -554,7 +554,7 @@
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const backendURL = isLocal
         ? 'http://localhost:3002/auth/google'
-        : 'https://audio-city-api-proxy.chilafrican.workers.dev/auth/google';
+        : 'https://api.audiocity-ug.com/auth/google';
       
       window.location.href = backendURL;
     }
