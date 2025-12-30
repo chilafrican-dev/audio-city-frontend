@@ -2774,16 +2774,19 @@ masterBtn.addEventListener('click', async () => {
         }
       }, 4000); // Poll every 4 seconds
       
-      // CRITICAL: Return immediately - do NOT execute any code below
+      // 🚫 CRITICAL: Return immediately - do NOT execute any code below
       // The polling will handle setting downloadUrls when the job completes
+      // If we continue, code below might try to access data.wav which DOES NOT EXIST
       masterBtn.disabled = false;
       masterBtn.innerHTML = '<span>🎛️</span> Master';
+      console.log('✅ Returning immediately - polling will handle wav when ready');
       return; // Exit function immediately - polling handles completion
     }
     
-    // Only execute this block if we DON'T have a jobId (old sync format)
-    // If we have jobId, we should have returned above
+    // 🚫 SAFETY: Only execute this block if we DON'T have a jobId (old sync format)
+    // If we have jobId, we should have returned above - this should NEVER execute with jobId
     if (!data.jobId && data.downloads && data.downloads.wav) {
+      console.log('⚠️ Old sync format (no jobId) - using direct response');
       // Old format - direct response (backward compatibility)
       masterResult = data;
       // Use API base URL for downloads (remove /api suffix for static file serving)
