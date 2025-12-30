@@ -1387,14 +1387,20 @@
       }
     }
     
-    // Validate token with backend and update localStorage if needed
+    // Validate token with backend - DO NOT clear localStorage on failure
+    // Trust localStorage - only use this for refreshing user data
     async function validateAndUpdateToken() {
       const authToken = localStorage.getItem('auth_token');
-      if (!authToken) {
-        console.log('No token found, user not logged in');
+      const userId = localStorage.getItem('user_id');
+      
+      // Trust localStorage - if we have token and user_id, user is logged in
+      if (!authToken || !userId) {
+        console.log('No token or user_id in localStorage, user not logged in');
         return false;
       }
       
+      // User has localStorage data, they are logged in
+      // Try to validate and refresh data, but don't clear on failure
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
           method: 'GET',
@@ -1406,7 +1412,7 @@
         if (response.ok) {
           const data = await response.json();
           if (data.valid && data.user) {
-            console.log('✅ Token is valid, user:', data.user.username);
+            console.log('✅ Token validated, user:', data.user.username);
             // Update localStorage with fresh user data
             if (data.user.id) localStorage.setItem('user_id', data.user.id);
             if (data.user.username) localStorage.setItem('username', data.user.username);
@@ -1419,24 +1425,21 @@
             if (data.user.profile_image_url) {
               localStorage.setItem('profile_image_url', data.user.profile_image_url);
             }
-            return true;
           } else {
-            console.log('❌ Token invalid, clearing auth data');
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_id');
-            return false;
+            console.log('⚠️ Token validation returned invalid, but keeping localStorage (user may need to re-login later)');
+            // DO NOT clear localStorage - let the user stay "logged in" until they explicitly sign out
           }
         } else {
-          console.log('❌ Token validation failed, clearing auth data');
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user_id');
-          return false;
+          console.log('⚠️ Token validation request failed, keeping localStorage');
+          // DO NOT clear localStorage
         }
       } catch (error) {
         console.error('Token validation error:', error);
-        // Don't clear on network errors, just use existing localStorage
-        return !!localStorage.getItem('user_id');
+        // DO NOT clear localStorage
       }
+      
+      // Always return true if we have localStorage data
+      return !!(localStorage.getItem('auth_token') && localStorage.getItem('user_id'));
     }
     
     // Update authentication UI - trust localStorage immediately, validate in background
