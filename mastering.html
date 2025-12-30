@@ -2760,15 +2760,23 @@ masterBtn.addEventListener('click', async () => {
     
     // 🚫 SAFETY: Only execute this block if we DON'T have a jobId (old sync format)
     // If we have jobId, we should have returned above - this should NEVER execute with jobId
-    // CRITICAL: Check data.downloads exists AND has wav before accessing
-    // Also check that jobIdReceived flag is false (triple safety)
-    // 🚫 EMERGENCY FIX: Add guard to prevent undefined access
-    if (!data || !data.downloads || typeof data.downloads !== 'object' || !data.downloads.wav) {
+    // 🚫 EMERGENCY FIX: Check data exists and has no jobId FIRST
+    if (!data || data.jobId) {
+      // If we have jobId, we already handled it above - return immediately
+      if (data && data.jobId) {
+        console.warn('⚠️ WARNING: Code reached after return with jobId - this should not happen!');
+      }
+      return; // Exit to prevent any wav access
+    }
+    
+    // 🚫 CRITICAL: Now check if downloads.wav exists - use safe property access
+    if (!data.downloads || typeof data.downloads !== 'object' || !data.downloads.wav) {
       console.warn('⚠️ Old format check failed - data.downloads.wav does not exist');
       return; // Exit to prevent error
     }
     
-    if (!jobIdReceived && !data.jobId && data && data.downloads && typeof data.downloads === 'object' && data.downloads.wav) {
+    // ✅ Safe to access data.downloads.wav now - all guards passed
+    if (!jobIdReceived && data.downloads && data.downloads.wav) {
       console.log('⚠️ Old sync format (no jobId) - using direct response');
       // Old format - direct response (backward compatibility)
       masterResult = data;
