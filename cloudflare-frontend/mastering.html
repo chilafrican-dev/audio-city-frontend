@@ -1513,10 +1513,8 @@
 </div>
 
 <script>
-// 🔥 VERIFICATION: If you see this in console, cloudflare-frontend/mastering.html is loaded
-// 🔥 VERIFICATION: If you see this in console, cloudflare-frontend/mastering.html is loaded
-console.log("🔥🔥🔥 ACTIVE FILE CONFIRMED - cloudflare-frontend/mastering.html loaded 🔥🔥🔥");
-console.log("🔥🔥🔥 ACTIVE FILE CONFIRMED - cloudflare-frontend/mastering.html loaded 🔥🔥🔥");
+// 🔥 VERIFICATION: If you see this in console, mastering.html is loaded
+console.log("🔥🔥🔥 ACTIVE FILE CONFIRMED - mastering.html loaded 🔥🔥🔥");
 
 // API configuration - use direct VM connection (worker can't connect to HTTP backends)
 // Determine API URL based on hostname
@@ -1528,6 +1526,8 @@ const API_PRIMARY = isLocalhost
 // Fallback to localhost only if VM is down (for local development)
 const API_FALLBACK = 'http://localhost:3002/api';
 let API = API_PRIMARY;
+// Make API globally accessible for mastering.js
+window.API = API;
 const MOBILE_MONEY_NUMBER = '+256700000000';
 
 // Julypay API Configuration
@@ -1662,7 +1662,7 @@ let backendCheckInterval = null;
 let backendCheckFailures = 0;
 const MAX_BACKEND_CHECK_FAILURES = 3;
 
-// State
+// State - Expose to window for mastering.js
 let currentFile = null;
 let audioBuffer = null;
 let masteredBuffer = null;
@@ -1673,6 +1673,9 @@ let playbackMode = 'after'; // 'before' or 'after'
 let masteredAudioElement = null; // HTML5 audio element for mastered playback
 let selectedPreset = 'kidandali';
 let downloadUrls = { audioFile: null, mp3: null }; // Changed 'wav' to 'audioFile' to avoid .wav access
+let masterResult = null;
+let startTime = 0;
+let pausedAt = 0;
 
 // Helper function to safely get audio URL (NO .wav property - using 'audioFile' instead)
 function getAudioUrl() {
@@ -1701,9 +1704,17 @@ function getWavUrl() {
     return null;
   }
 }
-let masterResult = null;
-let startTime = 0;
-let pausedAt = 0;
+
+// Expose state to window for mastering.js (will be synced when values change)
+window.currentFile = currentFile;
+window.selectedPreset = selectedPreset;
+window.audioContext = audioContext;
+window.masteredBuffer = masteredBuffer;
+window.playbackMode = playbackMode;
+window.downloadUrls = downloadUrls || { audioFile: null, mp3: null }; // Ensure always an object (NO .wav property)
+window.isPlaying = isPlaying;
+window.getAudioUrl = getAudioUrl; // Expose helper
+window.getWavUrl = getWavUrl; // Expose helper
 let animationId = null;
 let analyserNode = null;
 let dataArray = null;
@@ -1921,6 +1932,7 @@ audioInput.addEventListener('change', e => {
 
 async function handleFile(file) {
   currentFile = file;
+  window.currentFile = currentFile; // Sync for mastering.js
   trackName.textContent = file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name;
   statusText.textContent = 'Loading audio...';
   statusBar.className = 'status-bar processing';
@@ -1935,9 +1947,11 @@ async function handleFile(file) {
   downloadMp3.disabled = true;
   masterResult = null;
   masteredBuffer = null; // Reset mastered buffer for new file
+  window.masteredBuffer = masteredBuffer; // Sync for mastering.js
   
   // Decode audio
   audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+  window.audioContext = audioContext; // Sync for mastering.js
   const arrayBuffer = await file.arrayBuffer();
   audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
   
@@ -1987,6 +2001,7 @@ document.querySelectorAll('.preset-list').forEach(list => {
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selectedPreset = btn.dataset.preset;
+    window.selectedPreset = selectedPreset; // Sync for mastering.js
     
     // Update target
     const lufs = btn.dataset.lufs;
@@ -2040,14 +2055,15 @@ function updatePlayhead() {
 
 function startPlayback() {
   // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
-  // Prefer preview WAV (16-bit), then MP3, then 24-bit WAV
+  // Prefer preview, then MP3, then mastered file
   if (playbackMode === 'after' && !masteredBuffer) {
-    const audioUrl = getAudioUrl(); // Use helper function - NO direct .wav access
+    // Use helper function - NO direct .wav access
+    const audioUrl = getAudioUrl();
     console.log('Using HTML5 audio for mastered playback:', audioUrl);
     console.log('Available URLs:', downloadUrls);
     
     if (audioUrl) {
-      // Use HTML5 audio element for mastered playback (Web Audio API can't decode 24-bit WAV)
+      // Use HTML5 audio element for mastered playback
       if (!masteredAudioElement || masteredAudioElement.src !== audioUrl) {
         masteredAudioElement = new Audio(audioUrl);
         masteredAudioElement.preload = 'auto';
@@ -2505,6 +2521,7 @@ progressBar.addEventListener('click', e => {
 // A/B Toggle
 beforeBtn.addEventListener('click', () => {
   playbackMode = 'before';
+  window.playbackMode = playbackMode; // Sync for mastering.js
   beforeBtn.classList.add('active');
   afterBtn.classList.remove('active');
   const currentModeEl = document.getElementById('currentMode');
@@ -2524,6 +2541,7 @@ beforeBtn.addEventListener('click', () => {
 
 afterBtn.addEventListener('click', () => {
   playbackMode = 'after';
+  window.playbackMode = playbackMode; // Sync for mastering.js
   afterBtn.classList.add('active');
   beforeBtn.classList.remove('active');
   const currentModeEl = document.getElementById('currentMode');
@@ -2545,445 +2563,11 @@ afterBtn.addEventListener('click', () => {
   }
 });
 
-// Master
-masterBtn.addEventListener('click', async () => {
-  if (!currentFile) return;
-  
-  const backendOk = await checkBackend();
-  if (!backendOk) {
-    statusBar.className = 'status-bar error';
-    statusText.textContent = '❌ Backend offline. Please ensure the backend is running and accessible.';
-    return;
-  }
-  
-  // Ensure API is set to VM (backend is always on VM, not localhost)
-  // Even if checkBackend succeeded on localhost, we need to use VM for the actual request
-  if (API.includes('localhost:3002')) {
-    console.log('Switching from localhost to VM for mastering request');
-    API = 'https://api.audiocity-ug.com/api';
-  }
-  
-  // Optional: Show confirmation (reminder is already visible)
-  // User can proceed directly since reminder is always visible
-  
-  // Stop playback
-  if (isPlaying) stopPlayback();
-  pausedAt = 0;
-  
-  masterBtn.disabled = true;
-  masterBtn.innerHTML = '<span>⏳</span> Mastering...';
-  statusBar.className = 'status-bar processing';
-  statusText.textContent = 'Processing with real FFmpeg loudnorm...';
-  downloadReady.classList.remove('show');
-  
-  try {
-    const formData = new FormData();
-    formData.append('audio', currentFile);
-    formData.append('preset', selectedPreset);
-    
-    // Log the API URL being used for debugging
-    console.log('Mastering request to:', `${API}/quick-master`);
-    
-    // Start progress polling
-    let progressId = null;
-    let progressInterval = null; // Declare at function scope
-    
-    const pollProgress = async (id) => {
-      try {
-        const progressRes = await fetch(`${API}/mastering-progress/${id}`);
-        if (progressRes.ok) {
-          const progress = await progressRes.json();
-          if (progress.status === 'processing') {
-            statusText.textContent = `${progress.message} (${progress.progress}%)`;
-            // Update progress bar if it exists
-            const progressBar = document.getElementById('progressBar');
-            if (progressBar) {
-              progressBar.style.width = `${progress.progress}%`;
-            }
-            return progress;
-          } else if (progress.status === 'complete') {
-            clearInterval(progressInterval);
-            progressInterval = null;
-            statusText.textContent = '✅ Mastering complete!';
-            // Refresh stats when complete status is detected (with small delay to ensure backend saved)
-            setTimeout(() => {
-              loadUsageStats();
-            }, 500);
-            return progress;
-          } else if (progress.status === 'error') {
-            clearInterval(progressInterval);
-            progressInterval = null;
-            throw new Error(progress.message);
-          }
-        }
-      } catch (err) {
-        console.warn('Progress poll error:', err);
-        if (err.message && err.message.includes('Error:')) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-          throw err;
-        }
-      }
-      return null;
-    };
-    
-    // Add timeout to prevent hanging (15 minutes for large files - mastering can take time)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15 minutes
-    
-    let res;
-    try {
-      res = await fetch(`${API}/quick-master`, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-      }
-      if (fetchError.name === 'AbortError') {
-        throw new Error('Mastering request timed out. The file may be too large or the server is taking too long.');
-      }
-      throw fetchError;
-    }
-    
-    // Check content type before parsing
-    const contentType = res.headers.get('content-type') || '';
-    console.log('Response content-type:', contentType);
-    let data;
-    
-    // Try to parse JSON response even if status is not OK (for error messages)
-    if (contentType.includes('application/json')) {
-      data = await res.json();
-      console.log('Mastering response received:', data);
-    } else {
-      // If not JSON, try to parse anyway but handle errors
-      const text = await res.text();
-      console.log('Non-JSON response received:', text.substring(0, 200));
-      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-        throw new Error('Backend returned HTML instead of JSON. Backend may be offline or misconfigured.');
-      }
-      try {
-        data = JSON.parse(text);
-        console.log('Parsed JSON from text:', data);
-      } catch (parseError) {
-        throw new Error(`Invalid response from backend: ${text.substring(0, 100)}`);
-      }
-    }
-    
-    // Check if response is OK or if it's a service unavailable error
-    if (!res.ok) {
-      console.error('Backend error response:', res.status, data);
-      
-      // Handle service unavailable (503) - mastering feature not available
-      if (res.status === 503 && data.message) {
-        if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-        }
-        throw new Error(data.message || 'Audio mastering is not available in the current backend.');
-      }
-      
-      // Handle other errors
-      throw new Error(data.error || data.message || `Backend error: ${res.status} ${res.statusText}`);
-    }
-    
-    if (!data.success) {
-      console.error('Mastering failed:', data.error);
-      if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-      }
-      throw new Error(data.error || data.message || 'Mastering failed');
-    }
-    
-    // Start polling for progress if progressId is provided
-    if (data.progressId) {
-      progressId = data.progressId;
-      progressInterval = setInterval(async () => {
-        const progress = await pollProgress(progressId);
-        if (progress && progress.status === 'complete') {
-          // Fetch the final result
-          try {
-            const resultRes = await fetch(`${API}/mastering-result/${progressId}`);
-            if (resultRes.ok) {
-              const result = await resultRes.json();
-              if (result.success) {
-                masterResult = result;
-                // Use API base URL for downloads (remove /api suffix for static file serving)
-                const baseUrl = API.replace('/api', '');
-                // Use 'audioFile' instead of 'wav' - NO .wav access
-                // SAFE: Check if result.downloads exists before accessing
-                if (result && result.downloads && typeof result.downloads === 'object') {
-                  const wavValue = result.downloads['wav'] || result.downloads['audioFile'] || result.downloads['audioUrl'];
-                  if (wavValue) {
-                    downloadUrls['audioFile'] = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
-                  }
-                  if (result.downloads.mp3) {
-                    downloadUrls.mp3 = result.downloads.mp3.startsWith('http') ? result.downloads.mp3 : `${baseUrl}${result.downloads.mp3}`;
-                  }
-                  // Use 16-bit preview WAV for browser playback (if available)
-                  if (result.downloads.preview) {
-                    downloadUrls.preview = result.downloads.preview.startsWith('http') ? result.downloads.preview : `${baseUrl}${result.downloads.preview}`;
-                  }
-                }
-                
-                // Update meters
-                inputLufs.textContent = `${result.input.lufs.toFixed(1)}`;
-                outputLufs.textContent = `${result.output.lufs.toFixed(1)}`;
-                lufsDisplay.textContent = `${result.output.lufs.toFixed(1)} LUFS`;
-                
-                peakDisplay.textContent = `${result.output.truePeak.toFixed(1)} dB`;
-                const peakPercent = Math.min(100, Math.max(0, (result.output.truePeak + 10) * 10));
-                peakBar.style.width = `${peakPercent}%`;
-                
-                const dr = Math.abs(result.output.lufs - result.input.lufs);
-                drDisplay.textContent = `${dr.toFixed(0)} DR`;
-                drBar.style.width = `${Math.min(100, dr * 10)}%`;
-                
-                gainDisplay.textContent = `${result.gain > 0 ? '+' : ''}${result.gain.toFixed(1)} dB`;
-                
-                // Load mastered audio for playback
-                // Try preview WAV first, then MP3, then 24-bit WAV as fallbacks
-                // Retry loading with exponential backoff since file might not be ready immediately
-                let audioLoadedSuccessfully = false;
-                
-                const tryLoadAudioFile = async (url, formatName, retryCount = 0, maxRetries = 3) => {
-                  try {
-                    console.log(`Loading ${formatName} from:`, url);
-                    
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    const contentType = response.headers.get('content-type');
-                    console.log(`Response content-type:`, contentType);
-                    
-                    const arrayBuffer = await response.arrayBuffer();
-                    console.log(`Downloaded ${formatName} size:`, arrayBuffer.byteLength, 'bytes');
-                    
-                    // Check if response is suspiciously small (likely an error message)
-                    if (arrayBuffer.byteLength < 1000) {
-                      const textDecoder = new TextDecoder();
-                      const errorText = textDecoder.decode(arrayBuffer);
-                      console.warn(`Response too small, likely error:`, errorText);
-                      
-                      // If it's an error and we have retries left, wait and retry
-                      if (retryCount < maxRetries) {
-                        const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
-                        console.log(`${formatName} not ready yet, retrying in ${waitTime}ms... (attempt ${retryCount + 1}/${maxRetries})`);
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
-                        return tryLoadAudioFile(url, formatName, retryCount + 1, maxRetries);
-                      } else {
-                        throw new Error(`${formatName} file not available: ${errorText}`);
-                      }
-                    }
-                    
-                    // Try to decode the audio
-                    masteredBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
-                    
-                    // Update waveform to show mastered version
-                    if (playbackMode === 'after') {
-                      drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-                    }
-                    console.log(`✅ Mastered ${formatName} loaded for preview`);
-                    return true;
-                  } catch (err) {
-                    // If we have retries left and it's a file-not-ready error, retry
-                    if (retryCount < maxRetries && (err.message.includes('not available') || err.message.includes('not ready'))) {
-                      const waitTime = Math.pow(2, retryCount) * 1000;
-                      console.log(`Retrying ${formatName} load in ${waitTime}ms... (attempt ${retryCount + 1}/${maxRetries})`);
-                      await new Promise(resolve => setTimeout(resolve, waitTime));
-                      return tryLoadAudioFile(url, formatName, retryCount + 1, maxRetries);
-                    }
-                    throw err; // Re-throw to allow fallback to next format
-                  }
-                };
-                
-                // Try formats in order: preview WAV -> MP3 -> full WAV
-                try {
-                  console.log('Full download URLs:', downloadUrls);
-                  
-                  // Try preview WAV first
-                  if (downloadUrls.preview) {
-                    try {
-                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.preview, 'preview WAV');
-                    } catch (previewErr) {
-                      console.warn('Preview WAV failed:', previewErr.message);
-                      // Fall through to try MP3
-                    }
-                  }
-                  
-                  // If preview failed, try MP3
-                  if (!audioLoadedSuccessfully && downloadUrls.mp3) {
-                    try {
-                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.mp3, 'MP3');
-                    } catch (mp3Err) {
-                      console.warn('MP3 failed:', mp3Err.message);
-                      // Fall through to try full WAV
-                    }
-                  }
-                  
-                  // If both failed, try full WAV
-                  if (!audioLoadedSuccessfully && getWavUrl()) {
-                    try {
-                      audioLoadedSuccessfully = await tryLoadAudioFile(getWavUrl(), 'WAV');
-                    } catch (wavErr) {
-                      console.warn('WAV failed:', wavErr.message);
-                    }
-                  }
-                  
-                  if (!audioLoadedSuccessfully) {
-                    // All formats failed - show message but downloads still work
-                    statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
-                  }
-                } catch (err) {
-                  console.warn('Could not load mastered audio for preview:', err.name, err.message);
-                  statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
-                }
-                
-                statusBar.className = 'status-bar';
-                // Only update status if audio loaded successfully, otherwise keep the error message
-                if (audioLoadedSuccessfully) {
-                  statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
-                }
-                
-                // Refresh usage stats after mastering completes (with small delay to ensure backend saved)
-                setTimeout(() => {
-                  loadUsageStats();
-                }, 500);
-                
-                downloadReady.classList.add('show');
-                downloadWav.disabled = false;
-                downloadMp3.disabled = false;
-              }
-            }
-          } catch (err) {
-            console.error('Error fetching result:', err);
-          }
-        }
-      }, 500); // Poll every 500ms
-    } else {
-      // Old format - direct response (backward compatibility)
-      masterResult = data;
-      // Use API base URL for downloads (remove /api suffix for static file serving)
-      const baseUrl = API.replace('/api', '');
-      // Use 'audioFile' instead of 'wav' - NO .wav access
-      // SAFE: Check if data.downloads exists before accessing
-      if (data && data.downloads && typeof data.downloads === 'object') {
-        const wavValue = data.downloads['wav'] || data.downloads['audioFile'] || data.downloads['audioUrl'];
-        if (wavValue) {
-          downloadUrls['audioFile'] = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
-        }
-        if (data.downloads.mp3) {
-          downloadUrls.mp3 = data.downloads.mp3.startsWith('http') ? data.downloads.mp3 : `${baseUrl}${data.downloads.mp3}`;
-        }
-      }
-      
-      // Update meters
-      inputLufs.textContent = `${data.input.lufs.toFixed(1)}`;
-      outputLufs.textContent = `${data.output.lufs.toFixed(1)}`;
-      lufsDisplay.textContent = `${data.output.lufs.toFixed(1)} LUFS`;
-      
-      peakDisplay.textContent = `${data.output.truePeak.toFixed(1)} dB`;
-      const peakPercent = Math.min(100, Math.max(0, (data.output.truePeak + 10) * 10));
-      peakBar.style.width = `${peakPercent}%`;
-      
-      const dr = Math.abs(data.output.lufs - data.input.lufs);
-      drDisplay.textContent = `${dr.toFixed(0)} DR`;
-      drBar.style.width = `${Math.min(100, dr * 10)}%`;
-      
-      gainDisplay.textContent = `${data.gain > 0 ? '+' : ''}${data.gain.toFixed(1)} dB`;
-      
-      // Load mastered audio for playback
-      // Note: Preview is optional - if it fails, downloads still work
-      let previewLoaded = false;
-      try {
-        const previewUrl = getAudioUrl(); // Use helper function - NO direct .wav access
-        console.log('Loading mastered audio for preview from:', previewUrl);
-        
-        const masteredResponse = await fetch(previewUrl);
-        if (!masteredResponse.ok) {
-          throw new Error(`HTTP ${masteredResponse.status}: ${masteredResponse.statusText}`);
-        }
-        
-        const masteredArrayBuffer = await masteredResponse.arrayBuffer();
-        
-        // Try to decode
-        try {
-          masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer.slice(0));
-          
-          // Update waveform to show mastered version
-          if (playbackMode === 'after') {
-            drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-          }
-          console.log('✅ Mastered audio loaded for preview');
-          previewLoaded = true;
-        } catch (decodeErr) {
-          console.warn('Could not decode mastered audio:', decodeErr.name, decodeErr.message);
-          // Try WAV if MP3 failed
-          if (previewUrl === downloadUrls.mp3 && getWavUrl()) {
-            try {
-              const wavResponse = await fetch(getWavUrl());
-              const wavArrayBuffer = await wavResponse.arrayBuffer();
-              masteredBuffer = await audioContext.decodeAudioData(wavArrayBuffer.slice(0));
-              if (playbackMode === 'after') {
-                drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-              }
-              console.log('✅ Mastered MP3 loaded for preview');
-              previewLoaded = true;
-            } catch (wavErr) {
-              console.warn('Could not decode WAV either:', wavErr.name, wavErr.message);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Could not load mastered audio for preview:', err.name, err.message);
-      }
-      
-      statusBar.className = 'status-bar';
-      if (previewLoaded) {
-        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
-      } else {
-        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
-      }
-      
-      downloadReady.classList.add('show');
-      downloadWav.disabled = false;
-      downloadMp3.disabled = false;
-    }
-    
-  } catch (err) {
-    console.error('Mastering error:', err);
-    // Clean up progress interval if it exists
-    if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
-      clearInterval(progressInterval);
-      progressInterval = null;
-    }
-    statusBar.className = 'status-bar error';
-    // Show user-friendly error message
-    const errorMsg = err.message || 'Mastering failed';
-    if (errorMsg.includes('temporarily unavailable') || errorMsg.includes('not available')) {
-      statusText.innerHTML = `❌ <strong>Feature Unavailable:</strong> ${errorMsg}`;
-    } else {
-      statusText.textContent = `❌ ${errorMsg}`;
-    }
-    masterBtn.disabled = false;
-    masterBtn.innerHTML = '<span>🎛️</span> Master';
-  } finally {
-    // Ensure button is always re-enabled
-    masterBtn.disabled = false;
-    if (masterBtn.innerHTML.includes('⏳')) {
-      masterBtn.innerHTML = '<span>🎛️</span> Master';
-    }
-  }
-  masterBtn.innerHTML = '<span>🎛️</span> Master Track';
-});
+// ✅ Button handler (SAFE)
+// ✅ Mastering logic moved to mastering.js (clean async implementation)
+// Old mastering code removed - see mastering.js for the clean rewrite
+// 🔥 ACTIVE FILE CONFIRMED - If you see this in console, mastering.html is loaded
+console.log("🔥 ACTIVE FILE CONFIRMED - mastering.html loaded");
 
 // Download with progress
 async function downloadFile(url, filename, progressEl, button) {
@@ -3166,277 +2750,10 @@ checkBackend().then((isAvailable) => {
     </div>
   </footer>
 
+  <!-- Clean Mastering JavaScript Module -->
+  <!-- IMPORTANT: Disable Rocket Loader and add cache busting to avoid caching issues -->
+  <!-- Test with hard refresh (Cmd+Shift+R / Ctrl+Shift+R) and check console logs -->
   <script src="mastering.js?v=20241230-4" data-cfasync="false"></script>
-</body>
-</html>
 
-      
-      // Load mastered audio for playback
-      // Note: Preview is optional - if it fails, downloads still work
-      let previewLoaded = false;
-      try {
-        const previewUrl = getAudioUrl(); // Use helper function - NO direct .wav access
-        console.log('Loading mastered audio for preview from:', previewUrl);
-        
-        const masteredResponse = await fetch(previewUrl);
-        if (!masteredResponse.ok) {
-          throw new Error(`HTTP ${masteredResponse.status}: ${masteredResponse.statusText}`);
-        }
-        
-        const masteredArrayBuffer = await masteredResponse.arrayBuffer();
-        
-        // Try to decode
-        try {
-          masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer.slice(0));
-          
-          // Update waveform to show mastered version
-          if (playbackMode === 'after') {
-            drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-          }
-          console.log('✅ Mastered audio loaded for preview');
-          previewLoaded = true;
-        } catch (decodeErr) {
-          console.warn('Could not decode mastered audio:', decodeErr.name, decodeErr.message);
-          // Try WAV if MP3 failed
-          if (previewUrl === downloadUrls.mp3 && getWavUrl()) {
-            try {
-              const wavResponse = await fetch(getWavUrl());
-              const wavArrayBuffer = await wavResponse.arrayBuffer();
-              masteredBuffer = await audioContext.decodeAudioData(wavArrayBuffer.slice(0));
-              if (playbackMode === 'after') {
-                drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-              }
-              console.log('✅ Mastered MP3 loaded for preview');
-              previewLoaded = true;
-            } catch (wavErr) {
-              console.warn('Could not decode WAV either:', wavErr.name, wavErr.message);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Could not load mastered audio for preview:', err.name, err.message);
-      }
-      
-      statusBar.className = 'status-bar';
-      if (previewLoaded) {
-        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
-      } else {
-        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
-      }
-      
-      downloadReady.classList.add('show');
-      downloadWav.disabled = false;
-      downloadMp3.disabled = false;
-    }
-    
-  } catch (err) {
-    console.error('Mastering error:', err);
-    // Clean up progress interval if it exists
-    if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
-      clearInterval(progressInterval);
-      progressInterval = null;
-    }
-    statusBar.className = 'status-bar error';
-    // Show user-friendly error message
-    const errorMsg = err.message || 'Mastering failed';
-    if (errorMsg.includes('temporarily unavailable') || errorMsg.includes('not available')) {
-      statusText.innerHTML = `❌ <strong>Feature Unavailable:</strong> ${errorMsg}`;
-    } else {
-      statusText.textContent = `❌ ${errorMsg}`;
-    }
-    masterBtn.disabled = false;
-    masterBtn.innerHTML = '<span>🎛️</span> Master';
-  } finally {
-    // Ensure button is always re-enabled
-    masterBtn.disabled = false;
-    if (masterBtn.innerHTML.includes('⏳')) {
-      masterBtn.innerHTML = '<span>🎛️</span> Master';
-    }
-  }
-  masterBtn.innerHTML = '<span>🎛️</span> Master Track';
-});
-
-// Download with progress
-async function downloadFile(url, filename, progressEl, button) {
-  try {
-    button.disabled = true;
-    button.classList.add('downloading');
-    progressEl.style.display = 'inline';
-    progressEl.textContent = '0%';
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Download failed');
-    
-    const contentLength = response.headers.get('content-length');
-    const total = contentLength ? parseInt(contentLength, 10) : 0;
-    
-    const reader = response.body.getReader();
-    const chunks = [];
-    let received = 0;
-    
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      chunks.push(value);
-      received += value.length;
-      
-      if (total > 0) {
-        const percent = Math.round((received / total) * 100);
-        progressEl.textContent = `${percent}%`;
-      } else {
-        progressEl.textContent = '...';
-      }
-    }
-    
-    // Combine chunks into blob
-    const blob = new Blob(chunks);
-    const blobUrl = URL.createObjectURL(blob);
-    
-    // Trigger download
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    // Cleanup
-    URL.revokeObjectURL(blobUrl);
-    
-    progressEl.textContent = '✅';
-    setTimeout(() => {
-      progressEl.style.display = 'none';
-      button.classList.remove('downloading');
-      button.disabled = false;
-    }, 1000);
-    
-  } catch (err) {
-    progressEl.textContent = '❌';
-    button.classList.remove('downloading');
-    button.disabled = false;
-    alert('Download failed: ' + err.message);
-  }
-}
-
-// Downloads
-downloadWav.addEventListener('click', () => {
-  // Use helper function - NO direct .wav access
-  const audioUrl = getWavUrl();
-  if (audioUrl && currentFile) {
-    const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.wav');
-    const progressEl = document.getElementById('wavProgress');
-    downloadFile(audioUrl, filename, progressEl, downloadWav);
-  } else {
-    console.warn('WAV URL not available yet');
-  }
-});
-
-downloadMp3.addEventListener('click', () => {
-  if (downloadUrls.mp3 && currentFile) {
-    const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.mp3');
-    const progressEl = document.getElementById('mp3Progress');
-    downloadFile(downloadUrls.mp3, filename, progressEl, downloadMp3);
-  }
-});
-
-// Keyboard shortcuts
-document.addEventListener('keydown', e => {
-  if (e.target.matches('input, textarea')) return;
-  
-  if (e.code === 'Space') {
-    e.preventDefault();
-    playBtn.click();
-  } else if (e.code === 'ArrowLeft') {
-    e.preventDefault();
-    rewindBtn.click();
-  } else if (e.code === 'ArrowRight') {
-    e.preventDefault();
-    forwardBtn.click();
-  }
-});
-
-// Resize
-window.addEventListener('resize', () => {
-  if (playbackMode === 'before' && audioBuffer) {
-    drawWaveform(audioBuffer, '#6b7280', '#9ca3af');
-  } else if (playbackMode === 'after') {
-    if (masteredBuffer) {
-      drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-    } else if (audioBuffer) {
-      drawWaveform(audioBuffer, '#8b5cf6', '#06b6d4');
-    }
-  }
-});
-
-// Wire donate button after DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', wireDonateButtons);
-} else {
-  wireDonateButtons();
-}
-
-// Init - check backend once, then poll only if it succeeds
-checkBackend().then((isAvailable) => {
-  if (isAvailable) {
-    // Only continue polling if backend is available
-    backendCheckInterval = setInterval(checkBackend, 30000); // Check every 30s if available
-    
-    // Load usage stats after backend is confirmed available
-    loadUsageStats();
-    // Refresh stats every 30 seconds
-    setInterval(loadUsageStats, 30000);
-  } else {
-    // Still try to load stats even if backend check fails (might be a different issue)
-    loadUsageStats();
-  }
-  // If backend is not available, stop checking to avoid console spam
-});
-</script>
-
-  <!-- Footer -->
-  <footer style="background: var(--bg-deep); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
-    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
-      <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
-          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
-        </div>
-        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
-          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
-        </p>
-        <div style="display: flex; gap: 12px;">
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
-        </div>
-      </div>
-      <div>
-        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
-          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
-          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
-          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
-          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
-        </div>
-      </div>
-      <div>
-        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
-          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
-        </div>
-      </div>
-    </div>
-    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
-    </div>
-  </footer>
-
-  <script src="mastering.js?v=20241230-4" data-cfasync="false"></script>
 </body>
 </html>
