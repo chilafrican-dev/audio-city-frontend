@@ -2740,23 +2740,34 @@ masterBtn.addEventListener('click', async () => {
     
     // 🚫 ABSOLUTE RULE: If we have jobId, wav DOES NOT EXIST yet - DO NOT ACCESS IT
     // Validate response - must have success and jobId
-    if (!data.success || !data.jobId) {
+    if (!data || !data.success || !data.jobId) {
       console.error('Mastering job failed:', data);
       if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
         clearInterval(progressInterval);
         progressInterval = null;
       }
-      throw new Error(data.error || data.message || 'Mastering job failed');
+      throw new Error(data?.error || data?.message || 'Mastering job failed');
     }
     
-    // ✅ We already handled the response above and started polling
-    // This code should never execute - we returned above
-    // But keeping it here for safety/backward compatibility
+    // 🚫 CRITICAL: If we reach here and have jobId, we should have returned above
+    // This is a safety check - if jobId exists, DO NOT access any wav properties
+    if (data && data.jobId) {
+      console.warn('⚠️ WARNING: Code reached after return - this should not happen!');
+      console.warn('⚠️ jobId exists:', data.jobId, '- DO NOT access wav!');
+      // Return immediately to prevent any wav access
+      return;
+    }
     
     // 🚫 SAFETY: Only execute this block if we DON'T have a jobId (old sync format)
     // If we have jobId, we should have returned above - this should NEVER execute with jobId
     // CRITICAL: Check data.downloads exists AND has wav before accessing
     // Also check that jobIdReceived flag is false (triple safety)
+    // 🚫 EMERGENCY FIX: Add guard to prevent undefined access
+    if (!data || !data.downloads || typeof data.downloads !== 'object' || !data.downloads.wav) {
+      console.warn('⚠️ Old format check failed - data.downloads.wav does not exist');
+      return; // Exit to prevent error
+    }
+    
     if (!jobIdReceived && !data.jobId && data && data.downloads && typeof data.downloads === 'object' && data.downloads.wav) {
       console.log('⚠️ Old sync format (no jobId) - using direct response');
       // Old format - direct response (backward compatibility)
