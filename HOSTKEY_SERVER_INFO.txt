@@ -1,0 +1,35 @@
+# ============================================
+# NEW HOSTKEY SERVER INFORMATION
+# ============================================
+
+Server ID: 12023
+Hostname: 43.245.227.33
+Main IP: 43.245.227.33
+Mask: 255.255.255.0
+Gateway: 43.245.227.1
+
+Username: root
+Password: vMC3_K5+74 ⚠️ CHANGE THIS IMMEDIATELY!
+
+OS: Ubuntu 22.04
+Configuration: VPS 4 vCore / 6GB RAM / 120GB SSD
+Location: UK
+
+Control Panel: https://invapi.hostkey.com/?id=12023
+Support: support@hostkey.com
+24/7 Support: https://www.hostkey.com or +31208203777
+
+# ============================================
+# MASTERING SERVER (Original VPS)
+# ============================================
+IP: 168.119.241.59
+Port: 3001
+Endpoint: http://168.119.241.59:3001/api/quick-master
+
+# ============================================
+# TUNNEL SETUP
+# ============================================
+# The tunnel on the new HostKey server will proxy
+# requests to the mastering server at 168.119.241.59:3001
+# ============================================
+
