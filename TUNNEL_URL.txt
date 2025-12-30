@@ -1,0 +1,29 @@
+# ============================================
+# CLOUDFLARE TUNNEL URL - SET THIS IN CLOUDFLARE DASHBOARD
+# ============================================
+
+Tunnel URL: https://budgets-sanyo-diy-silent.trycloudflare.com
+
+# ============================================
+# SET THIS IN CLOUDFLARE DASHBOARD:
+# ============================================
+# 
+# 1. Go to: https://dash.cloudflare.com
+# 2. Workers & Pages → audio-city-api-d1
+# 3. Settings → Variables and Secrets
+# 4. Add Environment Variable:
+#    Name: MASTERING_SERVER_URL
+#    Value: https://budgets-sanyo-diy-silent.trycloudflare.com
+#
+# OR use wrangler CLI:
+# echo "https://budgets-sanyo-diy-silent.trycloudflare.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+#
+# ============================================
+# TUNNEL STATUS:
+# ============================================
+# Server: 43.245.227.33 (HostKey)
+# Service: mastering-tunnel.service
+# Status: ✅ Active and running
+# Proxies to: http://168.119.241.59:3001
+# ============================================
+
