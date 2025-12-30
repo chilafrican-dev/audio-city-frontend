@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <meta name="version" content="2024-12-19-v2">
   <title>Feed — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
@@ -25,18 +26,101 @@
         if (isLoggedIn) {
           document.documentElement.classList.add('user-logged-in');
           console.log('🔐 [Feed] Auth: User logged in - added user-logged-in class');
+          
+          // FALLBACK: Directly show/hide elements if CSS class doesn't work
+          setTimeout(function() {
+            var loggedOut = document.querySelectorAll('.auth-logged-out');
+            var loggedIn = document.querySelectorAll('.auth-logged-in');
+            var signOutBtn = document.getElementById('signOutBtn');
+            var signInBtn = document.getElementById('signInBtn');
+            var signUpBtn = document.getElementById('signUpBtn');
+            var uploadBtn = document.getElementById('uploadBtn');
+            var inboxLink = document.getElementById('inboxNavLink');
+            var profileBtn = document.getElementById('profileBtn');
+            
+            // Hide logged-out buttons
+            loggedOut.forEach(function(el) {
+              if (el) {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+              }
+            });
+            if (signInBtn) {
+              signInBtn.style.display = 'none';
+              signInBtn.style.visibility = 'hidden';
+            }
+            if (signUpBtn) {
+              signUpBtn.style.display = 'none';
+              signUpBtn.style.visibility = 'hidden';
+            }
+            
+            // Show logged-in buttons
+            loggedIn.forEach(function(el) {
+              if (el && el.id !== 'profileBtn') {
+                el.style.display = 'inline-block';
+                el.style.visibility = 'visible';
+              } else if (el && el.id === 'profileBtn') {
+                el.style.display = 'flex';
+                el.style.visibility = 'visible';
+              }
+            });
+            if (signOutBtn) {
+              signOutBtn.style.display = 'inline-block';
+              signOutBtn.style.visibility = 'visible';
+              console.log('✅ [Feed] Sign out button made visible');
+            }
+            if (uploadBtn) {
+              uploadBtn.style.display = 'inline-block';
+              uploadBtn.style.visibility = 'visible';
+            }
+            if (inboxLink) {
+              inboxLink.style.display = 'inline-block';
+              inboxLink.style.visibility = 'visible';
+            }
+            if (profileBtn) {
+              profileBtn.style.display = 'flex';
+              profileBtn.style.visibility = 'visible';
+            }
+            console.log('✅ [Feed] Fallback: Directly updated', loggedOut.length, 'logged-out and', loggedIn.length, 'logged-in elements');
+          }, 50);
         } else {
           document.documentElement.classList.remove('user-logged-in');
           console.log('🔓 [Feed] Auth: User NOT logged in - removed class');
+          
+          // FALLBACK: Directly show/hide elements
+          setTimeout(function() {
+            var loggedOut = document.querySelectorAll('.auth-logged-out');
+            var loggedIn = document.querySelectorAll('.auth-logged-in');
+            loggedOut.forEach(function(el) {
+              if (el) el.style.display = 'inline-block';
+            });
+            loggedIn.forEach(function(el) {
+              if (el) el.style.display = 'none';
+            });
+          }, 50);
         }
       }
       
       // Run immediately
       checkAuth();
       
-      // Run again after a tiny delay to catch any race conditions
+      // Run again after tiny delays to catch race conditions
       setTimeout(checkAuth, 10);
+      setTimeout(checkAuth, 50);
       setTimeout(checkAuth, 100);
+      setTimeout(checkAuth, 200);
+      setTimeout(checkAuth, 500);
+      
+      // Also run when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAuth);
+      }
+      
+      // And on window load
+      window.addEventListener('load', function() {
+        setTimeout(checkAuth, 100);
+        setTimeout(checkAuth, 500);
+      });
     })();
   </script>
   <meta name="theme-color" content="#8b5cf6" />
@@ -1341,7 +1425,7 @@
     }
     
     // Update authentication UI - trust localStorage immediately, validate in background
-    // Update auth UI - now uses CSS classes only, no inline styles
+    // Update auth UI - uses CSS classes + inline style fallback
     function updateAuthUI() {
       const authToken = localStorage.getItem('auth_token');
       const userId = localStorage.getItem('user_id');
@@ -1354,6 +1438,41 @@
         document.documentElement.classList.add('user-logged-in');
         // Update profile picture
         updateHeaderProfilePicture();
+        
+        // FALLBACK: Directly update elements
+        setTimeout(function() {
+          var signOutBtn = document.getElementById('signOutBtn');
+          var signInBtn = document.getElementById('signInBtn');
+          var signUpBtn = document.getElementById('signUpBtn');
+          var uploadBtn = document.getElementById('uploadBtn');
+          var inboxLink = document.getElementById('inboxNavLink');
+          var profileBtn = document.getElementById('profileBtn');
+          
+          if (signOutBtn) {
+            signOutBtn.style.display = 'inline-block';
+            signOutBtn.style.visibility = 'visible';
+          }
+          if (signInBtn) {
+            signInBtn.style.display = 'none';
+            signInBtn.style.visibility = 'hidden';
+          }
+          if (signUpBtn) {
+            signUpBtn.style.display = 'none';
+            signUpBtn.style.visibility = 'hidden';
+          }
+          if (uploadBtn) {
+            uploadBtn.style.display = 'inline-block';
+            uploadBtn.style.visibility = 'visible';
+          }
+          if (inboxLink) {
+            inboxLink.style.display = 'inline-block';
+            inboxLink.style.visibility = 'visible';
+          }
+          if (profileBtn) {
+            profileBtn.style.display = 'flex';
+            profileBtn.style.visibility = 'visible';
+          }
+        }, 100);
       } else {
         document.documentElement.classList.remove('user-logged-in');
       }
@@ -1392,21 +1511,84 @@
     // Validate token in background (non-blocking) - doesn't affect UI
     validateAndUpdateToken().catch(() => {});
     
-    // Auth UI is now CSS-only - just ensure the class is set correctly
+    // Auth UI - CSS class + inline style fallback
     function forceAuthUI() {
       const hasToken = !!localStorage.getItem('auth_token');
       const hasUser = !!localStorage.getItem('user_id');
       const isLoggedIn = hasToken && hasUser;
       
-      // Only update the CSS class - CSS handles the rest
+      // Update CSS class
       if (isLoggedIn) {
         document.documentElement.classList.add('user-logged-in');
       } else {
         document.documentElement.classList.remove('user-logged-in');
       }
       
-      // Attach sign out button click handler if needed
+      // FALLBACK: Directly update elements
       const signOutBtn = document.getElementById('signOutBtn');
+      const signInBtn = document.getElementById('signInBtn');
+      const signUpBtn = document.getElementById('signUpBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const inboxLink = document.getElementById('inboxNavLink');
+      const profileBtn = document.getElementById('profileBtn');
+      
+      if (isLoggedIn) {
+        // Show logged-in elements
+        if (signOutBtn) {
+          signOutBtn.style.display = 'inline-block';
+          signOutBtn.style.visibility = 'visible';
+        }
+        if (uploadBtn) {
+          uploadBtn.style.display = 'inline-block';
+          uploadBtn.style.visibility = 'visible';
+        }
+        if (inboxLink) {
+          inboxLink.style.display = 'inline-block';
+          inboxLink.style.visibility = 'visible';
+        }
+        if (profileBtn) {
+          profileBtn.style.display = 'flex';
+          profileBtn.style.visibility = 'visible';
+        }
+        // Hide logged-out elements
+        if (signInBtn) {
+          signInBtn.style.display = 'none';
+          signInBtn.style.visibility = 'hidden';
+        }
+        if (signUpBtn) {
+          signUpBtn.style.display = 'none';
+          signUpBtn.style.visibility = 'hidden';
+        }
+      } else {
+        // Hide logged-in elements
+        if (signOutBtn) {
+          signOutBtn.style.display = 'none';
+          signOutBtn.style.visibility = 'hidden';
+        }
+        if (uploadBtn) {
+          uploadBtn.style.display = 'none';
+          uploadBtn.style.visibility = 'hidden';
+        }
+        if (inboxLink) {
+          inboxLink.style.display = 'none';
+          inboxLink.style.visibility = 'hidden';
+        }
+        if (profileBtn) {
+          profileBtn.style.display = 'none';
+          profileBtn.style.visibility = 'hidden';
+        }
+        // Show logged-out elements
+        if (signInBtn) {
+          signInBtn.style.display = 'inline-block';
+          signInBtn.style.visibility = 'visible';
+        }
+        if (signUpBtn) {
+          signUpBtn.style.display = 'inline-block';
+          signUpBtn.style.visibility = 'visible';
+        }
+      }
+      
+      // Attach sign out button click handler if needed
       if (signOutBtn && !signOutBtn.dataset.listenerAttached) {
         signOutBtn.addEventListener('click', (e) => {
           e.preventDefault();
