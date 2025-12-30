@@ -1322,6 +1322,32 @@
     }
     
     // Auth UI updated on page load - no need for polling
+    // Fallback: force auth UI after load to avoid any Rocket Loader timing issues
+    function forceAuthUI() {
+      try {
+        const hasToken = !!localStorage.getItem('auth_token');
+        const hasUser = !!localStorage.getItem('user_id');
+        const signInBtn = document.getElementById('signInBtn');
+        const signUpBtn = document.getElementById('signUpBtn');
+        const profileBtn = document.getElementById('profileBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const inboxNavLink = document.getElementById('inboxNavLink');
+        if (hasToken && hasUser) {
+          if (signInBtn) signInBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
+          if (signUpBtn) signUpBtn.style.cssText = 'display: none !important; visibility: hidden !important;';
+          if (profileBtn) profileBtn.style.cssText = 'display: flex !important; visibility: visible !important; position: relative;';
+          if (uploadBtn) uploadBtn.style.cssText = 'display: inline-block !important; visibility: visible !important; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;';
+          if (inboxNavLink) inboxNavLink.style.cssText = 'display: inline-block !important; visibility: visible !important;';
+        }
+      } catch (e) {
+        console.warn('forceAuthUI fallback failed', e);
+      }
+    }
+    if (document.readyState === 'complete') {
+      setTimeout(forceAuthUI, 150);
+    } else {
+      window.addEventListener('load', () => setTimeout(forceAuthUI, 150));
+    }
     
     // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
