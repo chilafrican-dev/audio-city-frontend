@@ -1488,22 +1488,121 @@ export default {
       return Response.json({ violations: [] }, { headers: corsHeaders });
     }
 
-    // POST /api/quick-master - Audio mastering (not available in Cloudflare Worker)
+    // POST /api/quick-master - Audio mastering (proxy to VPS server)
     if (url.pathname === '/api/quick-master' && request.method === 'POST') {
-      return Response.json({ 
-        success: false,
-        error: 'Audio mastering is not available in the current backend. This feature requires server-side audio processing capabilities that are not supported in Cloudflare Workers.',
-        message: 'Mastering feature is temporarily unavailable. Please use a dedicated mastering service or contact support for more information.'
-      }, { status: 503, headers: corsHeaders });
+      try {
+        // Proxy request to VPS mastering server
+        // Note: If VPS is only HTTP, Cloudflare Workers can still connect, but HTTPS is preferred
+        const MASTERING_SERVER_URL = env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001';
+        const formData = await request.formData();
+        
+        // Forward the request to the mastering server with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15 minutes timeout
+        
+        try {
+          const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/quick-master`, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          // Get response data
+          const contentType = masteringResponse.headers.get('content-type') || '';
+          let responseData;
+          
+          if (contentType.includes('application/json')) {
+            responseData = await masteringResponse.json();
+          } else {
+            // Handle other content types (e.g., file downloads)
+            responseData = await masteringResponse.text();
+          }
+          
+          // Return response with appropriate headers
+          return new Response(
+            typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
+            {
+              status: masteringResponse.status,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': contentType || 'application/json'
+              }
+            }
+          );
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            throw new Error('Mastering request timed out. The file may be too large or the server is taking too long.');
+          }
+          throw fetchError;
+        }
+      } catch (error) {
+        console.error('Mastering proxy error:', error);
+        return Response.json({
+          success: false,
+          error: 'Failed to connect to mastering server',
+          message: error.message || 'Mastering service is temporarily unavailable. Please try again later.'
+        }, { status: 503, headers: corsHeaders });
+      }
     }
 
-    // GET /api/mastering-progress/:id - Mastering progress (stub)
+    // GET /api/mastering-progress/:id - Mastering progress (proxy to VPS server)
     if (url.pathname.startsWith('/api/mastering-progress/') && request.method === 'GET') {
-      return Response.json({ 
-        status: 'error',
-        message: 'Mastering feature is not available',
-        progress: 0
-      }, { headers: corsHeaders });
+      try {
+        const progressId = url.pathname.split('/api/mastering-progress/')[1];
+        const MASTERING_SERVER_URL = 'http://168.119.241.59:3001';
+        
+        const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/mastering-progress/${progressId}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        const responseData = await masteringResponse.json();
+        
+        return Response.json(responseData, {
+          status: masteringResponse.status,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Mastering progress proxy error:', error);
+        return Response.json({
+          status: 'error',
+          message: 'Failed to fetch mastering progress',
+          progress: 0
+        }, { status: 503, headers: corsHeaders });
+      }
+    }
+
+    // GET /api/mastering-result/:id - Mastering result (proxy to VPS server)
+    if (url.pathname.startsWith('/api/mastering-result/') && request.method === 'GET') {
+      try {
+        const resultId = url.pathname.split('/api/mastering-result/')[1];
+        const MASTERING_SERVER_URL = 'http://168.119.241.59:3001';
+        
+        const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/mastering-result/${resultId}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        const responseData = await masteringResponse.json();
+        
+        return Response.json(responseData, {
+          status: masteringResponse.status,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Mastering result proxy error:', error);
+        return Response.json({
+          success: false,
+          error: 'Failed to fetch mastering result'
+        }, { status: 503, headers: corsHeaders });
+      }
     }
 
     // POST /api/tracks/:id/comment - Add comment
