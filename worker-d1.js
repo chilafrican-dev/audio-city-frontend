@@ -195,19 +195,19 @@ export default {
         
         try {
           const fc = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
-            .bind(userId).first();
+          .bind(userId).first();
           followersCount = fc?.count || 0;
         } catch (e) { /* follows table may not exist */ }
         
         try {
           const fg = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
-            .bind(userId).first();
+          .bind(userId).first();
           followingCount = fg?.count || 0;
         } catch (e) { /* follows table may not exist */ }
         
         try {
           const tc = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
-            .bind(userId).first();
+          .bind(userId).first();
           tracksCount = tc?.count || 0;
         } catch (e) { /* tracks table may not exist */ }
         
@@ -440,17 +440,17 @@ export default {
         try {
           const enrichedTracks = await Promise.all(rawTracks.map(async (track) => {
             const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
-              .bind(track.id).first();
-            const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
-              .bind(track.id).first();
-            
-            track.likes_count = likes?.count || 0;
-            track.comments_count = comments?.count || 0;
-            track.shares_count = track.shares_count || 0;
-            track.artist_is_verified = track.artist_is_verified === 1;
-            return track;
-          }));
-          return Response.json(enrichedTracks, { headers: corsHeaders });
+            .bind(track.id).first();
+          const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
+            .bind(track.id).first();
+          
+          track.likes_count = likes?.count || 0;
+          track.comments_count = comments?.count || 0;
+          track.shares_count = track.shares_count || 0;
+          track.artist_is_verified = track.artist_is_verified === 1;
+          return track;
+        }));
+        return Response.json(enrichedTracks, { headers: corsHeaders });
         } catch (enrichError) {
           // Return raw tracks without enrichment if it fails
           console.error('Enrichment error:', enrichError);
@@ -1190,8 +1190,8 @@ export default {
     if (url.pathname === '/api/conversations' && request.method === 'GET') {
       const userId = url.searchParams.get('user_id');
       if (!userId || !env.DB) {
-        return Response.json([], { headers: corsHeaders });
-      }
+      return Response.json([], { headers: corsHeaders });
+    }
       try {
         const conversations = await env.DB.prepare(`
           SELECT c.*, 
@@ -1493,7 +1493,13 @@ export default {
       try {
         // Proxy request to VPS mastering server
         // Note: Cloudflare Workers can make HTTP requests, but may have connectivity issues
-        const MASTERING_SERVER_URL = env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001';
+        // MASTERING_SERVER_URL should be base URL (e.g., https://mastering.audiocity-ug.com)
+        // The endpoint path is appended: /api/master or /api/quick-master
+        const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001';
+        // If URL includes /api/master, use it directly; otherwise append /api/quick-master for backward compatibility
+        const MASTERING_SERVER_URL = MASTERING_SERVER_BASE.includes('/api/') 
+          ? MASTERING_SERVER_BASE 
+          : `${MASTERING_SERVER_BASE}/api/quick-master`;
         const formData = await request.formData();
         
         // Forward the request to the mastering server with timeout
@@ -1502,7 +1508,7 @@ export default {
         
         try {
           console.log('Proxying mastering request to:', MASTERING_SERVER_URL);
-          const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/quick-master`, {
+          const masteringResponse = await fetch(MASTERING_SERVER_URL, {
             method: 'POST',
             body: formData,
             signal: controller.signal,
@@ -1572,9 +1578,10 @@ export default {
     if (url.pathname.startsWith('/api/mastering-progress/') && request.method === 'GET') {
       try {
         const progressId = url.pathname.split('/api/mastering-progress/')[1];
-        const MASTERING_SERVER_URL = 'http://168.119.241.59:3001';
+        // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
+        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001').replace(/\/api\/(master|quick-master)$/, '');
         
-        const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/mastering-progress/${progressId}`, {
+        const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/mastering-progress/${progressId}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
@@ -1601,9 +1608,10 @@ export default {
     if (url.pathname.startsWith('/api/mastering-result/') && request.method === 'GET') {
       try {
         const resultId = url.pathname.split('/api/mastering-result/')[1];
-        const MASTERING_SERVER_URL = 'http://168.119.241.59:3001';
+        // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
+        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001').replace(/\/api\/(master|quick-master)$/, '');
         
-        const masteringResponse = await fetch(`${MASTERING_SERVER_URL}/api/mastering-result/${resultId}`, {
+        const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/mastering-result/${resultId}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
@@ -1734,7 +1742,7 @@ export default {
         // Delete comment
         await env.DB.prepare('DELETE FROM comments WHERE id = ?').bind(commentId).run();
         try {
-          await env.DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?').bind(commentId).run();
+        await env.DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?').bind(commentId).run();
         } catch (e) { /* table may not exist */ }
         
         // Get updated comment count
