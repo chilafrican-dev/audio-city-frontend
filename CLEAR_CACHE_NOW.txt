@@ -1,0 +1,72 @@
+# CLEAR ALL CACHES - Step by Step
+
+## Step 1: Clear Cloudflare Cache
+
+### Option A: Via Cloudflare Dashboard (Recommended)
+1. Go to: https://dash.cloudflare.com
+2. Select your domain: `audiocity-ug.com`
+3. Click **"Caching"** in left sidebar
+4. Click **"Configuration"**
+5. Click **"Purge Everything"** button
+6. Confirm the purge
+7. Wait 1-2 minutes for propagation
+
+### Option B: Via API (Quick)
+Run this command (you'll need your Cloudflare API token):
+```bash
+curl -X POST "https://api.cloudflare.com/client/v4/zones/YOUR_ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{"purge_everything":true}'
+```
+
+## Step 2: Clear Browser Cache
+
+### Chrome/Edge:
+1. Press `Ctrl+Shift+Delete` (Windows) or `Cmd+Shift+Delete` (Mac)
+2. Select **"Cached images and files"**
+3. Time range: **"All time"**
+4. Click **"Clear data"**
+
+### Firefox:
+1. Press `Ctrl+Shift+Delete` (Windows) or `Cmd+Shift+Delete` (Mac)
+2. Select **"Cache"**
+3. Time range: **"Everything"**
+4. Click **"Clear Now"**
+
+### Safari:
+1. Press `Cmd+Option+E` to clear cache
+2. Or: Safari → Preferences → Advanced → Show Develop menu
+3. Then: Develop → Empty Caches
+
+## Step 3: Hard Refresh
+
+After clearing cache, do a hard refresh:
+- **Mac**: `Cmd + Shift + R`
+- **Windows/Linux**: `Ctrl + Shift + R`
+
+## Step 4: Test in Incognito/Private Window
+
+Open a new incognito/private window to test with zero cache:
+- **Chrome**: `Ctrl+Shift+N` (Windows) or `Cmd+Shift+N` (Mac)
+- **Firefox**: `Ctrl+Shift+P` (Windows) or `Cmd+Shift+P` (Mac)
+- **Safari**: `Cmd+Shift+N`
+
+## Step 5: Verify New Code is Loaded
+
+1. Open browser DevTools (F12)
+2. Go to **Network** tab
+3. Check **"Disable cache"** checkbox
+4. Reload the page
+5. Look for `mastering.js?v=20241230-3` in the network requests
+6. Check Console for: `🎛️ Mastering module initialized`
+
+## Quick One-Liner (Browser Console)
+
+Open browser console (F12) and run:
+```javascript
+// Clear all caches
+caches.keys().then(names => names.forEach(name => caches.delete(name)));
+location.reload(true);
+```
+
