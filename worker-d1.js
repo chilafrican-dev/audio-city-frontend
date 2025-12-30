@@ -1488,6 +1488,24 @@ export default {
       return Response.json({ violations: [] }, { headers: corsHeaders });
     }
 
+    // POST /api/quick-master - Audio mastering (not available in Cloudflare Worker)
+    if (url.pathname === '/api/quick-master' && request.method === 'POST') {
+      return Response.json({ 
+        success: false,
+        error: 'Audio mastering is not available in the current backend. This feature requires server-side audio processing capabilities that are not supported in Cloudflare Workers.',
+        message: 'Mastering feature is temporarily unavailable. Please use a dedicated mastering service or contact support for more information.'
+      }, { status: 503, headers: corsHeaders });
+    }
+
+    // GET /api/mastering-progress/:id - Mastering progress (stub)
+    if (url.pathname.startsWith('/api/mastering-progress/') && request.method === 'GET') {
+      return Response.json({ 
+        status: 'error',
+        message: 'Mastering feature is not available',
+        progress: 0
+      }, { headers: corsHeaders });
+    }
+
     // POST /api/tracks/:id/comment - Add comment
     if (url.pathname.includes('/comment') && request.method === 'POST' && !url.pathname.includes('comments/')) {
       const trackId = url.pathname.split('/api/tracks/')[1]?.split('/')[0];

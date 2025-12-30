@@ -6,13 +6,9 @@
   <title>Mastering Studio — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
-    if (window.location.protocol !== 'file:') {
-      var link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = 'manifest.json';
-      document.head.appendChild(link);
-    }
+    // Manifest loading disabled - Cloudflare WAF blocks JSON files
+    // PWA functionality is optional, app works fine without it
+    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -1522,7 +1518,7 @@
 // Since backend is on VM, always use VM URL unless explicitly running locally
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_PRIMARY = isLocalhost 
-  ? 'https://api.audiocity-ug.com/api'  // Use Cloudflare Worker
+  ? 'https://api.audiocity-ug.com/api'  // Use HTTPS tunnel
   : 'https://api.audiocity-ug.com/api';
 // Fallback to localhost only if VM is down (for local development)
 const API_FALLBACK = 'http://localhost:3002/api';
@@ -1623,6 +1619,7 @@ function wireDonateButtons() {
 }
 
 // Load usage stats
+let lastTrackCount = null;
 async function loadUsageStats() {
   try {
     const response = await fetch(`${API}/stats`);
@@ -1632,9 +1629,13 @@ async function loadUsageStats() {
       if (tracksCountEl) {
         // Ensure we have a valid number
         const count = parseInt(stats.tracksMastered || 0, 10);
+        // Only log if the value changed
+        if (lastTrackCount === null || lastTrackCount !== count) {
+          console.log('Usage stats updated:', count, 'tracks mastered');
+          lastTrackCount = count;
+        }
         // Format number with commas
         tracksCountEl.textContent = count.toLocaleString();
-        console.log('Usage stats updated:', count, 'tracks mastered');
       }
     } else {
       console.warn('Failed to load usage stats:', response.status, response.statusText);
@@ -2617,17 +2618,12 @@ masterBtn.addEventListener('click', async () => {
       throw fetchError;
     }
     
-    // Check if response is OK
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Backend error response:', res.status, errorText);
-      throw new Error(`Backend error: ${res.status} ${res.statusText}. ${errorText.substring(0, 200)}`);
-    }
-    
     // Check content type before parsing
     const contentType = res.headers.get('content-type') || '';
     console.log('Response content-type:', contentType);
     let data;
+    
+    // Try to parse JSON response even if status is not OK (for error messages)
     if (contentType.includes('application/json')) {
       data = await res.json();
       console.log('Mastering response received:', data);
@@ -2646,13 +2642,30 @@ masterBtn.addEventListener('click', async () => {
       }
     }
     
+    // Check if response is OK or if it's a service unavailable error
+    if (!res.ok) {
+      console.error('Backend error response:', res.status, data);
+      
+      // Handle service unavailable (503) - mastering feature not available
+      if (res.status === 503 && data.message) {
+        if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+        }
+        throw new Error(data.message || 'Audio mastering is not available in the current backend.');
+      }
+      
+      // Handle other errors
+      throw new Error(data.error || data.message || `Backend error: ${res.status} ${res.statusText}`);
+    }
+    
     if (!data.success) {
       console.error('Mastering failed:', data.error);
       if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
         clearInterval(progressInterval);
         progressInterval = null;
       }
-      throw new Error(data.error || 'Mastering failed');
+      throw new Error(data.error || data.message || 'Mastering failed');
     }
     
     // Start polling for progress if progressId is provided
@@ -2693,68 +2706,110 @@ masterBtn.addEventListener('click', async () => {
                 gainDisplay.textContent = `${result.gain > 0 ? '+' : ''}${result.gain.toFixed(1)} dB`;
                 
                 // Load mastered audio for playback
-                // Use 16-bit preview WAV first (browser-compatible), then MP3, then 24-bit WAV
-                try {
-                  const previewUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
-                  console.log('Loading mastered audio for preview from:', previewUrl);
-                  console.log('Full download URLs:', downloadUrls);
-                  
-                  const masteredResponse = await fetch(previewUrl);
-                  if (!masteredResponse.ok) {
-                    throw new Error(`HTTP ${masteredResponse.status}: ${masteredResponse.statusText}`);
-                  }
-                  
-                  const contentType = masteredResponse.headers.get('content-type');
-                  console.log('Response content-type:', contentType);
-                  console.log('Response size:', masteredResponse.headers.get('content-length'), 'bytes');
-                  
-                  const masteredArrayBuffer = await masteredResponse.arrayBuffer();
-                  console.log('Downloaded array buffer size:', masteredArrayBuffer.byteLength, 'bytes');
-                  
-                  // Try to decode - MP3 is more compatible than 24-bit WAV
+                // Try preview WAV first, then MP3, then 24-bit WAV as fallbacks
+                // Retry loading with exponential backoff since file might not be ready immediately
+                let audioLoadedSuccessfully = false;
+                
+                const tryLoadAudioFile = async (url, formatName, retryCount = 0, maxRetries = 3) => {
                   try {
-                    masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer.slice(0));
+                    console.log(`Loading ${formatName} from:`, url);
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    console.log(`Response content-type:`, contentType);
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    console.log(`Downloaded ${formatName} size:`, arrayBuffer.byteLength, 'bytes');
+                    
+                    // Check if response is suspiciously small (likely an error message)
+                    if (arrayBuffer.byteLength < 1000) {
+                      const textDecoder = new TextDecoder();
+                      const errorText = textDecoder.decode(arrayBuffer);
+                      console.warn(`Response too small, likely error:`, errorText);
+                      
+                      // If it's an error and we have retries left, wait and retry
+                      if (retryCount < maxRetries) {
+                        const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+                        console.log(`${formatName} not ready yet, retrying in ${waitTime}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        return tryLoadAudioFile(url, formatName, retryCount + 1, maxRetries);
+                      } else {
+                        throw new Error(`${formatName} file not available: ${errorText}`);
+                      }
+                    }
+                    
+                    // Try to decode the audio
+                    masteredBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
                     
                     // Update waveform to show mastered version
                     if (playbackMode === 'after') {
                       drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
                     }
-                    console.log('✅ Mastered audio loaded for preview');
-                  } catch (decodeErr) {
-                    console.warn('Could not decode mastered audio:', decodeErr.name, decodeErr.message);
-                    // Try MP3 if preview WAV failed
-                    if (previewUrl === downloadUrls.preview && downloadUrls.mp3) {
-                      console.log('Trying MP3 format instead...');
-                      try {
-                        const mp3Response = await fetch(downloadUrls.mp3);
-                        if (!mp3Response.ok) {
-                          throw new Error(`MP3 fetch failed: ${mp3Response.status}`);
-                        }
-                        const mp3ArrayBuffer = await mp3Response.arrayBuffer();
-                        console.log('MP3 array buffer size:', mp3ArrayBuffer.byteLength, 'bytes');
-                        masteredBuffer = await audioContext.decodeAudioData(mp3ArrayBuffer.slice(0));
-                        if (playbackMode === 'after') {
-                          drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-                        }
-                        console.log('✅ Mastered MP3 loaded for preview');
-                      } catch (mp3Err) {
-                        console.warn('Could not decode MP3 either:', mp3Err.name, mp3Err.message);
-                        // Preview unavailable - show message but downloads still work
-                        statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
-                      }
-                    } else {
-                      // Preview unavailable - show message but downloads still work
-                      statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
+                    console.log(`✅ Mastered ${formatName} loaded for preview`);
+                    return true;
+                  } catch (err) {
+                    // If we have retries left and it's a file-not-ready error, retry
+                    if (retryCount < maxRetries && (err.message.includes('not available') || err.message.includes('not ready'))) {
+                      const waitTime = Math.pow(2, retryCount) * 1000;
+                      console.log(`Retrying ${formatName} load in ${waitTime}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                      await new Promise(resolve => setTimeout(resolve, waitTime));
+                      return tryLoadAudioFile(url, formatName, retryCount + 1, maxRetries);
                     }
+                    throw err; // Re-throw to allow fallback to next format
+                  }
+                };
+                
+                // Try formats in order: preview WAV -> MP3 -> full WAV
+                try {
+                  console.log('Full download URLs:', downloadUrls);
+                  
+                  // Try preview WAV first
+                  if (downloadUrls.preview) {
+                    try {
+                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.preview, 'preview WAV');
+                    } catch (previewErr) {
+                      console.warn('Preview WAV failed:', previewErr.message);
+                      // Fall through to try MP3
+                    }
+                  }
+                  
+                  // If preview failed, try MP3
+                  if (!audioLoadedSuccessfully && downloadUrls.mp3) {
+                    try {
+                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.mp3, 'MP3');
+                    } catch (mp3Err) {
+                      console.warn('MP3 failed:', mp3Err.message);
+                      // Fall through to try full WAV
+                    }
+                  }
+                  
+                  // If both failed, try full WAV
+                  if (!audioLoadedSuccessfully && downloadUrls.wav) {
+                    try {
+                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.wav, 'WAV');
+                    } catch (wavErr) {
+                      console.warn('WAV failed:', wavErr.message);
+                    }
+                  }
+                  
+                  if (!audioLoadedSuccessfully) {
+                    // All formats failed - show message but downloads still work
+                    statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
                   }
                 } catch (err) {
                   console.warn('Could not load mastered audio for preview:', err.name, err.message);
-                  // Preview unavailable - show message but downloads still work
                   statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
                 }
                 
                 statusBar.className = 'status-bar';
-                statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+                // Only update status if audio loaded successfully, otherwise keep the error message
+                if (audioLoadedSuccessfully) {
+                  statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+                }
                 
                 // Refresh usage stats after mastering completes (with small delay to ensure backend saved)
                 setTimeout(() => {

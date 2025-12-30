@@ -8,6 +8,7 @@
   <script>
     // Manifest loading disabled - Cloudflare WAF blocks JSON files
     // PWA functionality is optional, app works fine without it
+    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -1517,7 +1518,7 @@
 // Since backend is on VM, always use VM URL unless explicitly running locally
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_PRIMARY = isLocalhost 
-  ? 'https://api.audiocity-ug.com/api'  // Use HTTPS API
+  ? 'https://api.audiocity-ug.com/api'  // Use HTTPS tunnel
   : 'https://api.audiocity-ug.com/api';
 // Fallback to localhost only if VM is down (for local development)
 const API_FALLBACK = 'http://localhost:3002/api';
@@ -1618,6 +1619,7 @@ function wireDonateButtons() {
 }
 
 // Load usage stats
+let lastTrackCount = null;
 async function loadUsageStats() {
   try {
     const response = await fetch(`${API}/stats`);
@@ -1627,9 +1629,13 @@ async function loadUsageStats() {
       if (tracksCountEl) {
         // Ensure we have a valid number
         const count = parseInt(stats.tracksMastered || 0, 10);
+        // Only log if the value changed
+        if (lastTrackCount === null || lastTrackCount !== count) {
+          console.log('Usage stats updated:', count, 'tracks mastered');
+          lastTrackCount = count;
+        }
         // Format number with commas
         tracksCountEl.textContent = count.toLocaleString();
-        console.log('Usage stats updated:', count, 'tracks mastered');
       }
     } else {
       console.warn('Failed to load usage stats:', response.status, response.statusText);
@@ -1659,6 +1665,7 @@ let audioContext = null;
 let sourceNode = null;
 let isPlaying = false;
 let playbackMode = 'after'; // 'before' or 'after'
+let masteredAudioElement = null; // HTML5 audio element for mastered playback
 let selectedPreset = 'kidandali';
 let downloadUrls = { wav: null, mp3: null };
 let masterResult = null;
@@ -1999,7 +2006,74 @@ function updatePlayhead() {
 }
 
 function startPlayback() {
-  // Use correct buffer based on playback mode
+  // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
+  // Prefer preview WAV (16-bit), then MP3, then 24-bit WAV
+  if (playbackMode === 'after' && !masteredBuffer) {
+    const audioUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
+    console.log('Using HTML5 audio for mastered playback:', audioUrl);
+    console.log('Available URLs:', downloadUrls);
+    
+    if (audioUrl) {
+      // Use HTML5 audio element for mastered playback (Web Audio API can't decode 24-bit WAV)
+      if (!masteredAudioElement || masteredAudioElement.src !== audioUrl) {
+        masteredAudioElement = new Audio(audioUrl);
+        masteredAudioElement.preload = 'auto';
+        masteredAudioElement.addEventListener('error', (e) => {
+          console.error('HTML5 audio error:', e);
+          // Fallback to original
+          playbackMode = 'before';
+          startPlayback();
+        });
+      }
+      
+      // Play HTML5 audio
+      masteredAudioElement.currentTime = pausedAt;
+      masteredAudioElement.play().catch(err => {
+        console.error('Error playing mastered audio:', err);
+        // Fallback to original if mastered fails
+        playbackMode = 'before';
+        startPlayback();
+        return;
+      });
+      
+      isPlaying = true;
+      playBtn.textContent = '⏸';
+      
+      // Update progress using HTML5 audio timeupdate
+      const updateProgress = () => {
+        if (!isPlaying || !masteredAudioElement) return;
+        if (masteredAudioElement.paused) {
+          stopPlayback();
+          return;
+        }
+        const progress = masteredAudioElement.currentTime / masteredAudioElement.duration;
+        progressFill.style.width = `${progress * 100}%`;
+        currentTimeEl.textContent = formatTime(masteredAudioElement.currentTime);
+        
+        const containerWidth = waveformContainer.offsetWidth;
+        playhead.style.left = `${progress * containerWidth}px`;
+        playhead.style.display = 'block';
+        
+        if (masteredAudioElement.ended) {
+          stopPlayback();
+          return;
+        }
+        
+        if (isPlaying) {
+          requestAnimationFrame(updateProgress);
+        }
+      };
+      
+      masteredAudioElement.addEventListener('ended', () => {
+        stopPlayback();
+      });
+      
+      updateProgress();
+      return;
+    }
+  }
+  
+  // Use correct buffer based on playback mode (for original audio)
   const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
   if (!bufferToUse) return;
   
@@ -2040,12 +2114,18 @@ function startPlayback() {
 }
 
 function stopPlayback() {
+  // Stop HTML5 audio if playing
+  if (masteredAudioElement && !masteredAudioElement.paused) {
+    pausedAt = masteredAudioElement.currentTime;
+    masteredAudioElement.pause();
+  }
+  
   if (sourceNode) {
     sourceNode.onended = null;
     sourceNode.stop();
   }
   
-  if (isPlaying) {
+  if (isPlaying && audioContext) {
     pausedAt += audioContext.currentTime - startTime;
   }
   
@@ -2290,19 +2370,44 @@ function stopMasterMeter() {
 }
 
 playBtn.addEventListener('click', () => {
-  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
-  if (!bufferToUse) return;
-  
-  if (isPlaying) {
-    stopPlayback();
+  // Check if we can play (either buffer or HTML5 audio)
+  if (playbackMode === 'after' && !masteredBuffer && downloadUrls.wav) {
+    // Can use HTML5 audio
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      if (masteredAudioElement && pausedAt >= masteredAudioElement.duration) pausedAt = 0;
+      startPlayback();
+    }
   } else {
-    if (pausedAt >= bufferToUse.duration) pausedAt = 0;
-    startPlayback();
+    const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+    if (!bufferToUse) return;
+    
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      if (pausedAt >= bufferToUse.duration) pausedAt = 0;
+      startPlayback();
+    }
   }
 });
 
 // Skip backward 10 seconds
 rewindBtn.addEventListener('click', () => {
+  // Handle HTML5 audio for mastered playback
+  if (playbackMode === 'after' && !masteredBuffer && masteredAudioElement) {
+    const wasPlaying = isPlaying;
+    if (wasPlaying) stopPlayback();
+    
+    pausedAt = Math.max(0, (masteredAudioElement.currentTime || pausedAt) - 10);
+    masteredAudioElement.currentTime = pausedAt;
+    progressFill.style.width = `${(pausedAt / masteredAudioElement.duration) * 100}%`;
+    currentTimeEl.textContent = formatTime(pausedAt);
+    
+    if (wasPlaying) startPlayback();
+    return;
+  }
+  
   const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
   if (!bufferToUse) return;
   
@@ -2318,6 +2423,20 @@ rewindBtn.addEventListener('click', () => {
 
 // Skip forward 10 seconds
 forwardBtn.addEventListener('click', () => {
+  // Handle HTML5 audio for mastered playback
+  if (playbackMode === 'after' && !masteredBuffer && masteredAudioElement) {
+    const wasPlaying = isPlaying;
+    if (wasPlaying) stopPlayback();
+    
+    pausedAt = Math.min(masteredAudioElement.duration, (masteredAudioElement.currentTime || pausedAt) + 10);
+    masteredAudioElement.currentTime = pausedAt;
+    progressFill.style.width = `${(pausedAt / masteredAudioElement.duration) * 100}%`;
+    currentTimeEl.textContent = formatTime(pausedAt);
+    
+    if (wasPlaying) startPlayback();
+    return;
+  }
+  
   const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
   if (!bufferToUse) return;
   
@@ -2434,7 +2553,7 @@ masterBtn.addEventListener('click', async () => {
     
     // Start progress polling
     let progressId = null;
-    let progressInterval = null;
+    let progressInterval = null; // Declare at function scope
     
     const pollProgress = async (id) => {
       try {
@@ -2475,9 +2594,9 @@ masterBtn.addEventListener('click', async () => {
       return null;
     };
     
-    // Add timeout to prevent hanging (5 minutes for large files)
+    // Add timeout to prevent hanging (15 minutes for large files - mastering can take time)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minutes
+    const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15 minutes
     
     let res;
     try {
@@ -2489,24 +2608,22 @@ masterBtn.addEventListener('click', async () => {
       clearTimeout(timeoutId);
     } catch (fetchError) {
       clearTimeout(timeoutId);
-      if (progressInterval) clearInterval(progressInterval);
+      if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
       if (fetchError.name === 'AbortError') {
         throw new Error('Mastering request timed out. The file may be too large or the server is taking too long.');
       }
       throw fetchError;
     }
     
-    // Check if response is OK
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Backend error response:', res.status, errorText);
-      throw new Error(`Backend error: ${res.status} ${res.statusText}. ${errorText.substring(0, 200)}`);
-    }
-    
     // Check content type before parsing
     const contentType = res.headers.get('content-type') || '';
     console.log('Response content-type:', contentType);
     let data;
+    
+    // Try to parse JSON response even if status is not OK (for error messages)
     if (contentType.includes('application/json')) {
       data = await res.json();
       console.log('Mastering response received:', data);
@@ -2525,10 +2642,30 @@ masterBtn.addEventListener('click', async () => {
       }
     }
     
+    // Check if response is OK or if it's a service unavailable error
+    if (!res.ok) {
+      console.error('Backend error response:', res.status, data);
+      
+      // Handle service unavailable (503) - mastering feature not available
+      if (res.status === 503 && data.message) {
+        if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+        }
+        throw new Error(data.message || 'Audio mastering is not available in the current backend.');
+      }
+      
+      // Handle other errors
+      throw new Error(data.error || data.message || `Backend error: ${res.status} ${res.statusText}`);
+    }
+    
     if (!data.success) {
       console.error('Mastering failed:', data.error);
-      if (progressInterval) clearInterval(progressInterval);
-      throw new Error(data.error || 'Mastering failed');
+      if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      throw new Error(data.error || data.message || 'Mastering failed');
     }
     
     // Start polling for progress if progressId is provided
@@ -2548,6 +2685,10 @@ masterBtn.addEventListener('click', async () => {
                 const baseUrl = API.replace('/api', '');
                 downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
                 downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
+                // Use 16-bit preview WAV for browser playback (if available)
+                if (result.downloads.preview) {
+                  downloadUrls.preview = `${baseUrl}${result.downloads.preview}`;
+                }
                 
                 // Update meters
                 inputLufs.textContent = `${result.input.lufs.toFixed(1)}`;
@@ -2565,22 +2706,110 @@ masterBtn.addEventListener('click', async () => {
                 gainDisplay.textContent = `${result.gain > 0 ? '+' : ''}${result.gain.toFixed(1)} dB`;
                 
                 // Load mastered audio for playback
+                // Try preview WAV first, then MP3, then 24-bit WAV as fallbacks
+                // Retry loading with exponential backoff since file might not be ready immediately
+                let audioLoadedSuccessfully = false;
+                
+                const tryLoadAudioFile = async (url, formatName, retryCount = 0, maxRetries = 3) => {
+                  try {
+                    console.log(`Loading ${formatName} from:`, url);
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    console.log(`Response content-type:`, contentType);
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    console.log(`Downloaded ${formatName} size:`, arrayBuffer.byteLength, 'bytes');
+                    
+                    // Check if response is suspiciously small (likely an error message)
+                    if (arrayBuffer.byteLength < 1000) {
+                      const textDecoder = new TextDecoder();
+                      const errorText = textDecoder.decode(arrayBuffer);
+                      console.warn(`Response too small, likely error:`, errorText);
+                      
+                      // If it's an error and we have retries left, wait and retry
+                      if (retryCount < maxRetries) {
+                        const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+                        console.log(`${formatName} not ready yet, retrying in ${waitTime}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        return tryLoadAudioFile(url, formatName, retryCount + 1, maxRetries);
+                      } else {
+                        throw new Error(`${formatName} file not available: ${errorText}`);
+                      }
+                    }
+                    
+                    // Try to decode the audio
+                    masteredBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+                    
+                    // Update waveform to show mastered version
+                    if (playbackMode === 'after') {
+                      drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+                    }
+                    console.log(`✅ Mastered ${formatName} loaded for preview`);
+                    return true;
+                  } catch (err) {
+                    // If we have retries left and it's a file-not-ready error, retry
+                    if (retryCount < maxRetries && (err.message.includes('not available') || err.message.includes('not ready'))) {
+                      const waitTime = Math.pow(2, retryCount) * 1000;
+                      console.log(`Retrying ${formatName} load in ${waitTime}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                      await new Promise(resolve => setTimeout(resolve, waitTime));
+                      return tryLoadAudioFile(url, formatName, retryCount + 1, maxRetries);
+                    }
+                    throw err; // Re-throw to allow fallback to next format
+                  }
+                };
+                
+                // Try formats in order: preview WAV -> MP3 -> full WAV
                 try {
-                  const masteredUrl = downloadUrls.wav;
-                  const masteredResponse = await fetch(masteredUrl);
-                  const masteredArrayBuffer = await masteredResponse.arrayBuffer();
-                  masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer);
+                  console.log('Full download URLs:', downloadUrls);
                   
-                  // Update waveform to show mastered version
-                  if (playbackMode === 'after') {
-                    drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+                  // Try preview WAV first
+                  if (downloadUrls.preview) {
+                    try {
+                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.preview, 'preview WAV');
+                    } catch (previewErr) {
+                      console.warn('Preview WAV failed:', previewErr.message);
+                      // Fall through to try MP3
+                    }
+                  }
+                  
+                  // If preview failed, try MP3
+                  if (!audioLoadedSuccessfully && downloadUrls.mp3) {
+                    try {
+                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.mp3, 'MP3');
+                    } catch (mp3Err) {
+                      console.warn('MP3 failed:', mp3Err.message);
+                      // Fall through to try full WAV
+                    }
+                  }
+                  
+                  // If both failed, try full WAV
+                  if (!audioLoadedSuccessfully && downloadUrls.wav) {
+                    try {
+                      audioLoadedSuccessfully = await tryLoadAudioFile(downloadUrls.wav, 'WAV');
+                    } catch (wavErr) {
+                      console.warn('WAV failed:', wavErr.message);
+                    }
+                  }
+                  
+                  if (!audioLoadedSuccessfully) {
+                    // All formats failed - show message but downloads still work
+                    statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
                   }
                 } catch (err) {
-                  console.warn('Could not load mastered audio for preview:', err);
+                  console.warn('Could not load mastered audio for preview:', err.name, err.message);
+                  statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
                 }
                 
                 statusBar.className = 'status-bar';
-                statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+                // Only update status if audio loaded successfully, otherwise keep the error message
+                if (audioLoadedSuccessfully) {
+                  statusText.textContent = `✅ Mastered at ${result.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+                }
                 
                 // Refresh usage stats after mastering completes (with small delay to ensure backend saved)
                 setTimeout(() => {
@@ -2621,22 +2850,57 @@ masterBtn.addEventListener('click', async () => {
       gainDisplay.textContent = `${data.gain > 0 ? '+' : ''}${data.gain.toFixed(1)} dB`;
       
       // Load mastered audio for playback
+      // Note: Preview is optional - if it fails, downloads still work
+      let previewLoaded = false;
       try {
-        const masteredUrl = downloadUrls.wav;
-        const masteredResponse = await fetch(masteredUrl);
-        const masteredArrayBuffer = await masteredResponse.arrayBuffer();
-        masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer);
+        const previewUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
+        console.log('Loading mastered audio for preview from:', previewUrl);
         
-        // Update waveform to show mastered version
-        if (playbackMode === 'after') {
-          drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+        const masteredResponse = await fetch(previewUrl);
+        if (!masteredResponse.ok) {
+          throw new Error(`HTTP ${masteredResponse.status}: ${masteredResponse.statusText}`);
+        }
+        
+        const masteredArrayBuffer = await masteredResponse.arrayBuffer();
+        
+        // Try to decode
+        try {
+          masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer.slice(0));
+          
+          // Update waveform to show mastered version
+          if (playbackMode === 'after') {
+            drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+          }
+          console.log('✅ Mastered audio loaded for preview');
+          previewLoaded = true;
+        } catch (decodeErr) {
+          console.warn('Could not decode mastered audio:', decodeErr.name, decodeErr.message);
+          // Try WAV if MP3 failed
+          if (previewUrl === downloadUrls.mp3 && downloadUrls.wav) {
+            try {
+              const wavResponse = await fetch(downloadUrls.wav);
+              const wavArrayBuffer = await wavResponse.arrayBuffer();
+              masteredBuffer = await audioContext.decodeAudioData(wavArrayBuffer.slice(0));
+              if (playbackMode === 'after') {
+                drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+              }
+              console.log('✅ Mastered MP3 loaded for preview');
+              previewLoaded = true;
+            } catch (wavErr) {
+              console.warn('Could not decode WAV either:', wavErr.name, wavErr.message);
+            }
+          }
         }
       } catch (err) {
-        console.warn('Could not load mastered audio for preview:', err);
+        console.warn('Could not load mastered audio for preview:', err.name, err.message);
       }
       
       statusBar.className = 'status-bar';
-      statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+      if (previewLoaded) {
+        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS with ${selectedPreset} preset`;
+      } else {
+        statusText.textContent = `✅ Mastered at ${data.output.lufs.toFixed(1)} LUFS. Preview unavailable, but downloads work!`;
+      }
       
       downloadReady.classList.add('show');
       downloadWav.disabled = false;
@@ -2645,7 +2909,8 @@ masterBtn.addEventListener('click', async () => {
     
   } catch (err) {
     console.error('Mastering error:', err);
-    if (progressInterval) {
+    // Clean up progress interval if it exists
+    if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
       clearInterval(progressInterval);
       progressInterval = null;
     }
