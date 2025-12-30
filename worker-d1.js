@@ -1081,6 +1081,31 @@ export default {
       return Response.json({ success: true, message: 'Message sent' }, { headers: corsHeaders });
     }
 
+    // GET /api/conversations/:conversationId/:recipientId/messages - Get conversation messages (stub)
+    if (url.pathname.includes('/conversations/') && url.pathname.includes('/messages') && request.method === 'GET') {
+      return Response.json([], { headers: corsHeaders });
+    }
+
+    // PUT /api/conversations/:conversationId/:recipientId/messages/read - Mark messages as read (stub)
+    if (url.pathname.includes('/conversations/') && url.pathname.includes('/messages/read') && request.method === 'PUT') {
+      return Response.json({ success: true }, { headers: corsHeaders });
+    }
+
+    // GET /api/conversations - Get user conversations (stub)
+    if (url.pathname === '/api/conversations' && request.method === 'GET') {
+      return Response.json([], { headers: corsHeaders });
+    }
+
+    // POST /api/conversations - Create conversation (stub)
+    if (url.pathname === '/api/conversations' && request.method === 'POST') {
+      const body = await parseBody(request);
+      return Response.json({ 
+        id: `conv_${Date.now()}`,
+        participants: body?.participants || [],
+        created_at: new Date().toISOString()
+      }, { headers: corsHeaders });
+    }
+
     // GET /api/users/:id/notifications - Get notifications (stub)
     if (url.pathname.includes('/notifications') && request.method === 'GET') {
       return Response.json([], { headers: corsHeaders });
