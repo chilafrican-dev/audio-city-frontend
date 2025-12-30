@@ -1,0 +1,106 @@
+# QUICK FIX: 413 Request Entity Too Large
+
+## The Problem
+Nginx on your VPS (43.245.227.33) is rejecting large audio file uploads.
+
+## The Solution (5 minutes)
+
+### Step 1: Connect to VPS
+Open Terminal and run:
+```bash
+ssh root@43.245.227.33
+```
+Enter password when prompted.
+
+### Step 2: Find the Nginx Config File
+```bash
+# Check which config files exist
+ls -la /etc/nginx/sites-available/
+ls -la /etc/nginx/sites-enabled/
+```
+
+Look for files like:
+- `mastering.audiocity-ug.com`
+- `default`
+- `audio-city`
+
+### Step 3: Edit the Config File
+Use the filename you found. For example:
+```bash
+nano /etc/nginx/sites-available/mastering.audiocity-ug.com
+```
+
+OR if that doesn't exist:
+```bash
+nano /etc/nginx/sites-available/default
+```
+
+### Step 4: Add the Upload Limit
+Find the `server { }` block and add this line inside it:
+
+```nginx
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name mastering.audiocity-ug.com;
+    
+    # ADD THIS LINE:
+    client_max_body_size 500M;
+    
+    location /api {
+        proxy_pass http://localhost:3001;
+        # ALSO ADD HERE:
+        client_max_body_size 500M;
+    }
+}
+```
+
+### Step 5: Save and Exit
+- Press `Ctrl + X`
+- Press `Y` to confirm
+- Press `Enter` to save
+
+### Step 6: Test the Configuration
+```bash
+nginx -t
+```
+
+Should see: `nginx: configuration file /etc/nginx/nginx.conf test is successful`
+
+### Step 7: Reload Nginx
+```bash
+systemctl reload nginx
+```
+
+### Step 8: Verify It Worked
+```bash
+nginx -T | grep client_max_body_size
+```
+
+Should show: `client_max_body_size 500M;`
+
+## Done! ✅
+
+Now try uploading your audio file again. The 413 error should be gone.
+
+## If You Can't Find the Config File
+
+Run this to see all nginx configs:
+```bash
+grep -r "mastering.audiocity-ug.com" /etc/nginx/
+```
+
+Or check the main config:
+```bash
+cat /etc/nginx/nginx.conf | grep -A 10 "server_name"
+```
+
+## Alternative: One-Line Fix (if you know the config file path)
+
+```bash
+# Replace the path with your actual config file
+sed -i '/server_name mastering.audiocity-ug.com/a\    client_max_body_size 500M;' /etc/nginx/sites-available/mastering.audiocity-ug.com
+sed -i '/location \/api/a\        client_max_body_size 500M;' /etc/nginx/sites-available/mastering.audiocity-ug.com
+nginx -t && systemctl reload nginx
+```
+
