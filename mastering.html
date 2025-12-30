@@ -2714,18 +2714,19 @@ masterBtn.addEventListener('click', async () => {
       throw new Error(data.error || data.message || `Backend error: ${res.status} ${res.statusText}`);
     }
     
-    if (!data.success) {
-      console.error('Mastering failed:', data.error);
+    // Validate response - must have success and jobId (DO NOT touch wav here, it doesn't exist yet)
+    if (!data.success || !data.jobId) {
+      console.error('Mastering job failed:', data);
       if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
         clearInterval(progressInterval);
         progressInterval = null;
       }
-      throw new Error(data.error || data.message || 'Mastering failed');
+      throw new Error(data.error || data.message || 'Mastering job failed');
     }
     
-    // Start polling for job status if jobId is provided
-    if (data.jobId) {
-      const jobId = data.jobId;
+    // Start polling for job status - jobId is guaranteed to exist here
+    const jobId = data.jobId;
+    if (jobId) {
       statusText.textContent = '🔄 Starting mastering process...';
       
       // Start checking job status immediately, then continue every 5 seconds
