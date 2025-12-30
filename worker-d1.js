@@ -116,12 +116,11 @@ export default {
         if (!env.DB) {
           return Response.json([], { headers: corsHeaders });
         }
-        // Filter out admin accounts - hide users with is_admin=1 or admin emails
+        // Filter out admin accounts - only hide users with is_admin=1 or username exactly 'admin'
         const users = await env.DB.prepare(`
           SELECT * FROM users 
-          WHERE (is_admin IS NULL OR is_admin = 0) 
-            AND (email NOT LIKE '%@chilafrican.com' AND email NOT LIKE '%chilafrican@%')
-            AND id NOT LIKE 'admin_%'
+          WHERE (is_admin IS NULL OR is_admin = 0 OR is_admin != 1) 
+            AND (LOWER(username) != 'admin')
           ORDER BY created_at DESC
         `).all();
         
@@ -321,13 +320,12 @@ export default {
         const limit = parseInt(url.searchParams.get('limit') || '100');
         const artistId = url.searchParams.get('artist_id');
         
-        // Filter out tracks from admin users
+        // Filter out tracks from admin users (only hide is_admin=1 or username exactly 'admin')
         let query = `SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified 
           FROM tracks t 
           LEFT JOIN users u ON t.artist_id = u.id
-          WHERE (u.is_admin IS NULL OR u.is_admin = 0) 
-            AND (u.email NOT LIKE '%@chilafrican.com' AND u.email NOT LIKE '%chilafrican@%')
-            AND (u.username NOT LIKE 'admin%' OR u.username IS NULL)`;
+          WHERE (u.is_admin IS NULL OR u.is_admin = 0 OR u.is_admin != 1) 
+            AND (u.username IS NULL OR LOWER(u.username) != 'admin')`;
         const params = [];
         
         if (artistId) {
@@ -517,14 +515,13 @@ export default {
         if (!env.DB) {
           return Response.json([], { headers: corsHeaders });
         }
-        // Filter out admin accounts from trending artists
+        // Filter out admin accounts from trending artists - only hide is_admin=1 or username exactly 'admin'
         const artists = await env.DB.prepare(`
           SELECT u.*, COUNT(t.id) as track_count
           FROM users u
           LEFT JOIN tracks t ON u.id = t.artist_id
-          WHERE (u.is_admin IS NULL OR u.is_admin = 0) 
-            AND (u.email NOT LIKE '%@chilafrican.com' AND u.email NOT LIKE '%chilafrican@%')
-            AND u.id NOT LIKE 'admin_%'
+          WHERE (u.is_admin IS NULL OR u.is_admin = 0 OR u.is_admin != 1) 
+            AND (LOWER(u.username) != 'admin')
           GROUP BY u.id
           ORDER BY track_count DESC, u.created_at DESC
           LIMIT 10
