@@ -2024,7 +2024,8 @@ function startPlayback() {
   // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
   // Prefer preview, then MP3, then mastered file
   if (playbackMode === 'after' && !masteredBuffer) {
-    const audioUrl = downloadUrls.preview || downloadUrls.mp3 || (downloadUrls.wav || null);
+    // Safe access - check downloadUrls exists first
+    const audioUrl = downloadUrls ? (downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav || null) : null;
     console.log('Using HTML5 audio for mastered playback:', audioUrl);
     console.log('Available URLs:', downloadUrls);
     
@@ -2386,7 +2387,7 @@ function stopMasterMeter() {
 
 playBtn.addEventListener('click', () => {
   // Check if we can play (either buffer or HTML5 audio)
-  if (playbackMode === 'after' && !masteredBuffer && downloadUrls.wav !== null && downloadUrls.wav !== undefined) {
+  if (playbackMode === 'after' && !masteredBuffer && downloadUrls && downloadUrls.wav !== null && downloadUrls.wav !== undefined) {
     // Can use HTML5 audio
     if (isPlaying) {
       stopPlayback();
@@ -2598,6 +2599,11 @@ async function downloadFile(url, filename, progressEl, button) {
 
 // Downloads
 downloadWav.addEventListener('click', () => {
+  // Safe access - check downloadUrls exists first
+  if (!downloadUrls) {
+    console.warn('downloadUrls not initialized');
+    return;
+  }
   const audioUrl = downloadUrls.wav;
   if (audioUrl && currentFile) {
     const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.wav');
