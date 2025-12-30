@@ -1,8 +1,10 @@
 # ============================================
-# CLOUDFLARE TUNNEL URL - SET THIS IN CLOUDFLARE DASHBOARD
+# CLOUDFLARE TUNNEL URL - UPDATED
 # ============================================
 
-Tunnel URL: https://budgets-sanyo-diy-silent.trycloudflare.com
+Current Tunnel URL: https://built-purchase-roland-damages.trycloudflare.com
+
+⚠️  NOTE: Quick tunnels can change when restarted. For production, use a named tunnel.
 
 # ============================================
 # SET THIS IN CLOUDFLARE DASHBOARD:
@@ -11,12 +13,12 @@ Tunnel URL: https://budgets-sanyo-diy-silent.trycloudflare.com
 # 1. Go to: https://dash.cloudflare.com
 # 2. Workers & Pages → audio-city-api-d1
 # 3. Settings → Variables and Secrets
-# 4. Add Environment Variable:
+# 4. Update Environment Variable:
 #    Name: MASTERING_SERVER_URL
-#    Value: https://budgets-sanyo-diy-silent.trycloudflare.com
+#    Value: https://built-purchase-roland-damages.trycloudflare.com
 #
 # OR use wrangler CLI:
-# echo "https://budgets-sanyo-diy-silent.trycloudflare.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+# echo "https://built-purchase-roland-damages.trycloudflare.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
 #
 # ============================================
 # TUNNEL STATUS:
@@ -25,5 +27,7 @@ Tunnel URL: https://budgets-sanyo-diy-silent.trycloudflare.com
 # Service: mastering-tunnel.service
 # Status: ✅ Active and running
 # Proxies to: http://168.119.241.59:3001
+# 
+# ⚠️  Quick tunnels are temporary. For production stability,
+#     consider setting up a named tunnel with a persistent URL.
 # ============================================
-
