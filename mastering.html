@@ -2668,9 +2668,9 @@ masterBtn.addEventListener('click', async () => {
       throw new Error(data.error || data.message || 'Mastering failed');
     }
     
-    // Start polling for progress if progressId is provided
-    if (data.progressId) {
-      progressId = data.progressId;
+    // Start polling for progress if progressId or jobId is provided
+    if (data.progressId || data.jobId) {
+      progressId = data.progressId || data.jobId;
       progressInterval = setInterval(async () => {
         const progress = await pollProgress(progressId);
         if (progress && progress.status === 'complete') {
@@ -2826,7 +2826,7 @@ masterBtn.addEventListener('click', async () => {
           }
         }
       }, 500); // Poll every 500ms
-    } else {
+    } else if (data.downloads && data.downloads.wav) {
       // Old format - direct response (backward compatibility)
       masterResult = data;
       // Use API base URL for downloads (remove /api suffix for static file serving)
