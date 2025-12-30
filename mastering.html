@@ -2682,6 +2682,13 @@ masterBtn.addEventListener('click', async () => {
     if (contentType.includes('application/json')) {
       data = await res.json();
       console.log('Mastering response received:', data);
+      
+      // SAFETY CHECK: If we have a jobId, NEVER try to access wav/downloads - it doesn't exist yet!
+      if (data.jobId) {
+        // This is an async job - wav will come later via polling
+        // DO NOT access data.wav or data.downloads here - it will crash!
+        console.log('Async job detected, jobId:', data.jobId);
+      }
     } else {
       // If not JSON, try to parse anyway but handle errors
       const text = await res.text();
