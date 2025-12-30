@@ -367,7 +367,7 @@ export default {
           return Response.json({ error: 'Track not found' }, { status: 404, headers: corsHeaders });
         }
         
-        const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM likes WHERE track_id = ?')
+        const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
           .bind(trackId).first();
         const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
           .bind(trackId).first();
@@ -433,17 +433,17 @@ export default {
       
       try {
         const existing = await env.DB.prepare(
-          'SELECT id FROM likes WHERE user_id = ? AND track_id = ?'
+          'SELECT id FROM track_likes WHERE user_id = ? AND track_id = ?'
         ).bind(userId, trackId).first();
         
         if (existing) {
           // Unlike
-          await env.DB.prepare('DELETE FROM likes WHERE user_id = ? AND track_id = ?')
+          await env.DB.prepare('DELETE FROM track_likes WHERE user_id = ? AND track_id = ?')
             .bind(userId, trackId).run();
           return Response.json({ success: true, liked: false }, { headers: corsHeaders });
         } else {
           // Like
-          await env.DB.prepare('INSERT INTO likes (id, user_id, track_id, created_at) VALUES (?, ?, ?, datetime("now"))')
+          await env.DB.prepare('INSERT INTO track_likes (id, user_id, track_id, created_at) VALUES (?, ?, ?, datetime("now"))')
             .bind(uuid(), userId, trackId).run();
           return Response.json({ success: true, liked: true }, { headers: corsHeaders });
         }
@@ -1045,7 +1045,7 @@ export default {
 
         // Delete track
         await env.DB.prepare('DELETE FROM tracks WHERE id = ?').bind(trackId).run();
-        await env.DB.prepare('DELETE FROM likes WHERE track_id = ?').bind(trackId).run();
+        await env.DB.prepare('DELETE FROM track_likes WHERE track_id = ?').bind(trackId).run();
 
         // Update user track count
         await env.DB.prepare('UPDATE users SET tracks_count = tracks_count - 1 WHERE id = ?')
