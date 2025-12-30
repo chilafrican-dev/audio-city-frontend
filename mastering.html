@@ -1674,6 +1674,34 @@ let masterResult = null;
 let startTime = 0;
 let pausedAt = 0;
 
+// Helper function to safely get audio URL (NO direct .wav access)
+function getAudioUrl() {
+  try {
+    if (!downloadUrls || typeof downloadUrls !== 'object') {
+      return null;
+    }
+    // Use bracket notation to avoid .wav access
+    return downloadUrls['preview'] || downloadUrls['mp3'] || downloadUrls['wav'] || null;
+  } catch (e) {
+    console.warn('Error getting audio URL:', e);
+    return null;
+  }
+}
+
+// Helper function to safely get WAV URL specifically
+function getWavUrl() {
+  try {
+    if (!downloadUrls || typeof downloadUrls !== 'object') {
+      return null;
+    }
+    // Use bracket notation to avoid .wav access
+    return downloadUrls['wav'] || null;
+  } catch (e) {
+    console.warn('Error getting WAV URL:', e);
+    return null;
+  }
+}
+
 // Expose state to window for mastering.js (will be synced when values change)
 window.currentFile = currentFile;
 window.selectedPreset = selectedPreset;
@@ -1682,6 +1710,8 @@ window.masteredBuffer = masteredBuffer;
 window.playbackMode = playbackMode;
 window.downloadUrls = downloadUrls || { wav: null, mp3: null }; // Ensure always an object
 window.isPlaying = isPlaying;
+window.getAudioUrl = getAudioUrl; // Expose helper
+window.getWavUrl = getWavUrl; // Expose helper
 let animationId = null;
 let analyserNode = null;
 let dataArray = null;
@@ -2387,7 +2417,7 @@ function stopMasterMeter() {
 
 playBtn.addEventListener('click', () => {
   // Check if we can play (either buffer or HTML5 audio)
-  if (playbackMode === 'after' && !masteredBuffer && downloadUrls && downloadUrls.wav !== null && downloadUrls.wav !== undefined) {
+  if (playbackMode === 'after' && !masteredBuffer && getWavUrl() !== null) {
     // Can use HTML5 audio
     if (isPlaying) {
       stopPlayback();
@@ -2599,16 +2629,14 @@ async function downloadFile(url, filename, progressEl, button) {
 
 // Downloads
 downloadWav.addEventListener('click', () => {
-  // Safe access - check downloadUrls exists first
-  if (!downloadUrls) {
-    console.warn('downloadUrls not initialized');
-    return;
-  }
-  const audioUrl = downloadUrls.wav;
+  // Use helper function - NO direct .wav access
+  const audioUrl = getWavUrl();
   if (audioUrl && currentFile) {
     const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.wav');
     const progressEl = document.getElementById('wavProgress');
     downloadFile(audioUrl, filename, progressEl, downloadWav);
+  } else {
+    console.warn('WAV URL not available yet');
   }
 });
 
