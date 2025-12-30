@@ -2682,18 +2682,29 @@ masterBtn.addEventListener('click', async () => {
             const resultRes = await fetch(`${API}/mastering-result/${progressId}`);
             if (resultRes.ok) {
               const result = await resultRes.json();
-              if (result.success && result.downloads) {
+              console.log('Mastering result received:', result);
+              if (result.success) {
+                // Check if downloads exist before accessing
+                if (!result.downloads) {
+                  console.error('Result missing downloads:', result);
+                  statusText.textContent = '⚠️ Mastering complete but downloads not available. Please try again.';
+                  return;
+                }
                 masterResult = result;
                 // Use API base URL for downloads (remove /api suffix for static file serving)
                 const baseUrl = API.replace('/api', '');
-                if (result.downloads.wav) {
+                if (result.downloads && result.downloads.wav) {
                   downloadUrls.wav = `${baseUrl}${result.downloads.wav}`;
+                } else {
+                  console.warn('WAV download URL missing in result');
                 }
-                if (result.downloads.mp3) {
+                if (result.downloads && result.downloads.mp3) {
                   downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
+                } else {
+                  console.warn('MP3 download URL missing in result');
                 }
                 // Use 16-bit preview WAV for browser playback (if available)
-                if (result.downloads.preview) {
+                if (result.downloads && result.downloads.preview) {
                   downloadUrls.preview = `${baseUrl}${result.downloads.preview}`;
                 }
                 
