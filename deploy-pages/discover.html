@@ -1748,7 +1748,15 @@
     async function loadFeaturedTracks() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/tracks?order=views_count.desc&limit=6`);
-        let tracks = response.ok ? await response.json() : [];
+        let tracks = [];
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Ensure data is an array
+          tracks = Array.isArray(data) ? data : [];
+        } else {
+          console.warn('Failed to load featured tracks:', response.status, response.statusText);
+        }
         
         const container = document.getElementById('featuredTracks');
         const section = container ? container.closest('.hero-section') : null;
@@ -1819,7 +1827,15 @@
     async function loadHot100Tracks() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/tracks?order=views_count.desc&limit=100`);
-        let tracks = response.ok ? await response.json() : [];
+        let tracks = [];
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Ensure data is an array
+          tracks = Array.isArray(data) ? data : [];
+        } else {
+          console.warn('Failed to load Hot 100 tracks:', response.status, response.statusText);
+        }
         
         // Sort by plays (views_count) - simple ranking by plays
         if (tracks.length > 0) {
@@ -1952,7 +1968,15 @@
     async function loadTrendingTracks() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/tracks?order=views_count.desc&limit=12`);
-        const tracks = response.ok ? await response.json() : [];
+        let tracks = [];
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Ensure data is an array
+          tracks = Array.isArray(data) ? data : [];
+        } else {
+          console.warn('Failed to load trending tracks:', response.status, response.statusText);
+        }
         
         const container = document.getElementById('trendingTracks');
         const section = document.getElementById('exploreSection');
