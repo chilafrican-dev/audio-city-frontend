@@ -1588,7 +1588,8 @@ export default {
       try {
         const progressId = url.pathname.split('/api/mastering-progress/')[1];
         // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
-        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001').replace(/\/api\/(master|quick-master)$/, '');
+        // Default to new mastering server domain
+        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
         
         const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/mastering-progress/${progressId}`, {
           method: 'GET',
@@ -1658,7 +1659,8 @@ export default {
       try {
         const resultId = url.pathname.split('/api/mastering-result/')[1];
         // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
-        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001').replace(/\/api\/(master|quick-master)$/, '');
+        // Default to new mastering server domain
+        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
         
         const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/mastering-result/${resultId}`, {
           method: 'GET',
