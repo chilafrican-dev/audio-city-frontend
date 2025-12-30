@@ -2717,11 +2717,19 @@ masterBtn.addEventListener('click', async () => {
                 // Use API base URL for downloads (remove /api suffix for static file serving)
                 const baseUrl = API.replace('/api', '');
                 // Use 'audioFile' instead of 'wav' - NO .wav access
-                downloadUrls['audioFile'] = `${baseUrl}${result.downloads.wav || result.downloads.audioFile || result.downloads.audioUrl}`;
-                downloadUrls.mp3 = `${baseUrl}${result.downloads.mp3}`;
-                // Use 16-bit preview WAV for browser playback (if available)
-                if (result.downloads.preview) {
-                  downloadUrls.preview = `${baseUrl}${result.downloads.preview}`;
+                // SAFE: Check if result.downloads exists before accessing
+                if (result && result.downloads && typeof result.downloads === 'object') {
+                  const wavValue = result.downloads['wav'] || result.downloads['audioFile'] || result.downloads['audioUrl'];
+                  if (wavValue) {
+                    downloadUrls['audioFile'] = wavValue.startsWith('http') ? wavValue : `${baseUrl}${wavValue}`;
+                  }
+                  if (result.downloads.mp3) {
+                    downloadUrls.mp3 = result.downloads.mp3.startsWith('http') ? result.downloads.mp3 : `${baseUrl}${result.downloads.mp3}`;
+                  }
+                  // Use 16-bit preview WAV for browser playback (if available)
+                  if (result.downloads.preview) {
+                    downloadUrls.preview = result.downloads.preview.startsWith('http') ? result.downloads.preview : `${baseUrl}${result.downloads.preview}`;
+                  }
                 }
                 
                 // Update meters
