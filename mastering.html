@@ -2675,8 +2675,9 @@ masterBtn.addEventListener('click', async () => {
       // Start polling immediately, then continue every 500ms
       pollProgress(progressId).catch(err => console.warn('Initial poll error:', err));
       progressInterval = setInterval(async () => {
-        const progress = await pollProgress(progressId);
-        if (progress && progress.status === 'complete') {
+        try {
+          const progress = await pollProgress(progressId);
+          if (progress && progress.status === 'complete') {
           // Fetch the final result
           try {
             const resultRes = await fetch(`${API}/mastering-result/${progressId}`);
