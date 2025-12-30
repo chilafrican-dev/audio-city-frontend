@@ -13,1306 +13,728 @@
     }
     
     body {
-      margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #e5ddd5;
-      background-image: 
-        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
-        linear-gradient(135deg, #e5ddd5 0%, #d2dbdc 100%);
-      background-attachment: fixed;
-      color: #111b21;
+      background: #111;
+      color: #fff;
       height: 100vh;
       overflow: hidden;
     }
 
     /* Header */
     header {
-      position: sticky;
-      top: 0;
-      background: #000000 !important;
-      border-bottom: 1px solid #1f1f2b;
-      padding: 12px 0;
-      z-index: 100;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-    }
-    
-    .header-content {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 24px;
+      background: #000;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 24px;
+      border-bottom: 1px solid #222;
+      height: 60px;
     }
     
-    .logo-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: #fff;
-    }
-    
-    .logo-brand .brand-text {
-      font-size: 36px;
+    .logo {
+      font-size: 24px;
       font-weight: 900;
-      color: #ffffff !important;
-      -webkit-text-fill-color: #ffffff !important;
-      letter-spacing: 1px;
+      color: #fff;
+      text-decoration: none;
     }
     
     nav {
       display: flex;
       gap: 8px;
-      align-items: center;
     }
     
-    .nav-item {
+    nav a {
       padding: 8px 16px;
-      color: #aaa;
+      color: #888;
       text-decoration: none;
       border-radius: 8px;
-      transition: all 0.2s;
       font-size: 14px;
     }
     
-    .nav-item:hover, .nav-item.active {
+    nav a:hover, nav a.active {
       color: #fff;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255,255,255,0.1);
     }
-    
-    .profile-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #111118;
-      border: 1px solid #1f1f2b;
-      overflow: hidden;
+
+    /* Main Container */
+    .container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+
+    /* Left Sidebar - Conversations List */
+    .sidebar {
+      width: 350px;
+      background: #111;
+      border-right: 1px solid #222;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid #222;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .conversations {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .conversation-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
       cursor: pointer;
+      border-bottom: 1px solid #1a1a1a;
+      transition: background 0.2s;
+    }
+
+    .conversation-item:hover {
+      background: #1a1a1a;
+    }
+
+    .conversation-item.active {
+      background: #1f1f1f;
+    }
+
+    .conversation-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #333;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      overflow: hidden;
     }
-    
-    .profile-btn img {
+
+    .conversation-avatar img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    /* Main Inbox Container */
-    .inbox {
-      display: flex;
-      height: calc(100vh - 60px);
-      overflow: hidden;
-      background: #fff;
-      max-width: 1400px;
-      margin: 0 auto;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    }
-
-    /* LEFT - Chat List (WhatsApp style) */
-    .chat-list {
-      width: 30%;
-      min-width: 300px;
-      background: #fff;
-      border-right: 1px solid #e9edef;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .chat-list-header {
-      padding: 10px 16px;
-      background: #f0f2f5;
-      border-bottom: 1px solid #e9edef;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .chat-list-header h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 400;
-      color: #111b21;
+    .conversation-info {
       flex: 1;
+      min-width: 0;
     }
 
-    .chat-list-body {
-      flex: 1;
-      overflow-y: auto;
-      background: #fff;
+    .conversation-name {
+      font-weight: 500;
+      font-size: 16px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .chat-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      cursor: pointer;
-      transition: background 0.1s;
-      border-bottom: 1px solid #f0f2f5;
-      position: relative;
+    .conversation-preview {
+      color: #888;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .chat-item:hover {
-      background: #f5f6f6;
-    }
-
-    .chat-item.active {
-      background: #e9edef;
-    }
-
-    .chat-item img {
-      width: 49px;
-      height: 49px;
-      border-radius: 50%;
-      object-fit: cover;
+    .conversation-time {
+      color: #666;
+      font-size: 12px;
       flex-shrink: 0;
     }
 
-    .chat-info {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    
-    .chat-info-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .chat-info h4 {
-      margin: 0;
-      font-size: 17px;
-      font-weight: 400;
-      color: #111b21;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chat-info p {
-      margin: 0;
-      font-size: 14px;
-      color: #667781;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    
-    .chat-time {
-      font-size: 12px;
-      color: #667781;
-      white-space: nowrap;
-    }
-
-    .badge {
-      position: absolute;
-      top: 12px;
-      right: 16px;
+    .unread-badge {
       background: #25d366;
-      color: white;
-      border-radius: 10px;
+      color: #fff;
+      font-size: 11px;
       padding: 2px 6px;
-      font-size: 12px;
-      font-weight: 500;
-      min-width: 20px;
-      text-align: center;
+      border-radius: 10px;
+      margin-left: 8px;
     }
 
-    /* RIGHT - Chat Window (WhatsApp style) */
-    .chat-window {
+    /* Right Side - Chat Area */
+    .chat-area {
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: #efeae2;
-      background-image: 
-        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
-      background-attachment: fixed;
-      overflow: hidden;
-      min-height: 0; /* Important for flex scroll */
+      background: #0a0a0a;
     }
 
-    /* HEADER (WhatsApp style) */
+    /* Chat Header */
     .chat-header {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 16px;
-      border-bottom: 1px solid #e9edef;
-      background: #f0f2f5;
-      flex-shrink: 0; /* Prevent header from shrinking */
-      z-index: 10;
+      padding: 12px 16px;
+      background: #111;
+      border-bottom: 1px solid #222;
+      height: 65px;
     }
 
-    .chat-header img {
+    .chat-header-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .chat-header-avatar img {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      flex-shrink: 0;
     }
 
-    .chat-header-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .chat-header-info h4 {
-      margin: 0;
+    .chat-header-info h3 {
       font-size: 16px;
-      font-weight: 400;
-      color: #111b21;
+      font-weight: 500;
     }
 
     .chat-header-info p {
-      margin: 2px 0 0;
       font-size: 13px;
-      color: #667781;
+      color: #888;
     }
 
-    .back-btn {
-      background: none;
-      border: none;
-      color: #54656f;
-      font-size: 24px;
-      cursor: pointer;
-      padding: 8px;
-      margin-right: 4px;
-      transition: background 0.2s;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .back-btn:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    /* BODY (WhatsApp style) - Single box for all messages */
-    .chat-body {
+    /* Messages Area */
+    .messages-area {
       flex: 1;
-      padding: 16px 16px;
+      overflow-y: auto;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
-      overflow-y: auto;
-      background: transparent;
-      width: 100%;
-      position: relative;
-      min-height: 0; /* Important for flex scroll */
-    }
-
-    /* Message wrapper for proper alignment - all in one box */
-    .msg-wrapper {
-      display: flex;
-      width: 100%;
-      margin-bottom: 2px;
-      clear: both;
-      flex-shrink: 0;
-    }
-
-    .msg-wrapper.sent {
-      justify-content: flex-end;
-      align-items: flex-end;
-    }
-
-    .msg-wrapper.received {
-      justify-content: flex-start;
-      align-items: flex-start;
-    }
-
-    /* BUBBLES - WhatsApp style message bubbles - all in one box */
-    .msg {
-      max-width: 65%;
-      min-width: 100px;
-      padding: 6px 7px 8px 9px;
-      border-radius: 7.5px;
-      font-size: 14.2px;
-      word-wrap: break-word;
-      line-height: 19px;
-      display: inline-block;
-      position: relative;
-      box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
-      margin: 0;
-    }
-
-    .msg-content {
-      display: inline;
-      word-wrap: break-word;
-    }
-
-    .msg-time {
-      display: inline-block;
-      font-size: 11.5px;
-      margin-left: 6px;
-      vertical-align: bottom;
-      white-space: nowrap;
-      opacity: 0.7;
-    }
-
-    /* Sender (current user) - RIGHT side - Green bubble */
-    .msg.sent {
-      background: #d9fdd3;
-      color: #111b21;
-    }
-
-    .msg.sent .msg-time {
-      color: rgba(0, 0, 0, 0.45);
-    }
-
-    /* Receiver (other user) - LEFT side - White bubble */
-    .msg.received {
-      background: #fff;
-      color: #111b21;
-    }
-
-    .msg.received .msg-time {
-      color: rgba(0, 0, 0, 0.45);
-    }
-
-    /* INPUT (WhatsApp style) */
-    .chat-input {
-      display: flex;
-      align-items: flex-end;
-      padding: 5px 10px;
-      border-top: 1px solid #e9edef;
-      background: #f0f2f5;
-      gap: 8px;
-      flex-shrink: 0; /* Prevent input from shrinking */
-      z-index: 10;
-    }
-
-    .chat-input-wrapper {
-      flex: 1;
-      background: #fff;
-      border-radius: 21px;
-      padding: 9px 12px;
-      display: flex;
-      align-items: flex-end;
       gap: 8px;
     }
 
-    .chat-input input,
-    .chat-input textarea {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #111b21;
-      padding: 0;
+    .message {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 18px;
       font-size: 15px;
-      font-family: inherit;
-      resize: none;
-      max-height: 100px;
-      line-height: 20px;
+      line-height: 1.4;
+      word-wrap: break-word;
     }
 
-    .chat-input input:focus,
-    .chat-input textarea:focus {
+    .message.sent {
+      align-self: flex-end;
+      background: #25d366;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      background: #262626;
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    /* Input Area */
+    .input-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #111;
+      border-top: 1px solid #222;
+    }
+
+    .input-area input {
+      flex: 1;
+      background: #262626;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 24px;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .input-area input:focus {
       outline: none;
     }
 
-    .chat-input button {
-      background: transparent;
+    .input-area input::placeholder {
+      color: #666;
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #25d366;
       border: none;
-      color: #54656f;
+      color: #fff;
       cursor: pointer;
-      font-size: 24px;
-      padding: 0;
-      width: 32px;
-      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.2s;
-      flex-shrink: 0;
+      font-size: 20px;
+      transition: background 0.2s;
     }
 
-    .chat-input button:hover {
-      color: #111b21;
+    .send-btn:hover {
+      background: #1da851;
     }
 
-    .chat-input button.send-btn {
-      background: #25d366;
-      color: white;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
+    .send-btn:disabled {
+      background: #333;
+      cursor: not-allowed;
     }
 
-    .chat-input button.send-btn:hover {
-      background: #20ba5a;
-    }
-
-    /* Empty State */
+    /* Empty States */
     .empty-state {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      flex: 1;
-      min-height: 200px;
-      color: #667781;
-      text-align: center;
-      padding: 40px;
+      color: #666;
     }
 
     .empty-state-icon {
-      font-size: 120px;
-      margin-bottom: 24px;
-      opacity: 0.6;
+      font-size: 64px;
+      margin-bottom: 16px;
     }
 
     .empty-state-text {
-      font-size: 32px;
-      font-weight: 300;
-      color: #41525d;
+      font-size: 18px;
       margin-bottom: 8px;
     }
 
-    .empty-state-subtext {
+    .empty-state-sub {
       font-size: 14px;
-      color: #667781;
-      max-width: 400px;
+      color: #555;
     }
 
-    /* Tabs (for Messages/Requests/Notifications) */
-    .inbox-tabs {
-      display: flex;
-      gap: 8px;
-      padding: 8px;
-      background: #111118;
-      border-bottom: 1px solid #1f1f2b;
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        display: block;
+      }
+      
+      .chat-area {
+        display: none;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+      }
+      
+      .chat-area.active {
+        display: flex;
+      }
+      
+      .back-btn {
+        display: block;
+      }
     }
-    
-    .inbox-tab {
-      flex: 1;
-      padding: 12px 20px;
-      background: transparent;
+
+    .back-btn {
+      display: none;
+      background: none;
       border: none;
-      color: #aaa;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s;
-      position: relative;
-    }
-    
-    .inbox-tab:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .inbox-tab.active {
-      color: #7c3aed;
-      background: rgba(124, 58, 237, 0.15);
-    }
-    
-    .inbox-tab-badge {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: #7c3aed;
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-size: 10px;
-      font-weight: 700;
-      color: white;
-    }
-
-    /* Hide tabs when in chat view */
-    .chat-window-view .inbox-tabs {
-      display: none;
-    }
-
-    /* Profile Menu */
-    .dropdown-menu {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 8px;
-      background: #111118;
-      border: 1px solid #1f1f2b;
-      border-radius: 12px;
+      font-size: 24px;
+      cursor: pointer;
       padding: 8px;
-      min-width: 180px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-      z-index: 1000;
-      display: none;
+      margin-right: 8px;
     }
 
-    .dropdown-menu.show {
-      display: block;
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
     }
 
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: all 0.2s;
-      cursor: pointer;
+    ::-webkit-scrollbar-track {
+      background: transparent;
     }
 
-    .dropdown-item:hover {
-      background: rgba(255, 255, 255, 0.1);
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 3px;
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
   <header>
-    <div class="header-content">
-      <a href="index.html" class="logo-brand">
-        <span class="brand-text">AUDIO CITY</span>
-      </a>
-      <nav>
-        <a href="discover.html" class="nav-item">Home</a>
-        <a href="feed.html" class="nav-item">Feed</a>
-        <a href="artists.html" class="nav-item">Artists</a>
-        <a href="inbox.html" class="nav-item active">Inbox</a>
-        <a href="mastering.html" class="nav-item">Mastering</a>
-      </nav>
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="profile-btn" id="profileBtn" style="position: relative; display: none;" onclick="toggleProfileMenu(event)">
-          <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
-          <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px;">👤</div>
-          <div class="dropdown-menu" id="profileMenu">
-            <a href="profile.html" class="dropdown-item">👤 Profile</a>
-            <a href="settings.html" class="dropdown-item">⚙️ Settings</a>
-            <div class="dropdown-item" onclick="signOut()" style="color: #ef4444; border-top: 1px solid #1f1f2b; margin-top: 4px; padding-top: 12px;">🚪 Sign out</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <a href="index.html" class="logo">AUDIO CITY</a>
+    <nav>
+      <a href="discover.html">Home</a>
+      <a href="feed.html">Feed</a>
+      <a href="artists.html">Artists</a>
+      <a href="inbox.html" class="active">Inbox</a>
+    </nav>
   </header>
-  
-  <!-- Main Inbox Container -->
-  <div class="inbox">
-    <!-- LEFT: Chat List -->
-    <div class="chat-list" id="chatListContainer">
-      <div class="chat-list-header">Messages</div>
-      <div class="chat-list-body" id="messagesList">
+
+  <div class="container">
+    <!-- Left: Conversations List -->
+    <div class="sidebar">
+      <div class="sidebar-header">Messages</div>
+      <div class="conversations" id="conversationsList">
         <div class="empty-state">
           <div class="empty-state-icon">💬</div>
-          <div class="empty-state-text">No messages yet</div>
-          <div class="empty-state-subtext">Start a conversation with a creator!</div>
+          <div class="empty-state-text">No conversations yet</div>
+          <div class="empty-state-sub">Start chatting with artists!</div>
         </div>
       </div>
     </div>
-    
-    <!-- RIGHT: Chat Window -->
-    <div class="chat-window" id="chatWindow" style="display: none;">
-      <!-- Chat Header -->
-      <div class="chat-header" id="conversationHeader">
-        <button class="back-btn" onclick="showMessagesList()">←</button>
-        <div id="conversationAvatar" style="width: 36px; height: 36px; border-radius: 50%; background: #1f1f2b; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>
-        <div class="chat-header-info">
-          <h4 id="conversationName">User</h4>
-          <p id="conversationStatus">Online</p>
-        </div>
-      </div>
 
-      <!-- Chat Body -->
-      <div class="chat-body" id="conversationMessages">
-        <div class="empty-state">
-          <div class="empty-state-icon">💬</div>
-          <div class="empty-state-text">No messages yet</div>
-          <div class="empty-state-subtext">Start the conversation!</div>
-        </div>
-      </div>
-
-      <!-- Chat Input -->
-      <div class="chat-input">
-        <div class="chat-input-wrapper">
-          <button style="background: transparent; border: none; color: #54656f; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">😊</button>
-          <textarea id="messageInput" placeholder="Type a message..." rows="1" onkeydown="handleMessageInputKeydown(event)"></textarea>
-          <button style="background: transparent; border: none; color: #54656f; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">📎</button>
-        </div>
-        <button id="sendMessageBtn" class="send-btn" onclick="sendMessage()" style="background: #25d366; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">▶</button>
-      </div>
-    </div>
-    
-    <!-- Default View: Show empty state when no conversation selected -->
-    <div id="defaultView" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #efeae2; background-image: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%); background-attachment: fixed;">
-        <div class="empty-state">
+    <!-- Right: Chat Area -->
+    <div class="chat-area" id="chatArea">
+      <div class="empty-state" id="noChatSelected">
         <div class="empty-state-icon">💬</div>
         <div class="empty-state-text">Select a conversation</div>
-        <div class="empty-state-subtext">Choose a message from the list to start chatting</div>
+        <div class="empty-state-sub">Choose from your messages on the left</div>
+      </div>
+      
+      <!-- Active Chat (hidden by default) -->
+      <div id="activeChat" style="display: none; flex-direction: column; height: 100%;">
+        <div class="chat-header">
+          <button class="back-btn" onclick="closeChat()">←</button>
+          <div class="chat-header-avatar" id="chatAvatar">👤</div>
+          <div class="chat-header-info">
+            <h3 id="chatName">User</h3>
+            <p id="chatStatus">Online</p>
+          </div>
+        </div>
+        
+        <div class="messages-area" id="messagesArea">
+          <!-- Messages will be inserted here -->
+        </div>
+        
+        <div class="input-area">
+          <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
       </div>
     </div>
   </div>
-  
+
   <script>
     const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
 
+    let currentUserId = localStorage.getItem('user_id');
+    let currentChatUserId = null;
     let currentConversationId = null;
-    let currentConversationUserId = null; // For UI display (other user's info)
-    let conversationMessages = [];
-    let readConversations = new Set(); // Track conversations marked as read in this session
-    
-    // Get current user ID
-    function getCurrentUserId() {
-      return localStorage.getItem('user_id');
-    }
-    
-    // Get auth token
-    function getAuthToken() {
-      return localStorage.getItem('auth_token');
+
+    // Generate conversation ID (sorted for consistency)
+    function getConversationId(userId1, userId2) {
+      return [userId1, userId2].sort().join('_');
     }
 
-    /**
-     * Generate conversationId from two user IDs (sorted for consistency)
-     * WhatsApp/Instagram model: conversationId = hash(userA_id + userB_id)
-     * 
-     * RULE: ONE CONVERSATION = ONE BOX
-     * Both users share the SAME conversationId
-     * 
-     * Example:
-     * - User A (u1) and User B (u2) → conversationId = "u1_u2"
-     * - Both users load messages by: GET /messages?conversationId=u1_u2
-     * - UI determines left/right based on: senderId === currentUserId
-     */
-    function generateConversationId(userId1, userId2) {
-      // Sort IDs to ensure same conversationId regardless of order
-      const sorted = [String(userId1), String(userId2)].sort();
-      return sorted.join('_');
+    // Format time
+    function formatTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      
+      if (diff < 60000) return 'Just now';
+      if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
+      return Math.floor(diff / 86400000) + 'd';
+    }
+
+    // Format message time
+    function formatMessageTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Load conversations
+    async function loadConversations() {
+      if (!currentUserId) {
+        document.getElementById('conversationsList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔒</div>
+            <div class="empty-state-text">Please log in</div>
+            <div class="empty-state-sub"><a href="login.html" style="color: #25d366;">Sign in</a> to view messages</div>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${currentUserId}/messages`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          renderConversations(data);
+        } else {
+          renderConversations([]);
+        }
+      } catch (e) {
+        console.error('Error loading conversations:', e);
+        renderConversations([]);
+      }
+    }
+
+    // Render conversations list
+    async function renderConversations(conversations) {
+      const container = document.getElementById('conversationsList');
+      
+      if (!conversations || conversations.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <div class="empty-state-text">No conversations yet</div>
+            <div class="empty-state-sub">Start chatting with artists!</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Group by other user
+      const grouped = new Map();
+      for (const conv of conversations) {
+        const otherUserId = conv.id || conv.conversation_id || conv.sender_id;
+        if (!otherUserId || otherUserId === currentUserId) continue;
+        
+        if (!grouped.has(otherUserId)) {
+          grouped.set(otherUserId, {
+            oderId: otherUserId,
+            lastMessage: conv.last_message || conv.text || conv.content || '',
+            lastTime: conv.created_at || conv.updated_at || '',
+            unread: conv.read === 0 || conv.read === false,
+            name: conv.sender_name || conv.name || null,
+            avatar: conv.sender_avatar || conv.avatar || conv.profile_image_url || null
+          });
+        }
+      }
+
+      // Fetch user info for each conversation
+      const items = [];
+      for (const [userId, conv] of grouped) {
+        if (!conv.name) {
+          try {
+            const userRes = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              conv.name = userData.name || userData.username || 'User';
+              conv.avatar = userData.profile_image_url || userData.avatar_url || null;
+            }
+          } catch (e) {
+            conv.name = 'User';
+          }
+        }
+        items.push({ oderId: userId, ...conv });
+      }
+
+      // Sort by last message time
+      items.sort((a, b) => new Date(b.lastTime || 0) - new Date(a.lastTime || 0));
+
+      container.innerHTML = items.map(conv => `
+        <div class="conversation-item" onclick="openChat('${conv.oderId}')">
+          <div class="conversation-avatar">
+            ${conv.avatar ? `<img src="${conv.avatar}" alt="">` : '👤'}
+          </div>
+          <div class="conversation-info">
+            <div class="conversation-name">${escapeHtml(conv.name || 'User')}</div>
+            <div class="conversation-preview">${escapeHtml(conv.lastMessage || 'No messages')}</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="conversation-time">${formatTime(conv.lastTime)}</div>
+            ${conv.unread ? '<span class="unread-badge">1</span>' : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Open chat with user
+    async function openChat(userId) {
+      currentChatUserId = userId;
+      currentConversationId = getConversationId(currentUserId, userId);
+
+      // Show chat UI
+      document.getElementById('noChatSelected').style.display = 'none';
+      document.getElementById('activeChat').style.display = 'flex';
+      document.getElementById('chatArea').classList.add('active');
+
+      // Mark conversation as active
+      document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+      event.target.closest('.conversation-item')?.classList.add('active');
+
+      // Load user info
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+        if (res.ok) {
+          const user = await res.json();
+          document.getElementById('chatName').textContent = user.name || user.username || 'User';
+          const avatar = document.getElementById('chatAvatar');
+          if (user.profile_image_url || user.avatar_url) {
+            avatar.innerHTML = `<img src="${user.profile_image_url || user.avatar_url}" alt="">`;
+          } else {
+            avatar.innerHTML = '👤';
+          }
+        }
+      } catch (e) {
+        console.error('Error loading user:', e);
+      }
+
+      // Load messages
+      await loadMessages();
+
+      // Mark as read
+      try {
+        await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${userId}/messages/read`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        });
+      } catch (e) {}
+    }
+
+    // Close chat (mobile)
+    function closeChat() {
+      document.getElementById('noChatSelected').style.display = 'flex';
+      document.getElementById('activeChat').style.display = 'none';
+      document.getElementById('chatArea').classList.remove('active');
+      currentChatUserId = null;
+    }
+
+    // Load messages for current chat
+    async function loadMessages() {
+      if (!currentChatUserId) return;
+
+      const container = document.getElementById('messagesArea');
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${currentChatUserId}/messages`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+        });
+
+        if (res.ok) {
+          const messages = await res.json();
+          renderMessages(messages);
+        } else {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">Start the conversation!</div></div>';
+        }
+      } catch (e) {
+        console.error('Error loading messages:', e);
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Error loading messages</div></div>';
+      }
+    }
+
+    // Render messages
+    function renderMessages(messages) {
+      const container = document.getElementById('messagesArea');
+
+      if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">Start the conversation!</div></div>';
+        return;
+      }
+
+      // Sort by time
+      const sorted = [...messages].sort((a, b) => 
+        new Date(a.created_at || 0) - new Date(b.created_at || 0)
+      );
+
+      container.innerHTML = sorted.map(msg => {
+        const isSent = (msg.sender_id || msg.senderId) === currentUserId;
+        const content = msg.content || msg.text || msg.message || '';
+        const time = formatMessageTime(msg.created_at);
+
+        return `
+          <div class="message ${isSent ? 'sent' : 'received'}">
+            <div>${escapeHtml(content)}</div>
+            <div class="message-time">${time}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Send message
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      
+      if (!text || !currentChatUserId) return;
+
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${currentChatUserId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
+          body: JSON.stringify({
+            sender_id: currentUserId,
+            recipient_id: currentChatUserId,
+            content: text
+          })
+        });
+
+        if (res.ok) {
+          input.value = '';
+          await loadMessages();
+          loadConversations(); // Update sidebar
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert('Failed to send: ' + (err.error || 'Unknown error'));
+        }
+      } catch (e) {
+        console.error('Error sending:', e);
+        alert('Error sending message');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    // Handle Enter key
+    function handleKeyPress(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     }
 
     // Escape HTML
     function escapeHtml(text) {
       const div = document.createElement('div');
-      div.textContent = text;
+      div.textContent = text || '';
       return div.innerHTML;
     }
-    
-    // Format time ago
-    function formatTimeAgo(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      const now = new Date();
-      const diff = now - date;
-      const seconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
 
-      if (days > 0) return `${days}d ago`;
-      if (hours > 0) return `${hours}h ago`;
-      if (minutes > 0) return `${minutes}m ago`;
-      return 'Just now';
-    }
-
-    // Toggle profile menu
-    function toggleProfileMenu(event) {
-      event.stopPropagation();
-      const menu = document.getElementById('profileMenu');
-      menu.classList.toggle('show');
-    }
-
-    // Close profile menu when clicking outside
-    document.addEventListener('click', function(event) {
-      const menu = document.getElementById('profileMenu');
-      const btn = document.getElementById('profileBtn');
-      if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) {
-        menu.classList.remove('show');
-      }
-    });
-
-    // Sign out
-    function signOut() {
-      if (confirm('Are you sure you want to sign out?')) {
-        localStorage.removeItem('user_id');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('username');
-        window.location.href = 'login.html';
-      }
-    }
-
-    // Load messages list
-    async function loadMessages() {
-      const userId = getCurrentUserId();
-      const token = getAuthToken();
-      
-      if (!userId || !token) {
-        document.getElementById('messagesList').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🔒</div>
-            <div class="empty-state-text">Please log in</div>
-            <div class="empty-state-subtext">Sign in to view your messages</div>
-          </div>
-        `;
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/users/${userId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-      if (response.ok) {
-          const messages = await response.json();
-          await renderMessages(messages);
-      } else {
-          document.getElementById('messagesList').innerHTML = `
-            <div class="empty-state">
-              <div class="empty-state-icon">💬</div>
-              <div class="empty-state-text">No messages yet</div>
-              <div class="empty-state-subtext">Start a conversation with a creator!</div>
-            </div>
-          `;
-      }
-      } catch (error) {
-        console.error('Error loading messages:', error);
-        document.getElementById('messagesList').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">⚠️</div>
-            <div class="empty-state-text">Error loading messages</div>
-            <div class="empty-state-subtext">Please try again later</div>
-          </div>
-        `;
-      }
-    }
-
-    // Render messages list - Group by conversationId (WhatsApp/Instagram model)
-    async function renderMessages(msgs) {
-      const container = document.getElementById('messagesList');
-      if (!container) return;
-
-      if (!msgs || msgs.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">💬</div>
-            <div class="empty-state-text">No messages yet</div>
-            <div class="empty-state-subtext">Start a conversation with a creator!</div>
-          </div>
-        `;
-        return;
-      }
-
-      const currentUserId = getCurrentUserId();
-      
-      // Group messages by conversationId (ONE CONVERSATION = ONE BOX)
-      // Handle both cases: API returns conversations OR individual messages
-      const conversationsMap = new Map();
-      
-      for (const item of msgs) {
-        // Check if this is already a conversation object or a message
-        let conversationId = item.conversationId || item.conversation_id;
-        let otherUserId = item.otherUserId || item.participant_id || item.user_id;
-        let lastMessage = item.lastMessage || item.last_message || item.text || item.content || item.message || '';
-        let lastMessageTime = item.lastMessageTime || item.updated_at || item.timestamp || item.created_at || item.createdAt;
-        let isUnread = item.isUnread !== undefined ? item.isUnread : !item.read;
-        
-        // Backend returns: { id: partnerId, conversation_id: partnerId, sender_id: ..., last_message: ... }
-        // The conversation_id is actually the partner's ID, not a real conversationId
-        // We need to extract otherUserId and generate the real conversationId
-        
-        // First, get otherUserId from backend response
-        if (!otherUserId) {
-          // Backend returns id = partnerId
-          otherUserId = item.id || item.conversation_id;
-          
-          // If still no otherUserId, try to extract from sender_id/recipient_id
-          if (!otherUserId) {
-            const senderId = item.senderId || item.sender_id;
-            const receiverId = item.receiverId || item.recipient_id || item.receiver_id;
-            otherUserId = senderId === currentUserId ? receiverId : senderId;
-          }
-        }
-        
-        // Generate conversationId from currentUserId and otherUserId
-        if (otherUserId && !conversationId) {
-          conversationId = generateConversationId(currentUserId, otherUserId);
-        }
-        
-        // If conversationId was provided but otherUserId wasn't, extract it
-        if (conversationId && !otherUserId) {
-          const parts = conversationId.split('_');
-          otherUserId = parts.find(id => String(id) !== String(currentUserId)) || parts[1] || parts[0];
-        }
-        
-        // Fallback: extract from participants array
-        if (!otherUserId && item.participants && Array.isArray(item.participants)) {
-          otherUserId = item.participants.find(id => String(id) !== String(currentUserId));
-          if (otherUserId && !conversationId) {
-            conversationId = generateConversationId(currentUserId, otherUserId);
-          }
-        }
-        
-        if (!conversationId || !otherUserId) continue;
-        
-        // If conversation doesn't exist, create it
-        if (!conversationsMap.has(conversationId)) {
-          conversationsMap.set(conversationId, {
-            conversationId: conversationId,
-            otherUserId: otherUserId,
-            lastMessage: lastMessage,
-            lastMessageTime: lastMessageTime,
-            isUnread: isUnread,
-            senderName: item.sender_name || item.senderName || item.sender?.username || item.name || null,
-            senderAvatar: item.sender?.profile_image || item.senderAvatar || item.avatar || item.profile_image || null
-          });
-        } else {
-          // Update if this message/conversation is more recent
-          const conv = conversationsMap.get(conversationId);
-          const itemTime = new Date(lastMessageTime || 0).getTime();
-          const convTime = new Date(conv.lastMessageTime || 0).getTime();
-          if (itemTime > convTime) {
-            conv.lastMessage = lastMessage;
-            conv.lastMessageTime = lastMessageTime;
-          }
-          conv.isUnread = conv.isUnread || isUnread;
-        }
-      }
-      
-      // Load user info for each conversation's other participant (only if not already loaded)
-      const conversations = Array.from(conversationsMap.values());
-      const conversationsWithNames = await Promise.all(conversations.map(async (conv) => {
-        if (!conv.otherUserId) return conv;
-        
-        // Only fetch if we don't already have the name/avatar
-        if (!conv.senderName || !conv.senderAvatar) {
-          try {
-            const userResponse = await fetch(`${API_BASE_URL}/api/users/${conv.otherUserId}`);
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
-              conv.senderName = conv.senderName || userData.name || userData.full_name || userData.username || 'User';
-              conv.senderAvatar = conv.senderAvatar || userData.profile_image || userData.avatar_url || userData.profile_image_url || null;
-            }
-          } catch (error) {
-            console.log('Error loading user info:', error);
-            // Set defaults if fetch fails
-            conv.senderName = conv.senderName || 'User';
-          }
-        }
-        
-        return conv;
-      }));
-      
-      // Sort by last message time (most recent first)
-      conversationsWithNames.sort((a, b) => {
-        const timeA = new Date(a.lastMessageTime || 0).getTime();
-        const timeB = new Date(b.lastMessageTime || 0).getTime();
-        return timeB - timeA;
-      });
-
-      // Render one chat item per conversation
-      container.innerHTML = conversationsWithNames.map(conv => {
-        const timeAgo = formatTimeAgo(conv.lastMessageTime);
-        const senderName = conv.senderName || 'User';
-        const preview = conv.lastMessage || 'No preview';
-        
-        // Check if this conversation was marked as read in this session
-        const conversationKey = `${getCurrentUserId()}_${conv.otherUserId}`;
-        const isMarkedAsRead = readConversations.has(conversationKey);
-        
-        // Conversation is unread only if backend says so AND we haven't marked it as read in this session
-        const isUnread = conv.isUnread && !isMarkedAsRead;
-        
-        return `
-          <div class="chat-item ${isUnread ? 'unread' : ''}" onclick="showMessageConversation('${conv.otherUserId}', this)">
-            ${conv.senderAvatar ? `<img src="${conv.senderAvatar}" alt="${escapeHtml(senderName)}">` : '<div style="width: 42px; height: 42px; border-radius: 50%; background: #1f1f2b; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>'}
-            <div class="chat-info">
-              <h4>${escapeHtml(senderName)}</h4>
-              <p>${escapeHtml(preview)}</p>
-              </div>
-            ${isUnread ? '<div class="badge">1</div>' : ''}
-          </div>
-        `;
-      }).join('');
-    }
-    
-    // Show message conversation
-    async function showMessageConversation(userId, clickedElement) {
-      const currentUserId = getCurrentUserId();
-      if (!currentUserId) return;
-      
-      // Generate conversationId (WhatsApp/Instagram model)
-      currentConversationId = generateConversationId(currentUserId, userId);
-      currentConversationUserId = userId; // Store for UI display
-      
-      // Hide default view, show chat window
-      const defaultView = document.getElementById('defaultView');
-      const chatWindow = document.getElementById('chatWindow');
-      if (defaultView) defaultView.style.display = 'none';
-      if (chatWindow) chatWindow.style.display = 'flex';
-      
-      // Update active chat item
-      document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
-      });
-      if (clickedElement && clickedElement.classList) {
-        clickedElement.classList.add('active');
-      }
-
-      // Load user info
-      try {
-        const userResponse = await fetch(`${API_BASE_URL}/api/users/${userId}`);
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          const userName = userData.name || userData.full_name || userData.username || 'User';
-          const userAvatar = userData.profile_image || userData.avatar_url || userData.profile_image_url;
-
-          document.getElementById('conversationName').textContent = userName;
-          
-          const avatarEl = document.getElementById('conversationAvatar');
-          if (userAvatar) {
-            avatarEl.innerHTML = `<img src="${userAvatar}" alt="${userName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-          } else {
-            avatarEl.innerHTML = '👤';
-          }
-        }
-      } catch (error) {
-        console.error('Error loading user info:', error);
-      }
-
-      // Mark this conversation as read in session cache (before API call)
-      const conversationKey = `${currentUserId}_${userId}`;
-      readConversations.add(conversationKey);
-      
-      // Remove badge from UI immediately (before API call for instant feedback)
-      if (clickedElement) {
-        const badge = clickedElement.querySelector('.badge');
-      if (badge) {
-          badge.remove();
-        }
-        clickedElement.classList.remove('unread');
-      }
-      
-      // Also remove badge from all chat items with same otherUserId (in case of duplicates)
-      document.querySelectorAll('.chat-item').forEach(item => {
-        const onclickAttr = item.getAttribute('onclick');
-        if (onclickAttr && onclickAttr.includes(`'${userId}'`)) {
-          const badge = item.querySelector('.badge');
-          if (badge) {
-            badge.remove();
-          }
-          item.classList.remove('unread');
-        }
-      });
-      
-      // Mark messages as read when conversation is opened
-      await markConversationAsRead(currentUserId, userId);
-      
-      // Load conversation messages by conversationId
-      await loadConversationMessages();
-    }
-    
-    // Mark conversation messages as read
-    async function markConversationAsRead(currentUserId, otherUserId) {
-      const token = getAuthToken();
-      if (!currentUserId || !otherUserId || !token) return;
-      
-      try {
-        // PUT /api/conversations/:userId1/:userId2/messages/read
-        const response = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${otherUserId}/messages/read`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Messages marked as read:', data);
-          
-          // Reload messages list to update read status (with longer delay to ensure backend saved)
-          // Only reload if we're still on the messages list view
-          setTimeout(() => {
-            // Check if we're still viewing messages (not in a conversation)
-            const chatWindow = document.getElementById('chatWindow');
-            if (chatWindow && chatWindow.style.display !== 'none') {
-              // We're in a conversation, reload messages list in background
-              loadMessages();
-            }
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Error marking messages as read:', error);
-      }
-    }
-
-    // Show messages list
-    function showMessagesList() {
-      currentConversationId = null;
-      currentConversationUserId = null;
-      document.getElementById('defaultView').style.display = 'flex';
-      document.getElementById('chatWindow').style.display = 'none';
-      
-      // Remove active state from chat items
-      document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
-      });
-    }
-
-    // Load conversation messages by conversationId (WhatsApp/Instagram model)
-    // Backend uses: GET /api/conversations/:userId1/:userId2/messages
-    async function loadConversationMessages() {
-      const currentUserId = getCurrentUserId();
-      const token = getAuthToken();
-      if (!currentUserId || !token || !currentConversationId || !currentConversationUserId) return;
-
-      try {
-        // Extract user IDs from conversationId and use backend endpoint
-        // Backend expects: GET /api/conversations/:userId1/:userId2/messages
-        const response = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${currentConversationUserId}/messages`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          conversationMessages = Array.isArray(data) ? data : (data.messages || []);
-        } else {
-          conversationMessages = [];
-        }
-      } catch (error) {
-        console.log('Error loading conversation messages:', error);
-        conversationMessages = [];
-      }
-
-      renderConversationMessages();
-    }
-
-    // Render conversation messages
-    function renderConversationMessages() {
-      const container = document.getElementById('conversationMessages');
-      if (!container) return;
-      
-      if (conversationMessages.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">💬</div>
-            <div class="empty-state-text">No messages yet</div>
-            <div class="empty-state-subtext">Start the conversation!</div>
-          </div>
-        `;
-        return;
-      }
-      
-      const currentUserId = getCurrentUserId();
-      
-      // Format time for display
-      function formatMessageTime(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const displayHours = hours % 12 || 12;
-        const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
-        return `${displayHours}:${displayMinutes} ${ampm}`;
-      }
-      
-      // Sort messages by timestamp to ensure chronological order (all in one box)
-      const sortedMessages = [...conversationMessages].sort((a, b) => {
-        const timeA = new Date(a.created_at || a.timestamp || a.createdAt || 0).getTime();
-        const timeB = new Date(b.created_at || b.timestamp || b.createdAt || 0).getTime();
-        return timeA - timeB;
-      });
-      
-      // Render all messages in one box - sender on right, receiver on left
-      // WhatsApp/Instagram model: Messages where senderId === loggedInUserId → RIGHT (sent)
-      // Messages where senderId !== loggedInUserId → LEFT (received)
-      const loggedInUserId = currentUserId; // Alias for clarity
-      
-      // Clear container first
-      container.innerHTML = '';
-      
-      // Create and append each message bubble
-      sortedMessages.forEach(msg => {
-        // Normalize senderId (backend uses sender_id, normalize to senderId)
-        const msgSenderId = msg.senderId || msg.sender_id;
-        const isSent = msgSenderId === loggedInUserId;
-        
-        // Create message wrapper
-        const msgWrapper = document.createElement('div');
-        msgWrapper.className = `msg-wrapper ${isSent ? 'sent' : 'received'}`;
-        
-        // Create message bubble
-        const bubble = document.createElement('div');
-        bubble.className = `msg ${isSent ? 'sent' : 'received'}`;
-        
-        // Create message content
-        const msgContent = document.createElement('div');
-        msgContent.className = 'msg-content';
-        msgContent.innerText = msg.text || msg.content || msg.message || '';
-        
-        // Create message time
-        const msgTime = document.createElement('span');
-        msgTime.className = 'msg-time';
-        msgTime.innerText = formatMessageTime(msg.created_at || msg.timestamp || msg.createdAt);
-        
-        // Assemble bubble
-        bubble.appendChild(msgContent);
-        bubble.appendChild(msgTime);
-        msgWrapper.appendChild(bubble);
-        
-        // Append to container
-        container.appendChild(msgWrapper);
-      });
-
-      // Scroll to bottom
-      setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
-      }, 100);
-    }
-
-    // Handle message input keydown
-    function handleMessageInputKeydown(event) {
-      const input = document.getElementById('messageInput');
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-      // Auto-resize textarea
-      if (input) {
-        input.style.height = 'auto';
-        input.style.height = input.scrollHeight + 'px';
-      }
-    }
-
-    // Send message (WhatsApp/Instagram model)
-    async function sendMessage() {
-      const input = document.getElementById('messageInput');
-      if (!input || !currentConversationId || !currentConversationUserId) return;
-
-      const messageText = input.value.trim();
-      if (!messageText) return;
-
-      const sendBtn = document.getElementById('sendMessageBtn');
-      if (sendBtn) {
-        sendBtn.disabled = true;
-        sendBtn.innerHTML = '⏳';
-      }
-
-      try {
-        const currentUserId = getCurrentUserId();
-        const token = getAuthToken();
-
-        // Use the same endpoint format as loadConversationMessages
-        // POST /api/conversations/:userId1/:userId2/messages
-        const response = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${currentConversationUserId}/messages`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            sender_id: currentUserId,
-            recipient_id: currentConversationUserId,
-            content: messageText,
-            conversation_id: currentConversationId
-          })
-        });
-
-        if (response.ok) {
-          const newMessage = await response.json();
-          // Backend returns sender_id, so map it to senderId for our rendering logic
-          if (newMessage.sender_id && !newMessage.senderId) {
-            newMessage.senderId = newMessage.sender_id;
-          }
-          
-          // Clear input immediately for better UX
-          input.value = '';
-          input.style.height = 'auto';
-          
-          // Reload conversation messages to get all messages including the new one
-          await loadConversationMessages();
-          
-          // Reload messages list to update preview
-          loadMessages();
-        } else {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          console.error('Send message error:', errorData);
-          alert(`Failed to send message: ${errorData.error || response.statusText}`);
-        }
-      } catch (error) {
-        console.error('Error sending message:', error);
-        alert('An error occurred while sending the message.');
-      } finally {
-        if (sendBtn) {
-          sendBtn.disabled = false;
-          sendBtn.innerHTML = '▶';
-        }
-      }
-    }
-
-    // Auto-resize message input
-    document.addEventListener('DOMContentLoaded', function() {
-      const messageInput = document.getElementById('messageInput');
-      if (messageInput) {
-        messageInput.addEventListener('input', function() {
-          this.style.height = 'auto';
-          this.style.height = this.scrollHeight + 'px';
-        });
-      }
-
-      // Check URL for user parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      const userIdParam = urlParams.get('user');
-
-      if (userIdParam) {
-        showMessageConversation(userIdParam, null);
-        // Find and activate the corresponding chat item after messages load
-        setTimeout(() => {
-          const chatItems = document.querySelectorAll('.chat-item');
-          chatItems.forEach(item => {
-            const onclickAttr = item.getAttribute('onclick');
-            if (onclickAttr && onclickAttr.includes(userIdParam)) {
-              item.classList.add('active');
-            }
-          });
-        }, 500);
-    } else {
-        loadMessages();
-      }
-
-      // Initialize profile button
-      const userId = getCurrentUserId();
+    // Check URL params
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get('user');
       if (userId) {
-        const profileBtn = document.getElementById('profileBtn');
-        if (profileBtn) {
-          profileBtn.style.display = 'flex';
-          
-          // Load profile image
-          fetch(`${API_BASE_URL}/api/users/${userId}`)
-            .then(res => res.json())
-            .then(user => {
-              const img = document.getElementById('headerProfileImg');
-              const placeholder = document.getElementById('headerProfilePlaceholder');
-              if (user.profile_image || user.avatar_url || user.profile_image_url) {
-                img.src = user.profile_image || user.avatar_url || user.profile_image_url;
-                img.style.display = 'block';
-                placeholder.style.display = 'none';
-              }
-            })
-            .catch(err => console.log('Error loading profile:', err));
-        }
+        openChat(userId);
       }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConversations();
+      checkUrlParams();
     });
   </script>
 </body>
