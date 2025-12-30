@@ -2562,94 +2562,92 @@ masterBtn.addEventListener('click', async () => {
     const pollMastering = async (jobId) => {
       try {
         const res = await fetch(`${API}/master-status/${jobId}`);
-        if (res.ok) {
-          const status = await res.json();
-          console.log('Job status check:', status);
-          
-          // Check status according to the async job pattern
-          if (status.status === "completed" && status.wav) {
-            // Job is complete and WAV is available
-            clearInterval(progressInterval);
-            progressInterval = null;
-            statusText.textContent = '✅ Mastering complete!';
-            
-            // Set download URLs
-            const baseUrl = API.replace('/api', '');
-            downloadUrls.wav = status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`;
-            if (status.mp3) {
-              downloadUrls.mp3 = status.mp3.startsWith('http') ? status.mp3 : `${baseUrl}${status.mp3}`;
-            }
-            
-            // Update meters if available
-            if (status.input && status.input.lufs !== undefined) {
-              inputLufs.textContent = `${status.input.lufs.toFixed(1)}`;
-            }
-            if (status.output && status.output.lufs !== undefined) {
-              outputLufs.textContent = `${status.output.lufs.toFixed(1)}`;
-              lufsDisplay.textContent = `${status.output.lufs.toFixed(1)} LUFS`;
-            }
-            if (status.output && status.output.truePeak !== undefined) {
-              peakDisplay.textContent = `${status.output.truePeak.toFixed(1)} dB`;
-              const peakPercent = Math.min(100, Math.max(0, (status.output.truePeak + 10) * 10));
-              peakBar.style.width = `${peakPercent}%`;
-            }
-            if (status.gain !== undefined) {
-              gainDisplay.textContent = `${status.gain > 0 ? '+' : ''}${status.gain.toFixed(1)} dB`;
-            }
-            
-            // Load mastered audio for playback
-            try {
-              const masteredResponse = await fetch(downloadUrls.wav);
-              if (masteredResponse.ok) {
-                const masteredArrayBuffer = await masteredResponse.arrayBuffer();
-                masteredBuffer = await audioContext.decodeAudioData(masteredArrayBuffer.slice(0));
-                if (playbackMode === 'after') {
-                  drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
-                }
-                console.log('✅ Mastered audio loaded for preview');
-              }
-            } catch (audioErr) {
-              console.warn('Could not load mastered audio for preview:', audioErr);
-            }
-            
-            statusBar.className = 'status-bar';
-            statusText.textContent = `✅ Mastered with ${selectedPreset} preset`;
-            downloadReady.classList.add('show');
-            downloadWav.disabled = false;
-            downloadMp3.disabled = false;
-            
-            // Refresh stats
-            setTimeout(() => {
-              loadUsageStats();
-            }, 500);
-            
-            masterBtn.disabled = false;
-            masterBtn.innerHTML = '<span>🎛️</span> Master';
-            
-            return { success: true, complete: true };
-          } else if (status.status === "failed") {
-            // Job failed
-            clearInterval(progressInterval);
-            progressInterval = null;
-            throw new Error(status.error || 'Mastering failed');
-          } else {
-            // Still processing - don't try to access wav yet
-            statusText.textContent = status.message || '🔄 Processing...';
-            return { success: false, complete: false };
+        const status = await res.json();
+        console.log("Mastering status:", status);
+
+        if (status.status === "completed" && status.wav) {
+          // ✅ NOW we have wav - set download URLs and play
+          const baseUrl = API.replace('/api', '');
+          downloadUrls.wav = status.wav.startsWith('http') ? status.wav : `${baseUrl}${status.wav}`;
+          if (status.mp3) {
+            downloadUrls.mp3 = status.mp3.startsWith('http') ? status.mp3 : `${baseUrl}${status.mp3}`;
           }
-        } else {
-          // HTTP error
-          const errorText = await res.text().catch(() => 'Unknown error');
-          throw new Error(`Server error: ${res.status} - ${errorText}`);
+          
+          // Update meters if available
+          if (status.input && status.input.lufs !== undefined) {
+            inputLufs.textContent = `${status.input.lufs.toFixed(1)}`;
+          }
+          if (status.output && status.output.lufs !== undefined) {
+            outputLufs.textContent = `${status.output.lufs.toFixed(1)}`;
+            lufsDisplay.textContent = `${status.output.lufs.toFixed(1)} LUFS`;
+          }
+          if (status.output && status.output.truePeak !== undefined) {
+            peakDisplay.textContent = `${status.output.truePeak.toFixed(1)} dB`;
+            const peakPercent = Math.min(100, Math.max(0, (status.output.truePeak + 10) * 10));
+            peakBar.style.width = `${peakPercent}%`;
+          }
+          if (status.gain !== undefined) {
+            gainDisplay.textContent = `${status.gain > 0 ? '+' : ''}${status.gain.toFixed(1)} dB`;
+          }
+          
+          // ✅ Play or download WAV only when ready
+          playWav(downloadUrls.wav);
+          
+          statusBar.className = 'status-bar';
+          statusText.textContent = `✅ Mastered with ${selectedPreset} preset`;
+          downloadReady.classList.add('show');
+          downloadWav.disabled = false;
+          downloadMp3.disabled = false;
+          
+          // Refresh stats
+          setTimeout(() => {
+            loadUsageStats();
+          }, 500);
+          
+          masterBtn.disabled = false;
+          masterBtn.innerHTML = '<span>🎛️</span> Master';
+          return;
         }
+
+        if (status.status === "failed") {
+          statusBar.className = 'status-bar error';
+          statusText.textContent = `❌ ${status.error || 'Mastering failed'}`;
+          masterBtn.disabled = false;
+          masterBtn.innerHTML = '<span>🎛️</span> Master';
+          alert("❌ Mastering failed");
+          return;
+        }
+
+        // Still processing - retry after 3 seconds
+        statusText.textContent = status.message || '🔄 Processing...';
+        setTimeout(() => pollMastering(jobId), 3000);
+
       } catch (err) {
-        console.warn('Job check error:', err);
-        if (err.message && (err.message.includes('Error') || err.message.includes('failed'))) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-          throw err;
-        }
-        return { success: false, complete: false, error: err.message };
+        console.error("Polling error:", err);
+        // Retry on error
+        setTimeout(() => pollMastering(jobId), 3000);
+      }
+    };
+    
+    // ✅ Play or download WAV only when ready
+    const playWav = (wavUrl) => {
+      try {
+        // Load mastered audio for playback
+        fetch(wavUrl)
+          .then(response => response.arrayBuffer())
+          .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer.slice(0)))
+          .then(buffer => {
+            masteredBuffer = buffer;
+            if (playbackMode === 'after') {
+              drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+            }
+            console.log('✅ Mastered audio loaded for preview');
+          })
+          .catch(audioErr => {
+            console.warn('Could not load mastered audio for preview:', audioErr);
+          });
+      } catch (err) {
+        console.warn('Error playing WAV:', err);
       }
     };
     
