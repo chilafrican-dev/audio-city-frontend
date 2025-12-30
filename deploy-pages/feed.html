@@ -1279,9 +1279,11 @@
       }
       
       // User has localStorage data, they are logged in
-      // Try to validate and refresh data, but don't clear on failure
+      // Try to validate and refresh data, with auto-renewal if token expired
       try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
+        // Send user_id as query param for auto-renewal
+        const validateUrl = `${API_BASE_URL}/api/auth/validate${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`;
+        const response = await fetch(validateUrl, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -1291,6 +1293,12 @@
         if (response.ok) {
           const data = await response.json();
           if (data.valid && data.user) {
+            // If token was renewed, update it in localStorage
+            if (data.token && data.renewed) {
+              console.log('🔄 Token auto-renewed, updating localStorage');
+              localStorage.setItem('auth_token', data.token);
+            }
+            
             console.log('✅ Token validated, user:', data.user.username);
             // Update localStorage with fresh user data
             if (data.user.id) localStorage.setItem('user_id', data.user.id);
