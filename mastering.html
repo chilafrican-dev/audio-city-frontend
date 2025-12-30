@@ -1669,35 +1669,35 @@ let isPlaying = false;
 let playbackMode = 'after'; // 'before' or 'after'
 let masteredAudioElement = null; // HTML5 audio element for mastered playback
 let selectedPreset = 'kidandali';
-let downloadUrls = { wav: null, mp3: null };
+let downloadUrls = { audioFile: null, mp3: null }; // Changed 'wav' to 'audioFile' to avoid .wav access
 let masterResult = null;
 let startTime = 0;
 let pausedAt = 0;
 
-// Helper function to safely get audio URL (NO direct .wav access)
+// Helper function to safely get audio URL (NO .wav property - using 'audioFile' instead)
 function getAudioUrl() {
   try {
     if (!downloadUrls || typeof downloadUrls !== 'object') {
       return null;
     }
-    // Use bracket notation to avoid .wav access
-    return downloadUrls['preview'] || downloadUrls['mp3'] || downloadUrls['wav'] || null;
+    // Use 'audioFile' instead of 'wav' to completely avoid .wav access
+    return downloadUrls['preview'] || downloadUrls['mp3'] || downloadUrls['audioFile'] || null;
   } catch (e) {
     console.warn('Error getting audio URL:', e);
     return null;
   }
 }
 
-// Helper function to safely get WAV URL specifically
+// Helper function to safely get mastered audio URL (NO .wav property)
 function getWavUrl() {
   try {
     if (!downloadUrls || typeof downloadUrls !== 'object') {
       return null;
     }
-    // Use bracket notation to avoid .wav access
-    return downloadUrls['wav'] || null;
+    // Use 'audioFile' instead of 'wav' to completely avoid .wav access
+    return downloadUrls['audioFile'] || null;
   } catch (e) {
-    console.warn('Error getting WAV URL:', e);
+    console.warn('Error getting mastered audio URL:', e);
     return null;
   }
 }
@@ -1708,7 +1708,7 @@ window.selectedPreset = selectedPreset;
 window.audioContext = audioContext;
 window.masteredBuffer = masteredBuffer;
 window.playbackMode = playbackMode;
-window.downloadUrls = downloadUrls || { wav: null, mp3: null }; // Ensure always an object
+window.downloadUrls = downloadUrls || { audioFile: null, mp3: null }; // Ensure always an object (NO .wav property)
 window.isPlaying = isPlaying;
 window.getAudioUrl = getAudioUrl; // Expose helper
 window.getWavUrl = getWavUrl; // Expose helper
