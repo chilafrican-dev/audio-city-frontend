@@ -2796,14 +2796,20 @@ masterBtn.addEventListener('click', async () => {
     
     // 🚫 SAFETY: Only execute this block if we DON'T have a jobId (old sync format)
     // If we have jobId, we should have returned above - this should NEVER execute with jobId
-    if (!data.jobId && data.downloads && data.downloads.wav) {
+    // CRITICAL: Check data.downloads exists AND has wav before accessing
+    if (!data.jobId && data.downloads && typeof data.downloads === 'object' && data.downloads.wav) {
       console.log('⚠️ Old sync format (no jobId) - using direct response');
       // Old format - direct response (backward compatibility)
       masterResult = data;
       // Use API base URL for downloads (remove /api suffix for static file serving)
       const baseUrl = API.replace('/api', '');
-      downloadUrls.wav = `${baseUrl}${data.downloads.wav}`;
-      downloadUrls.mp3 = `${baseUrl}${data.downloads.mp3}`;
+      // SAFETY: Double-check downloads.wav exists before accessing
+      if (data.downloads && data.downloads.wav) {
+        downloadUrls.wav = `${baseUrl}${data.downloads.wav}`;
+      }
+      if (data.downloads && data.downloads.mp3) {
+        downloadUrls.mp3 = `${baseUrl}${data.downloads.mp3}`;
+      }
       
       // Update meters
       inputLufs.textContent = `${data.input.lufs.toFixed(1)}`;
