@@ -2558,7 +2558,8 @@ masterBtn.addEventListener('click', async () => {
     let progressId = null;
     let progressInterval = null; // Declare at function scope
     
-    const checkJob = async (jobId) => {
+    // ✅ Polling function - replaces direct wav access
+    const pollMastering = async (jobId) => {
       try {
         const res = await fetch(`${API}/master-status/${jobId}`);
         if (res.ok) {
