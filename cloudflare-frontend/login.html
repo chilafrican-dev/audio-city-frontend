@@ -3,37 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <script>
-    // Manifest loading disabled - Cloudflare WAF blocks JSON files
-    // PWA functionality is optional, app works fine without it
-  </script>
-  <meta name="theme-color" content="#8b5cf6" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Audio City" />
+  <title>Sign In - Audio City</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
     :root {
       --bg-deep: #0a0a0f;
       --bg: #141420;
       --bg-light: #1a1a28;
       --text: #ffffff;
-      --muted: #a0a0b8;
-      --accent: #8b5cf6;
-      --accent-light: #a78bfa;
-      --accent-glow: rgba(139, 92, 246, 0.3);
-      --cyan: #06b6d4;
-      --success: #10b981;
-      --error: #ef4444;
+      --muted: #999;
+      --accent: #ffb432;
+      --success: #4caf50;
+      --error: #f44336;
       --border: rgba(255, 255, 255, 0.1);
-      --glass: rgba(255, 255, 255, 0.05);
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: var(--bg-deep);
       color: var(--text);
       min-height: 100vh;
@@ -46,10 +37,7 @@
     .bg-layer {
       position: fixed;
       inset: 0;
-      background: 
-        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.1), transparent 50%),
-        var(--bg-deep);
+      background: radial-gradient(ellipse at top, rgba(255, 180, 50, 0.08), transparent 50%);
       z-index: 0;
       pointer-events: none;
     }
@@ -57,17 +45,13 @@
     .container {
       position: relative;
       z-index: 1;
-      max-width: 440px;
+      max-width: 450px;
       width: 100%;
-    }
-    
-    .card {
-      background: rgba(20, 20, 32, 0.8);
-      backdrop-filter: blur(20px);
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: 12px;
       padding: 40px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
     
     .logo {
@@ -75,55 +59,15 @@
       margin-bottom: 32px;
     }
     
-    .logo-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 12px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .logo-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    
     .logo h1 {
-      font-size: 36px;
-      font-weight: 900;
-      color: #ffffff !important;
-      -webkit-text-fill-color: #ffffff !important;
+      font-size: 32px;
+      color: var(--accent);
       margin-bottom: 8px;
-      letter-spacing: 1px;
     }
     
     .logo p {
       color: var(--muted);
       font-size: 14px;
-    }
-    
-    .status {
-      padding: 12px 16px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      font-size: 14px;
-      display: none;
-    }
-    
-    .status.success {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: var(--success);
-      display: block;
-    }
-    
-    .status.error {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: var(--error);
-      display: block;
     }
     
     .form-group {
@@ -140,129 +84,118 @@
     
     .form-group input {
       width: 100%;
-      padding: 14px 16px;
-      background: var(--glass);
+      padding: 12px 16px;
+      background: var(--bg-light);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 8px;
       color: var(--text);
-      font-size: 15px;
-      transition: all 0.3s;
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 0.3s;
     }
     
     .form-group input:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
     }
     
-    .form-group input::placeholder {
-      color: var(--muted);
+    .form-group a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      float: right;
+    }
+    
+    .form-group a:hover {
+      text-decoration: underline;
     }
     
     .btn {
       width: 100%;
       padding: 14px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-light));
-      color: #fff;
+      background: var(--accent);
+      color: var(--bg-deep);
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: background 0.3s;
       margin-top: 8px;
     }
     
     .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px var(--accent-glow);
+      background: #ffc966;
     }
     
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
     }
     
-    .links {
+    .signup-link {
       text-align: center;
       margin-top: 24px;
       color: var(--muted);
       font-size: 14px;
     }
     
-    .links a {
+    .signup-link a {
       color: var(--accent);
       text-decoration: none;
       font-weight: 600;
-      transition: color 0.2s;
     }
     
-    .links a:hover {
-      color: var(--accent-light);
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+    
+    .status {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .status.success {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid rgba(76, 175, 80, 0.4);
+      color: var(--success);
+      display: block;
+    }
+    
+    .status.error {
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid rgba(244, 67, 54, 0.4);
+      color: var(--error);
+      display: block;
     }
     
     .divider {
-      display: flex;
-      align-items: center;
+      text-align: center;
       margin: 24px 0;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 14px;
+      position: relative;
     }
     
     .divider::before,
     .divider::after {
       content: '';
-      flex: 1;
+      position: absolute;
+      top: 50%;
+      width: 40%;
       height: 1px;
       background: var(--border);
     }
     
-    .divider span {
-      padding: 0 16px;
-    }
-    
-    .social-btns {
-      display: flex;
-      gap: 12px;
-    }
-    
-    .social-btn {
-      flex: 1;
-      padding: 12px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .social-btn:hover {
-      background: rgba(139, 92, 246, 0.1);
-      border-color: var(--accent);
-    }
-    
-    .back-link {
-      position: absolute;
-      top: -50px;
+    .divider::before {
       left: 0;
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: color 0.2s;
     }
     
-    .back-link:hover {
-      color: var(--accent);
+    .divider::after {
+      right: 0;
     }
   </style>
 </head>
@@ -270,101 +203,42 @@
   <div class="bg-layer"></div>
   
   <div class="container">
-    <a href="index.html" class="back-link">← Back to Audio City</a>
+    <div class="logo">
+      <h1>🎵 Audio City</h1>
+      <p>Welcome back</p>
+    </div>
     
-    <div class="card">
-      <div class="logo">
-        <div class="logo-icon">
-          <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none'; this.parentElement.innerHTML='🎵';">
-        </div>
-        <h1>Audio City</h1>
-        <p>Welcome back</p>
+    <div id="status" class="status"></div>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email or Username *</label>
+        <input type="text" id="identifier" required placeholder="Enter email or username" autocomplete="username">
       </div>
       
-      <div id="status" class="status"></div>
-      
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="identifier">Email or Username</label>
-          <input type="text" id="identifier" required placeholder="Enter email or username" autocomplete="username">
-        </div>
-        
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="Enter your password" autocomplete="current-password">
-        </div>
-        
-        <button type="submit" class="btn" id="submitBtn">
-          Sign In
-        </button>
-      </form>
-      
-      <div class="divider">
-        <span>or</span>
+      <div class="form-group">
+        <label>
+          Password *
+          <a href="forgot-password.html">Forgot?</a>
+        </label>
+        <input type="password" id="password" required placeholder="Enter your password" autocomplete="current-password">
       </div>
       
-      <div class="social-btns">
-        <button type="button" class="social-btn" id="googleSignInBtn" style="background: #fff; color: #333; font-weight: 600;">
-          <svg width="18" height="18" viewBox="0 0 18 18" style="margin-right: 8px;">
-            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
-            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
-          </svg>
-          Continue with Google
-        </button>
-      </div>
+      <button type="submit" class="btn" id="submitBtn">
+        🔓 Sign In
+      </button>
       
-      <div class="links">
-        <div style="margin-bottom: 8px;">
-          <a href="#" id="forgotPasswordLink" style="color: var(--accent); text-decoration: none; font-size: 14px;">Forgot password?</a>
-        </div>
-        Don't have an account? <a href="signup.html">Create one</a>
+      <div class="signup-link">
+        Don't have an account? <a href="signup.html">Sign Up</a>
       </div>
-    </div>
+    </form>
   </div>
-  
-  <!-- Forgot Password Modal -->
-  <div id="forgotPasswordModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); position: relative;">
-      <button onclick="closeForgotPasswordModal()" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--muted); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-light)'; this.style.color='var(--text)'" onmouseout="this.style.background='transparent'; this.style.color='var(--muted)'">×</button>
-      
-      <div style="text-align: center; margin-bottom: 24px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">🔑</div>
-        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Reset Password</h2>
-        <p style="color: var(--muted); font-size: 14px;">Enter your email or username to receive password reset instructions</p>
-      </div>
-      
-      <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event); return false;">
-        <div style="margin-bottom: 20px;">
-          <label for="forgotIdentifier" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">Email or Username</label>
-          <input type="text" id="forgotIdentifier" required style="width: 100%; padding: 12px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; transition: all 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" placeholder="Enter your email or username">
-        </div>
-        
-        <div id="forgotPasswordError" style="display: none; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-size: 14px; margin-bottom: 20px;"></div>
-        
-        <div id="forgotPasswordSuccess" style="display: none; padding: 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; color: #22c55e; font-size: 14px; margin-bottom: 20px;"></div>
-        
-        <div style="display: flex; gap: 12px;">
-          <button type="submit" id="forgotPasswordSubmit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Send Reset Link</button>
-          <button type="button" onclick="closeForgotPasswordModal()" style="padding: 12px 24px; background: var(--bg-light); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-card)'" onmouseout="this.style.background='var(--bg-light)'">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  
-  <!-- Google Sign-In Library -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   
   <script>
-    // Use local API for development, production API for deployed site
     const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
     
-    // Google OAuth Client ID - Replace with your actual Google Client ID
-    // Get it from: https://console.cloud.google.com/apis/credentials
-    // For now, we'll use a placeholder that you need to replace
     // Handle Google OAuth callback
     (function() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -394,259 +268,148 @@
           // Redirect to feed
           const returnUrl = urlParams.get('return') || 'feed.html';
           window.location.href = decodeURIComponent(returnUrl);
-          return; // This return is now inside an IIFE, so it's valid
+          return;
         }
       }
     })();
     
-    // Check if already logged in - show message but don't auto-redirect
+    // Check if already logged in
     if (localStorage.getItem('auth_token')) {
-      const statusEl = document.getElementById('status');
-      statusEl.className = 'status';
-      statusEl.style.display = 'block';
-      statusEl.style.background = 'rgba(139, 92, 246, 0.15)';
-      statusEl.style.border = '1px solid rgba(139, 92, 246, 0.3)';
-      statusEl.style.color = 'var(--accent)';
-      statusEl.innerHTML = 'You are already logged in. <a href="#" id="logoutLink" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Log out</a> or <a href="feed.html" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Go to Feed</a>';
-      
-      document.getElementById('logoutLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.clear();
-        window.location.reload();
-      });
+      const userType = localStorage.getItem('user_type');
+      if (userType === 'producer') {
+        window.location.href = 'producer-dashboard.html';
+      } else {
+        window.location.href = 'artist-corner.html';
+      }
     }
     
+    // Form submission
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const statusEl = document.getElementById('status');
       const submitBtn = document.getElementById('submitBtn');
+      
       const identifier = document.getElementById('identifier').value.trim();
       const password = document.getElementById('password').value;
-      
-      if (!identifier || !password) {
-        statusEl.className = 'status error';
-        statusEl.textContent = 'Please fill in all fields';
-        return;
-      }
       
       submitBtn.disabled = true;
       submitBtn.textContent = 'Signing in...';
       statusEl.className = 'status';
+      statusEl.textContent = '';
       
-      // Admin login check
+      // Check for admin credentials first
       const ADMIN_EMAIL = 'chilafrican@gmail.com';
       const ADMIN_PASSWORD = 'Semakulanico1';
       
       if (identifier.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
-        // Admin login - grant admin privileges
+        // Admin login - redirect to admin dashboard
         statusEl.className = 'status success';
-        statusEl.textContent = '✅ Admin login successful! Redirecting...';
+        statusEl.textContent = '✅ Admin access granted! Redirecting...';
         
-        // Generate a proper admin user ID (not just 'admin')
-        const adminUserId = 'admin_' + Date.now();
-        localStorage.setItem('auth_token', 'admin_token_' + Date.now());
-        localStorage.setItem('user_id', adminUserId);
-        localStorage.setItem('user_name', 'Admin');
-        localStorage.setItem('username', 'admin');
-        localStorage.setItem('user_email', ADMIN_EMAIL);
-        localStorage.setItem('is_admin', 'true');
-        localStorage.setItem('admin_mode', 'true');
-        // Store user_data for compatibility
-        localStorage.setItem('user_data', JSON.stringify({
-          id: adminUserId,
-          name: 'Admin',
-          username: 'admin',
+        // Set admin session
+        const sessionData = {
+          authenticated: true,
+          timestamp: Date.now(),
           email: ADMIN_EMAIL,
-          is_admin: true
-        }));
-        
-        // Check for return URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const returnUrl = urlParams.get('return') || 'feed.html';
+          isAdmin: true
+        };
+        localStorage.setItem('admin_authenticated', JSON.stringify(sessionData));
+        localStorage.setItem('auth_token', 'admin_token_' + Date.now());
+        localStorage.setItem('user_type', 'admin');
+        localStorage.setItem('user_email', ADMIN_EMAIL);
         
         setTimeout(() => {
-          window.location.href = decodeURIComponent(returnUrl);
+          window.location.href = 'admin-dashboard.html';
         }, 1000);
-        
         return;
       }
       
       try {
+        console.log('Attempting login with:', identifier);
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier, password }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            identifier, // email or username
+            password,
+          }),
         });
         
-        const data = await response.json();
+        console.log('Login response status:', response.status);
         
-        if (!response.ok) {
-          throw new Error(data.error || 'Login failed');
+        let data;
+        try {
+          data = await response.json();
+          console.log('Login response data:', data);
+        } catch (jsonError) {
+          console.error('Failed to parse JSON response:', jsonError);
+          const text = await response.text();
+          console.error('Response text:', text);
+          throw new Error(`Server error (${response.status}): ${text || 'Invalid response'}`);
         }
         
+        if (!response.ok) {
+          const errorMsg = data.error || data.details || `Login failed (${response.status})`;
+          console.error('Login failed:', errorMsg);
+          throw new Error(errorMsg);
+        }
+        
+        // Success
         statusEl.className = 'status success';
         statusEl.textContent = '✅ Login successful! Redirecting...';
         
-        localStorage.setItem('auth_token', data.token);
-        if (data.user.id) localStorage.setItem('user_id', data.user.id);
-        if (data.user.name) localStorage.setItem('user_name', data.user.name);
-        if (data.user.username) localStorage.setItem('username', data.user.username);
-        if (data.user.email) localStorage.setItem('user_email', data.user.email);
-        if (data.user.avatar_url || data.user.profile_image) {
-          localStorage.setItem('profile_image_url', data.user.avatar_url || data.user.profile_image);
+        // Save session
+        if (data.token) localStorage.setItem('auth_token', data.token);
+        if (data.user) {
+          if (data.user.id) localStorage.setItem('user_id', data.user.id);
+          if (data.user.user_type) localStorage.setItem('user_type', data.user.user_type);
+          if (data.user.name) localStorage.setItem('user_name', data.user.name);
+          if (data.user.username) localStorage.setItem('username', data.user.username);
+          if (data.user.email) localStorage.setItem('user_email', data.user.email);
         }
-        localStorage.setItem('is_admin', 'false');
         
-        // Check for return URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const returnUrl = urlParams.get('return') || 'feed.html';
-        
+        // Redirect based on user type
         setTimeout(() => {
-          window.location.href = decodeURIComponent(returnUrl);
+          if (data.user && data.user.user_type === 'producer') {
+            window.location.href = 'producer-dashboard.html';
+          } else if (data.user && data.user.user_type === 'listener') {
+            window.location.href = 'listener-dashboard.html';
+          } else {
+            window.location.href = 'feed.html';
+          }
         }, 1000);
         
       } catch (error) {
-        statusEl.className = 'status error';
-        statusEl.textContent = '❌ ' + error.message;
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-      }
-    });
-    
-    // Forgot Password functionality
-    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-    if (forgotPasswordLink) {
-      forgotPasswordLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        showForgotPasswordModal();
-      });
-    }
-    
-    // Show forgot password modal
-    function showForgotPasswordModal() {
-      const modal = document.getElementById('forgotPasswordModal');
-      if (modal) {
-        modal.style.display = 'flex';
-        document.getElementById('forgotPasswordForm').reset();
-        document.getElementById('forgotPasswordError').style.display = 'none';
-        document.getElementById('forgotPasswordSuccess').style.display = 'none';
-        setTimeout(() => document.getElementById('forgotIdentifier').focus(), 100);
-      }
-    }
-    
-    // Close forgot password modal
-    function closeForgotPasswordModal() {
-      const modal = document.getElementById('forgotPasswordModal');
-      if (modal) {
-        modal.style.display = 'none';
-        document.getElementById('forgotPasswordForm').reset();
-        document.getElementById('forgotPasswordError').style.display = 'none';
-        document.getElementById('forgotPasswordSuccess').style.display = 'none';
-      }
-    }
-    
-    // Handle forgot password form submission
-    async function handleForgotPassword(event) {
-      event.preventDefault();
-      
-      const identifier = document.getElementById('forgotIdentifier').value.trim();
-      const errorDiv = document.getElementById('forgotPasswordError');
-      const successDiv = document.getElementById('forgotPasswordSuccess');
-      const submitBtn = document.getElementById('forgotPasswordSubmit');
-      
-      if (!identifier) {
-        showForgotPasswordError('Please enter your email or username.');
-        return;
-      }
-      
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending...';
-      errorDiv.style.display = 'none';
-      successDiv.style.display = 'none';
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier })
-        });
+        console.error('Login error:', error);
+        console.error('Error stack:', error.stack);
         
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          successDiv.innerHTML = data.message || 'Password reset instructions have been sent to your email. Please check your inbox.<br><br><strong>Reset Link:</strong> <a href="' + data.reset_link + '" target="_blank" style="color: var(--accent);">' + data.reset_link + '</a>';
-          successDiv.style.display = 'block';
-          document.getElementById('forgotPasswordForm').reset();
-          
-          // Auto-close after 8 seconds
-          setTimeout(() => {
-            closeForgotPasswordModal();
-          }, 8000);
+        // Ensure status element exists and show error
+        if (statusEl) {
+          statusEl.className = 'status error';
+          statusEl.textContent = '❌ ' + (error.message || 'Login failed. Please try again.');
+          statusEl.style.display = 'block';
         } else {
-          showForgotPasswordError(data.error || 'Failed to send reset instructions. Please try again.');
+          alert('❌ Login failed: ' + (error.message || 'Please try again.'));
+        }
+        
+        if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Send Reset Link';
-        }
-      } catch (error) {
-        console.error('Error sending reset request:', error);
-        showForgotPasswordError('An error occurred. Please try again later.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Send Reset Link';
-      }
-    }
-    
-    // Show forgot password error
-    function showForgotPasswordError(message) {
-      const errorDiv = document.getElementById('forgotPasswordError');
-      errorDiv.textContent = message;
-      errorDiv.style.display = 'block';
-    }
-    
-    // Close modal when clicking outside
-    document.addEventListener('click', (e) => {
-      const modal = document.getElementById('forgotPasswordModal');
-      if (modal && e.target === modal) {
-        closeForgotPasswordModal();
-      }
-    });
-    
-    // Close modal on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const modal = document.getElementById('forgotPasswordModal');
-        if (modal && modal.style.display === 'flex') {
-          closeForgotPasswordModal();
+          submitBtn.textContent = '🔓 Sign In';
         }
       }
     });
-    
-    // Google Sign-In functionality
-    const googleSignInBtn = document.getElementById('googleSignInBtn');
-    if (googleSignInBtn) {
-      googleSignInBtn.addEventListener('click', () => {
-        handleGoogleSignIn();
-      });
-    }
-    
-    async function handleGoogleSignIn() {
-      const statusEl = document.getElementById('status');
-      statusEl.className = 'status';
-      statusEl.style.display = 'block';
-      statusEl.textContent = '⏳ Redirecting to Google...';
-      
-      // Redirect to backend OAuth endpoint
-      // Local vs Production backend
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const backendURL = isLocal
-        ? 'http://localhost:3002/auth/google'
-        : 'https://api.audiocity-ug.com/auth/google';
-      
-      window.location.href = backendURL;
-    }
   </script>
-  
-  <!-- Google Sign-In Library -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+

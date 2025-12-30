@@ -6,13 +6,9 @@
   <title>Create Account — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
-    if (window.location.protocol !== 'file:') {
-      var link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = 'manifest.json';
-      document.head.appendChild(link);
-    }
+    // Manifest loading disabled - Cloudflare WAF blocks JSON files
+    // PWA functionality is optional, app works fine without it
+    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -486,16 +482,30 @@
         statusEl.className = 'status';
         
         try {
+          console.log('Attempting signup with:', { username, email });
           const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password }),
           });
           
-          const data = await response.json();
+          console.log('Signup response status:', response.status);
+          
+          let data;
+          try {
+            data = await response.json();
+            console.log('Signup response data:', data);
+          } catch (jsonError) {
+            console.error('Failed to parse JSON response:', jsonError);
+            const text = await response.text();
+            console.error('Response text:', text);
+            throw new Error(`Server error (${response.status}): ${text || 'Invalid response'}`);
+          }
           
           if (!response.ok) {
-            throw new Error(data.error || 'Signup failed');
+            const errorMsg = data.error || data.details || `Signup failed (${response.status})`;
+            console.error('Signup failed:', errorMsg);
+            throw new Error(errorMsg);
           }
           
           statusEl.className = 'status success';
@@ -526,10 +536,22 @@
           }
           
         } catch (error) {
-          statusEl.className = 'status error';
-          statusEl.textContent = '❌ ' + error.message;
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create Account';
+          console.error('Signup error:', error);
+          console.error('Error stack:', error.stack);
+          
+          // Ensure status element exists and show error
+          if (statusEl) {
+            statusEl.className = 'status error';
+            statusEl.textContent = '❌ ' + (error.message || 'Signup failed. Please try again.');
+            statusEl.style.display = 'block';
+          } else {
+            alert('❌ Signup failed: ' + (error.message || 'Please try again.'));
+          }
+          
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
+          }
           isSubmitting = false; // Reset flag on error
         }
       });
