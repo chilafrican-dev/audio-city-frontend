@@ -1,0 +1,79 @@
+# 🔴 CRITICAL: DNS Setup Required for Mastering
+
+## Problem
+SSL certificate failed because `mastering.audiocity-ug.com` has no DNS record.
+
+## Solution Options
+
+### Option 1: Set Up DNS Record (Recommended)
+
+1. Go to your DNS provider (where `audiocity-ug.com` is managed)
+2. Add an A record:
+   ```
+   Type: A
+   Name: mastering
+   Value: 43.245.227.33
+   TTL: 300 (or Auto)
+   ```
+3. Wait 5-10 minutes for DNS propagation
+4. Then run certbot again:
+   ```bash
+   ssh root@43.245.227.33
+   certbot --nginx -d mastering.audiocity-ug.com --non-interactive --agree-tos --email chilafrican@gmail.com --redirect
+   ```
+
+### Option 2: Use Cloudflare DNS (If domain is on Cloudflare)
+
+1. Go to Cloudflare Dashboard → DNS
+2. Add A record:
+   - Name: `mastering`
+   - IPv4: `43.245.227.33`
+   - Proxy: 🟠 Proxied (Orange cloud ON)
+3. Cloudflare will automatically provide SSL
+4. Wait 2-5 minutes
+5. Test: `curl https://mastering.audiocity-ug.com/api/health`
+
+### Option 3: Temporary - Use IP with Self-Signed Cert
+
+I've set up a self-signed certificate. This works but browsers will show a warning.
+
+**To use it:**
+- Worker will accept it (we use `-k` flag)
+- Browsers will show "Not Secure" warning
+- **This is OK for now** - mastering will work
+
+### Option 4: Use Direct IP (No SSL)
+
+Update Worker to use HTTP (not recommended for production):
+```bash
+echo "http://43.245.227.33" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+```
+
+But Cloudflare Workers require HTTPS, so this won't work.
+
+## Current Status
+
+✅ Nginx configured and running
+✅ Self-signed SSL certificate created (temporary)
+✅ HTTPS working on server (with self-signed cert)
+⏳ DNS record needed for trusted SSL
+⏳ Worker configured to use `https://mastering.audiocity-ug.com/api/master`
+
+## Next Steps
+
+1. **Set up DNS** (Option 1 or 2 above)
+2. **Get real SSL certificate** after DNS is set up
+3. **Test mastering feature** - it should work now with self-signed cert
+
+## Test Commands
+
+```bash
+# Test from server
+curl -k https://mastering.audiocity-ug.com/api/health
+
+# Test from your computer
+curl -k https://mastering.audiocity-ug.com/api/health
+```
+
+The self-signed certificate is set up and working. The mastering feature should work now, but browsers will show a security warning. For production, set up the DNS record and get a real certificate.
+
