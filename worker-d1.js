@@ -110,13 +110,20 @@ export default {
       }, { headers: corsHeaders });
     }
 
-    // GET /api/users - Get all users/artists
+    // GET /api/users - Get all users/artists (excludes admin accounts from public view)
     if (url.pathname === '/api/users' && request.method === 'GET') {
       try {
         if (!env.DB) {
           return Response.json([], { headers: corsHeaders });
         }
-        const users = await env.DB.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
+        // Filter out admin accounts - hide users with is_admin=1 or admin emails
+        const users = await env.DB.prepare(`
+          SELECT * FROM users 
+          WHERE (is_admin IS NULL OR is_admin = 0) 
+            AND (email NOT LIKE '%@chilafrican.com' AND email NOT LIKE '%chilafrican@%')
+            AND id NOT LIKE 'admin_%'
+          ORDER BY created_at DESC
+        `).all();
         
         // Enrich with accurate counts
         const enrichedUsers = await Promise.all((users.results || []).map(async (user) => {
@@ -498,16 +505,20 @@ export default {
       }
     }
 
-    // GET /api/feed/trending-artists
+    // GET /api/feed/trending-artists (excludes admin accounts from public view)
     if (url.pathname === '/api/feed/trending-artists' && request.method === 'GET') {
       try {
         if (!env.DB) {
           return Response.json([], { headers: corsHeaders });
         }
+        // Filter out admin accounts from trending artists
         const artists = await env.DB.prepare(`
           SELECT u.*, COUNT(t.id) as track_count
           FROM users u
           LEFT JOIN tracks t ON u.id = t.artist_id
+          WHERE (u.is_admin IS NULL OR u.is_admin = 0) 
+            AND (u.email NOT LIKE '%@chilafrican.com' AND u.email NOT LIKE '%chilafrican@%')
+            AND u.id NOT LIKE 'admin_%'
           GROUP BY u.id
           ORDER BY track_count DESC, u.created_at DESC
           LIMIT 10

@@ -1362,20 +1362,13 @@
       console.error('Donate button not found!');
     }
     
-    // Create button
-    const createBtn = document.getElementById('createBtn');
-    createBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      showCreateModal();
-    });
-    // Keyboard support
-    createBtn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        showCreateModal();
-      }
-    });
+    // Upload button (Create) - now using uploadBtn
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', (e) => {
+        // Button is already a link, no need to prevent default
+      });
+    }
     
     // Sign out function - make it global
     window.signOut = function() {
