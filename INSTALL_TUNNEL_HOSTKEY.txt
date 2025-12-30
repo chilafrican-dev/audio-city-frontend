@@ -1,0 +1,82 @@
+# ============================================
+# CLOUDFLARE TUNNEL INSTALLATION
+# New HostKey Server: 43.245.227.33
+# ============================================
+#
+# Connect to server via web console or SSH, then run:
+#
+# ============================================
+# ONE-LINER INSTALL (Copy & Paste):
+# ============================================
+
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared && pkill -f "cloudflared tunnel" 2>/dev/null; cat > /etc/systemd/system/mastering-tunnel.service << 'SVC'
+[Unit]
+Description=Cloudflare Tunnel for Mastering Server
+After=network.target
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://168.119.241.59:3001
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+[Install]
+WantedBy=multi-user.target
+SVC
+systemctl daemon-reload && systemctl enable mastering-tunnel.service && systemctl start mastering-tunnel.service && sleep 5 && echo "=== TUNNEL URL ===" && journalctl -u mastering-tunnel.service -n 50 --no-pager | grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1 && echo "=== END ==="
+
+# ============================================
+# This will:
+# 1. Install cloudflared
+# 2. Create systemd service (tunnels to 168.119.241.59:3001)
+# 3. Start the tunnel
+# 4. Show the tunnel URL
+#
+# After you get the URL, set MASTERING_SERVER_URL in Cloudflare Dashboard
+# ============================================
+
+# ============================================
+# ALTERNATIVE: Step-by-step installation
+# ============================================
+
+# Step 1: Install cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+chmod +x /usr/local/bin/cloudflared
+
+# Step 2: Create systemd service
+cat > /etc/systemd/system/mastering-tunnel.service << 'SERVICE'
+[Unit]
+Description=Cloudflare Tunnel for Mastering Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://168.119.241.59:3001
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+# Step 3: Start the service
+systemctl daemon-reload
+systemctl enable mastering-tunnel.service
+systemctl start mastering-tunnel.service
+
+# Step 4: Get the tunnel URL (wait 5 seconds first)
+sleep 5
+journalctl -u mastering-tunnel.service -n 50 --no-pager | grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' | head -1
+
+# ============================================
+# Server Details:
+# - IP: 43.245.227.33
+# - Username: root
+# - Password: vMC3_K5+74 (change it!)
+# - Web Console: https://invapi.hostkey.com/?id=12023
+# ============================================
+
