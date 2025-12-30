@@ -1545,4 +1545,3 @@ export default {
     }, { status: 404, headers: corsHeaders });
   }
 };
-
