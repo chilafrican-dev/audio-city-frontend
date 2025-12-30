@@ -2727,7 +2727,8 @@ masterBtn.addEventListener('click', async () => {
       throw new Error(data.error || data.message || `Backend error: ${res.status} ${res.statusText}`);
     }
     
-    // Validate response - must have success and jobId (DO NOT touch wav here, it doesn't exist yet)
+    // 🚫 ABSOLUTE RULE: If we have jobId, wav DOES NOT EXIST yet - DO NOT ACCESS IT
+    // Validate response - must have success and jobId
     if (!data.success || !data.jobId) {
       console.error('Mastering job failed:', data);
       if (typeof progressInterval !== 'undefined' && progressInterval !== null) {
@@ -2737,8 +2738,14 @@ masterBtn.addEventListener('click', async () => {
       throw new Error(data.error || data.message || 'Mastering job failed');
     }
     
-    // Start polling for job status - jobId is guaranteed to exist here
+    // ✅ CRITICAL: We have jobId - wav will come later via polling
+    // DO NOT access data.wav, data.downloads.wav, or any wav property here
+    // It will crash because wav doesn't exist yet!
     const jobId = data.jobId;
+    console.log('✅ Job submitted successfully, jobId:', jobId);
+    console.log('⏳ WAV will be available after polling - DO NOT access it now!');
+    
+    // Start polling for job status - jobId is guaranteed to exist here
     if (jobId) {
       statusText.textContent = '🔄 Starting mastering process...';
       
