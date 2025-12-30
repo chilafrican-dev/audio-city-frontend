@@ -2683,11 +2683,17 @@ masterBtn.addEventListener('click', async () => {
       data = await res.json();
       console.log('Mastering response received:', data);
       
-      // SAFETY CHECK: If we have a jobId, NEVER try to access wav/downloads - it doesn't exist yet!
-      if (data.jobId) {
+      // CRITICAL SAFETY CHECK: If we have a jobId, NEVER try to access wav/downloads - it doesn't exist yet!
+      // This prevents any code from trying to access data.wav or data.downloads.wav before polling completes
+      if (data && data.jobId) {
         // This is an async job - wav will come later via polling
         // DO NOT access data.wav or data.downloads here - it will crash!
-        console.log('Async job detected, jobId:', data.jobId);
+        console.log('Async job detected, jobId:', data.jobId, '- WAV will be available after polling');
+        // Ensure downloads object doesn't exist to prevent accidental access
+        if (data.downloads) {
+          console.warn('WARNING: data.downloads exists but we have jobId - ignoring downloads, will poll for status');
+          delete data.downloads; // Remove to prevent accidental access
+        }
       }
     } else {
       // If not JSON, try to parse anyway but handle errors
