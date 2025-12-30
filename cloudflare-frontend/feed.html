@@ -176,14 +176,15 @@
     
     /* AUTH UI - CSS-based visibility control (faster than JavaScript) */
     /* Default state: show logged-out buttons, hide logged-in buttons */
+    /* CRITICAL: Protected UI is HIDDEN by default - only shown after backend validation */
     .auth-logged-out { display: inline-block !important; }
-    .auth-logged-in { display: none !important; }
+    .auth-logged-in { display: none !important; visibility: hidden !important; }
     
     /* When html has 'user-logged-in' class, flip visibility */
-    html.user-logged-in .auth-logged-out { display: none !important; }
-    html.user-logged-in .auth-logged-in { display: inline-block !important; }
-    html.user-logged-in .profile-btn.auth-logged-in { display: flex !important; }
-    html.user-logged-in #inboxNavLink { display: inline-block !important; }
+    html.user-logged-in .auth-logged-out { display: none !important; visibility: hidden !important; }
+    html.user-logged-in .auth-logged-in { display: inline-block !important; visibility: visible !important; }
+    html.user-logged-in .profile-btn.auth-logged-in { display: flex !important; visibility: visible !important; }
+    html.user-logged-in #inboxNavLink { display: inline-block !important; visibility: visible !important; }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -1524,15 +1525,77 @@
     
     let isPlaying = false;
     
-    // Initialize authentication UI - CSS handles visibility, we just set the class
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', updateAuthUI);
-    } else {
-      updateAuthUI();
+    // CRITICAL: Check auth state with backend on page load
+    async function checkAuthStateOnLoad() {
+      const token = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      
+      // If no token/userId, user is definitely not logged in
+      if (!token || !userId) {
+        console.log('🔓 [Feed] No auth data in localStorage - user not logged in');
+        updateAuthUI();
+        return;
+      }
+      
+      // Validate with backend to confirm session is still valid
+      try {
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? 'http://localhost:3002'
+          : 'https://api.audiocity-ug.com';
+        
+        const validateUrl = `${API_BASE_URL}/api/auth/validate${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`;
+        const response = await fetch(validateUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.valid && data.user) {
+            console.log('✅ [Feed] Backend confirms user is logged in:', data.user.username);
+            // Update token if it was renewed
+            if (data.token && data.renewed) {
+              localStorage.setItem('auth_token', data.token);
+            }
+            // Ensure user_id is set
+            if (data.user.id) {
+              localStorage.setItem('user_id', data.user.id);
+            }
+            updateAuthUI();
+            return;
+          }
+        }
+        
+        // If validation failed, user is not logged in - clear invalid session
+        console.log('❌ [Feed] Backend validation failed - user session invalid, clearing auth data');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('is_admin');
+        document.documentElement.classList.remove('user-logged-in');
+        updateAuthUI();
+      } catch (error) {
+        console.error('❌ [Feed] Error validating auth:', error);
+        // On error, trust localStorage but log warning
+        console.warn('⚠️ [Feed] Auth validation failed, trusting localStorage');
+        updateAuthUI();
+      }
     }
     
-    // Validate token in background (non-blocking) - doesn't affect UI
-    validateAndUpdateToken().catch(() => {});
+    // Initialize authentication UI - check with backend first
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        updateAuthUI(); // Show UI immediately based on localStorage
+        checkAuthStateOnLoad(); // Then validate with backend
+      });
+    } else {
+      updateAuthUI(); // Show UI immediately
+      checkAuthStateOnLoad(); // Then validate with backend
+    }
     
     // Auth UI - CSS class + inline style fallback
     function forceAuthUI() {
