@@ -670,7 +670,7 @@
         <button class="message-btn" id="messageBtn" style="display: inline-flex;">💬 Message</button>
         <button class="follow-btn" id="followBtn" style="display: none;">Follow</button>
         <button class="edit-profile-btn" id="editProfileBtn" style="display: none;">✏️ Edit Profile</button>
-        <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+        <button class="settings-btn" id="profileSettingsBtn" title="Settings">⚙️</button>
         <button class="report-btn" id="reportBtn" style="display: none;" title="Report User">🚩 Report</button>
       </div>
     </div>
@@ -808,7 +808,7 @@
       }
       
       // Settings button
-      const settingsButton = document.getElementById('settingsBtn'); // Renamed variable
+      const settingsButton = document.getElementById('profileSettingsBtn'); // Renamed variable and ID
       if (settingsButton) {
         settingsButton.addEventListener('click', () => {
           window.location.href = 'settings.html';
@@ -828,7 +828,7 @@
       const followBtn = document.getElementById('followBtn');
       const reportBtn = document.getElementById('reportBtn');
       const messageBtn = document.getElementById('messageBtn');
-      const settingsButton = document.getElementById('settingsBtn');
+      const settingsButton = document.getElementById('profileSettingsBtn');
       
       // Check if user is admin
       const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
