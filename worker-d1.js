@@ -888,6 +888,14 @@ export default {
           updates.push('location = ?');
           values.push(body.location);
         }
+        if (body.phone_number !== undefined) {
+          updates.push('phone_number = ?');
+          values.push(body.phone_number);
+        }
+        if (body.username !== undefined) {
+          updates.push('username = ?');
+          values.push(body.username);
+        }
         
         if (updates.length === 0) {
           return Response.json({ error: 'No fields to update' }, { status: 400, headers: corsHeaders });
