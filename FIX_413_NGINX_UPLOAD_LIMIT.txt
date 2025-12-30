@@ -1,0 +1,166 @@
+# Fix 413 Request Entity Too Large Error
+
+## Problem
+Nginx is rejecting audio file uploads because they exceed the default upload size limit (usually 1MB).
+
+## Solution: Increase Nginx Upload Limit
+
+### Step 1: SSH into VPS
+```bash
+ssh root@43.245.227.33
+```
+
+### Step 2: Find Nginx Config File
+The config file is likely at one of these locations:
+- `/etc/nginx/sites-available/mastering.audiocity-ug.com`
+- `/etc/nginx/sites-available/default`
+- `/etc/nginx/nginx.conf`
+
+Check which one exists:
+```bash
+ls -la /etc/nginx/sites-available/
+ls -la /etc/nginx/sites-enabled/
+```
+
+### Step 3: Edit Nginx Configuration
+
+#### Option A: If using site-specific config (recommended)
+```bash
+nano /etc/nginx/sites-available/mastering.audiocity-ug.com
+```
+
+Or if it's named differently:
+```bash
+nano /etc/nginx/sites-available/default
+```
+
+#### Option B: Edit main nginx.conf
+```bash
+nano /etc/nginx/nginx.conf
+```
+
+### Step 4: Add/Update client_max_body_size
+
+Add this line inside the `server { }` block:
+
+```nginx
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name mastering.audiocity-ug.com;
+    
+    # INCREASE UPLOAD LIMIT - Add this line
+    client_max_body_size 500M;
+    
+    # Also add to http block if editing nginx.conf
+    # (in the http { } section at the top level)
+    
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Also increase here for this specific location
+        client_max_body_size 500M;
+    }
+}
+```
+
+### Step 5: Also Update http Block (if editing nginx.conf)
+
+If editing `/etc/nginx/nginx.conf`, add this in the `http { }` block:
+
+```nginx
+http {
+    # Increase default upload size
+    client_max_body_size 500M;
+    
+    # ... rest of config
+}
+```
+
+### Step 6: Test Configuration
+```bash
+nginx -t
+```
+
+Should see: `nginx: configuration file /etc/nginx/nginx.conf test is successful`
+
+### Step 7: Reload Nginx
+```bash
+systemctl reload nginx
+```
+
+Or restart:
+```bash
+systemctl restart nginx
+```
+
+### Step 8: Verify
+```bash
+# Check nginx status
+systemctl status nginx
+
+# Check if config was applied
+nginx -T | grep client_max_body_size
+```
+
+Should show: `client_max_body_size 500M;`
+
+## Recommended Sizes
+
+- **500M** - Good for most audio files (WAV, MP3, FLAC)
+- **1G** - For very large files or multiple uploads
+- **2G** - Maximum recommended (very large files)
+
+## Alternative: Quick Fix (All Locations)
+
+Run this command to add to all server blocks:
+
+```bash
+# Backup first
+cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
+
+# Add to http block
+sed -i '/^http {/a\    client_max_body_size 500M;' /etc/nginx/nginx.conf
+
+# Test and reload
+nginx -t && systemctl reload nginx
+```
+
+## Troubleshooting
+
+If still getting 413 error:
+
+1. **Check if config was saved:**
+   ```bash
+   cat /etc/nginx/sites-enabled/* | grep client_max_body_size
+   ```
+
+2. **Check nginx error logs:**
+   ```bash
+   tail -f /var/log/nginx/error.log
+   ```
+
+3. **Verify the correct config file is being used:**
+   ```bash
+   nginx -T | grep -A 5 "server_name mastering"
+   ```
+
+4. **Make sure you're editing the enabled site:**
+   ```bash
+   # Check which configs are enabled
+   ls -la /etc/nginx/sites-enabled/
+   
+   # Make sure your config is symlinked
+   ln -s /etc/nginx/sites-available/mastering.audiocity-ug.com /etc/nginx/sites-enabled/
+   ```
+
+## After Fix
+
+The mastering feature should now accept files up to 500MB (or whatever size you set).
+
+Test by uploading an audio file through the mastering interface.
+
