@@ -381,21 +381,11 @@
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
     
-    // Check if already logged in
-    if (localStorage.getItem('auth_token')) {
-      const statusEl = document.getElementById('status');
-      statusEl.className = 'status';
-      statusEl.style.display = 'block';
-      statusEl.style.background = 'rgba(139, 92, 246, 0.15)';
-      statusEl.style.border = '1px solid rgba(139, 92, 246, 0.3)';
-      statusEl.style.color = 'var(--accent)';
-      statusEl.innerHTML = 'You are already logged in. <a href="#" id="logoutLink" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Log out</a> or <a href="feed.html" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Go to Feed</a>';
-      
-      document.getElementById('logoutLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.clear();
-        window.location.reload();
-      });
+    // If already logged in, go to feed
+    const hasAuth = localStorage.getItem('auth_token');
+    const hasUserId = localStorage.getItem('user_id');
+    if (hasAuth && hasUserId) {
+      window.location.replace('feed.html');
     }
     
     // Password strength indicator
