@@ -1294,9 +1294,63 @@ export default {
       }
     }
 
-    // Legacy message endpoints for backward compatibility
-    if (url.pathname.includes('/messages') && request.method === 'GET' && !url.pathname.includes('conversations')) {
-      return Response.json([], { headers: corsHeaders });
+    // GET /api/users/:id/messages - Get all conversations for a user
+    if (url.pathname.includes('/users/') && url.pathname.includes('/messages') && request.method === 'GET' && !url.pathname.includes('conversations')) {
+      const userId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      
+      if (!userId || !env.DB) {
+        return Response.json([], { headers: corsHeaders });
+      }
+      
+      try {
+        // Get all messages where user is sender or receiver, grouped by other user
+        const messages = await env.DB.prepare(`
+          SELECT 
+            m.id,
+            m.sender_id,
+            m.receiver_id,
+            m.text as last_message,
+            m.read,
+            m.created_at,
+            m.conversation_id,
+            CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END as other_user_id,
+            u.name as sender_name,
+            u.username as sender_username,
+            u.profile_image_url as sender_avatar
+          FROM messages m
+          LEFT JOIN users u ON (CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END) = u.id
+          WHERE m.sender_id = ? OR m.receiver_id = ?
+          ORDER BY m.created_at DESC
+        `).bind(userId, userId, userId, userId).all();
+        
+        // Group by other_user_id to get unique conversations
+        const conversationsMap = new Map();
+        for (const msg of (messages.results || [])) {
+          const otherUserId = msg.other_user_id;
+          if (!conversationsMap.has(otherUserId)) {
+            conversationsMap.set(otherUserId, {
+              id: otherUserId,
+              conversation_id: msg.conversation_id || `${[userId, otherUserId].sort().join('_')}`,
+              sender_id: msg.sender_id,
+              receiver_id: msg.receiver_id,
+              last_message: msg.last_message,
+              read: msg.read,
+              created_at: msg.created_at,
+              sender_name: msg.sender_name,
+              sender_avatar: msg.sender_avatar,
+              name: msg.sender_name,
+              avatar: msg.sender_avatar
+            });
+          }
+        }
+        
+        const conversations = Array.from(conversationsMap.values());
+        console.log(`Found ${conversations.length} conversations for user ${userId}`);
+        return Response.json(conversations, { headers: corsHeaders });
+      } catch (e) {
+        console.error('Error fetching user messages:', e);
+        return Response.json([], { headers: corsHeaders });
+      }
     }
     if (url.pathname === '/api/messages' && request.method === 'POST') {
       return Response.json({ success: true, message: 'Message sent' }, { headers: corsHeaders });
