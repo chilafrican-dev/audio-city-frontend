@@ -240,6 +240,38 @@ export default {
       }
     }
 
+    // GET /api/auth/validate - Validate current token and return user info
+    if (url.pathname === '/api/auth/validate' && request.method === 'GET') {
+      try {
+        const token = getAuthToken(request);
+        if (!token) {
+          return Response.json({ valid: false, error: 'No token provided' }, { headers: corsHeaders });
+        }
+        
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ valid: false, error: 'Invalid or expired token' }, { headers: corsHeaders });
+        }
+        
+        return Response.json({
+          valid: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            email: user.email,
+            user_type: user.user_type,
+            is_admin: user.is_admin === 1,
+            verified: user.verified === 1,
+            profile_image_url: user.profile_image_url
+          }
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('Token validation error:', error);
+        return Response.json({ valid: false, error: 'Validation failed' }, { headers: corsHeaders });
+      }
+    }
+
     // GET /api/users/:id/follow-status - Check if user follows another user
     if (url.pathname.includes('/follow-status') && request.method === 'GET') {
       const userId = url.pathname.split('/api/users/')[1]?.split('/')[0];

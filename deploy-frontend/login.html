@@ -370,15 +370,32 @@
         statusEl.className = 'status success';
         statusEl.textContent = '✅ Login successful! Redirecting...';
         
-        // Save session
-        if (data.token) localStorage.setItem('auth_token', data.token);
+        // Save session - store ALL user data
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token);
+          console.log('✅ Token stored:', data.token.substring(0, 20) + '...');
+        }
         if (data.user) {
-          if (data.user.id) localStorage.setItem('user_id', data.user.id);
+          if (data.user.id) {
+            localStorage.setItem('user_id', data.user.id);
+            console.log('✅ User ID stored:', data.user.id);
+          }
           if (data.user.user_type) localStorage.setItem('user_type', data.user.user_type);
           if (data.user.name) localStorage.setItem('user_name', data.user.name);
           if (data.user.username) localStorage.setItem('username', data.user.username);
           if (data.user.email) localStorage.setItem('user_email', data.user.email);
+          if (data.user.is_admin !== undefined) {
+            localStorage.setItem('is_admin', data.user.is_admin ? 'true' : 'false');
+          }
+          if (data.user.profile_image_url) {
+            localStorage.setItem('profile_image_url', data.user.profile_image_url);
+          }
         }
+        
+        // Verify storage
+        const storedToken = localStorage.getItem('auth_token');
+        const storedUserId = localStorage.getItem('user_id');
+        console.log('✅ Verification - Token:', !!storedToken, 'User ID:', storedUserId);
         
         // Redirect based on user type
         setTimeout(() => {

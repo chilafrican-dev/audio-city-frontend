@@ -1235,8 +1235,63 @@
       }
     }
     
+    // Validate token with backend and update localStorage if needed
+    async function validateAndUpdateToken() {
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        console.log('No token found, user not logged in');
+        return false;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.valid && data.user) {
+            console.log('✅ Token is valid, user:', data.user.username);
+            // Update localStorage with fresh user data
+            if (data.user.id) localStorage.setItem('user_id', data.user.id);
+            if (data.user.username) localStorage.setItem('username', data.user.username);
+            if (data.user.name) localStorage.setItem('user_name', data.user.name);
+            if (data.user.email) localStorage.setItem('user_email', data.user.email);
+            if (data.user.user_type) localStorage.setItem('user_type', data.user.user_type);
+            if (data.user.is_admin !== undefined) {
+              localStorage.setItem('is_admin', data.user.is_admin ? 'true' : 'false');
+            }
+            if (data.user.profile_image_url) {
+              localStorage.setItem('profile_image_url', data.user.profile_image_url);
+            }
+            return true;
+          } else {
+            console.log('❌ Token invalid, clearing auth data');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_id');
+            return false;
+          }
+        } else {
+          console.log('❌ Token validation failed, clearing auth data');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_id');
+          return false;
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        // Don't clear on network errors, just use existing localStorage
+        return !!localStorage.getItem('user_id');
+      }
+    }
+    
     // Update authentication UI
-    function updateAuthUI() {
+    async function updateAuthUI() {
+      // First validate token if we have one
+      const hasValidToken = await validateAndUpdateToken();
+      
       const authToken = localStorage.getItem('auth_token');
       const userId = localStorage.getItem('user_id');
       const signInBtn = document.getElementById('signInBtn');
@@ -1246,9 +1301,9 @@
       const inboxNavLink = document.getElementById('inboxNavLink');
       const signOutBtn = document.getElementById('signOutBtn');
       
-      console.log('Auth state:', { authToken: !!authToken, userId });
+      console.log('Auth state:', { authToken: !!authToken, userId, hasValidToken });
       
-      if (authToken && userId) {
+      if (hasValidToken && authToken && userId) {
         console.log('User is logged in - updating UI');
         // User is logged in - hide sign in/up, show profile button, upload button, and inbox
         if (signInBtn) {
@@ -1330,11 +1385,13 @@
     }
     
     // Aggressive auth UI update with multiple fallbacks
-    function forceAuthUI() {
+    async function forceAuthUI() {
       try {
+        // Validate token first
+        const hasValidToken = await validateAndUpdateToken();
         const hasToken = !!localStorage.getItem('auth_token');
         const hasUser = !!localStorage.getItem('user_id');
-        console.log('forceAuthUI running:', { hasToken, hasUser });
+        console.log('forceAuthUI running:', { hasToken, hasUser, hasValidToken });
         
         const signInBtn = document.getElementById('signInBtn');
         const signUpBtn = document.getElementById('signUpBtn');
@@ -1345,7 +1402,7 @@
         
         console.log('Elements found:', { signInBtn: !!signInBtn, signUpBtn: !!signUpBtn, profileBtn: !!profileBtn, uploadBtn: !!uploadBtn, signOutBtn: !!signOutBtn });
         
-        if (hasToken && hasUser) {
+        if (hasValidToken && hasToken && hasUser) {
           // User is logged in - hide sign in/up, show everything else
           if (signInBtn) {
             signInBtn.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
