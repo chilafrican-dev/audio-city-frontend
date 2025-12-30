@@ -1495,7 +1495,8 @@ export default {
         // Note: Cloudflare Workers can make HTTP requests, but may have connectivity issues
         // MASTERING_SERVER_URL should be base URL (e.g., https://mastering.audiocity-ug.com)
         // The endpoint path is appended: /api/master or /api/quick-master
-        const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001';
+        // Default to new mastering server domain
+        const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com';
         // If URL includes /api/master or /api/quick-master, use it directly
         // If it's a tunnel URL (trycloudflare.com), append /api/quick-master
         // Otherwise append /api/quick-master for backward compatibility
@@ -1617,7 +1618,10 @@ export default {
       try {
         const jobId = url.pathname.split('/api/master-status/')[1];
         // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
-        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001').replace(/\/api\/(master|quick-master)$/, '');
+        // Default to new mastering server domain
+        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
+        
+        console.log(`[Master Status] Fetching status for job ${jobId} from: ${MASTERING_SERVER_BASE}/api/master-status/${jobId}`);
         
         const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/master-status/${jobId}`, {
           method: 'GET',
@@ -1626,6 +1630,12 @@ export default {
           }
         });
         
+        if (!masteringResponse.ok) {
+          const errorText = await masteringResponse.text().catch(() => 'Unknown error');
+          console.error(`[Master Status] Server returned ${masteringResponse.status}:`, errorText);
+          throw new Error(`Mastering server returned ${masteringResponse.status}: ${errorText.substring(0, 200)}`);
+        }
+        
         const responseData = await masteringResponse.json();
         
         return Response.json(responseData, {
@@ -1633,11 +1643,12 @@ export default {
           headers: corsHeaders
         });
       } catch (error) {
-        console.error('Mastering status proxy error:', error);
+        console.error('[Master Status] Proxy error:', error.name, error.message);
         return Response.json({
           success: false,
           error: 'Failed to fetch mastering status',
-          message: error.message || 'Mastering service is temporarily unavailable.'
+          message: error.message || 'Mastering service is temporarily unavailable.',
+          details: error.name || 'Unknown error'
         }, { status: 503, headers: corsHeaders });
       }
     }
