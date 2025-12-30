@@ -13,18 +13,18 @@
     // PWA functionality is optional, app works fine without it
     // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
-  <script>
-    // CRITICAL: Check auth state IMMEDIATELY and add class to html element
-    // This runs SYNCHRONOUSLY before CSS is applied, so visibility is correct from the start
+  <script data-cfasync="false">
+    // CRITICAL: Check auth state IMMEDIATELY - data-cfasync="false" prevents Cloudflare Rocket Loader from deferring this
     (function() {
       var token = localStorage.getItem('auth_token');
       var userId = localStorage.getItem('user_id');
+      console.log('🔍 Early auth check - token:', !!token, 'userId:', userId);
       if (token && userId) {
-        // User is logged in - add class to document element immediately
         document.documentElement.classList.add('user-logged-in');
-        console.log('🔐 Auth: User logged in (token + userId found)');
+        console.log('🔐 Auth: User logged in - added user-logged-in class to <html>');
       } else {
-        console.log('🔓 Auth: User NOT logged in');
+        document.documentElement.classList.remove('user-logged-in');
+        console.log('🔓 Auth: User NOT logged in - no class added');
       }
     })();
   </script>
