@@ -1612,6 +1612,36 @@ export default {
       }
     }
 
+    // GET /api/master-status/:id - Mastering job status (proxy to VPS server)
+    if (url.pathname.startsWith('/api/master-status/') && request.method === 'GET') {
+      try {
+        const jobId = url.pathname.split('/api/master-status/')[1];
+        // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
+        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001').replace(/\/api\/(master|quick-master)$/, '');
+        
+        const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/master-status/${jobId}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        const responseData = await masteringResponse.json();
+        
+        return Response.json(responseData, {
+          status: masteringResponse.status,
+          headers: corsHeaders
+        });
+      } catch (error) {
+        console.error('Mastering status proxy error:', error);
+        return Response.json({
+          success: false,
+          error: 'Failed to fetch mastering status',
+          message: error.message || 'Mastering service is temporarily unavailable.'
+        }, { status: 503, headers: corsHeaders });
+      }
+    }
+
     // GET /api/mastering-result/:id - Mastering result (proxy to VPS server)
     if (url.pathname.startsWith('/api/mastering-result/') && request.method === 'GET') {
       try {
