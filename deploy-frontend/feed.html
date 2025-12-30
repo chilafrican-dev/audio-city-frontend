@@ -9,13 +9,9 @@
   <title>Feed — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
-    if (window.location.protocol !== 'file:') {
-      var link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = 'manifest.json';
-      document.head.appendChild(link);
-    }
+    // Manifest loading disabled - Cloudflare WAF blocks JSON files
+    // PWA functionality is optional, app works fine without it
+    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -1078,7 +1074,7 @@
         <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
         <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
         <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
-        <button class="create-btn" id="createBtn" title="Create" style="display: none;">+</button>
+        <a href="artist-corner.html" class="header-btn btn-upload" id="uploadBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s;">🎵 Create</a>
         <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative;">
           <a href="profile.html" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer;">
             <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
@@ -1104,7 +1100,6 @@
         <button class="filter-tab" data-filter="following">Following</button>
         <button class="filter-tab" data-filter="music">Music Only</button>
         <button class="filter-tab" data-filter="community">Community</button>
-        <button class="filter-tab" data-filter="ads">Ads</button>
         <button class="filter-tab" data-filter="nearby">Near You</button>
         </div>
       </div>
@@ -1209,6 +1204,10 @@
             if (avatar && avatar.startsWith('/uploads/')) {
               avatar = `${API_BASE_URL}${avatar}`;
             }
+            // Force HTTPS for any http avatar URLs to avoid mixed-content blocks
+            if (avatar && avatar.startsWith('http://')) {
+              avatar = avatar.replace('http://', 'https://');
+            }
           }
       } catch (error) {
           console.error('Failed to load profile picture from API:', error);
@@ -1218,6 +1217,10 @@
       // Fallback to localStorage if API didn't return an avatar
       if (!avatar) {
         avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+      }
+      // Upgrade any cached http avatar URLs to https (avoid mixed content)
+      if (avatar && avatar.startsWith('http://')) {
+        avatar = avatar.replace('http://', 'https://');
       }
       
       // Update header image
@@ -1238,11 +1241,11 @@
       const signInBtn = document.getElementById('signInBtn');
       const signUpBtn = document.getElementById('signUpBtn');
       const profileBtn = document.getElementById('profileBtn');
-      const createBtn = document.getElementById('createBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
       const inboxNavLink = document.getElementById('inboxNavLink');
       
       if (authToken && userId) {
-        // User is logged in - hide sign in/up, show profile button, create button, and inbox
+        // User is logged in - hide sign in/up, show profile button, upload button, and inbox
         if (signInBtn) {
           signInBtn.style.setProperty('display', 'none', 'important');
           signInBtn.style.setProperty('visibility', 'hidden', 'important');
@@ -1256,10 +1259,9 @@
           profileBtn.style.setProperty('visibility', 'visible', 'important');
           profileBtn.classList.add('show');
         }
-        if (createBtn) {
-          createBtn.style.setProperty('display', 'flex', 'important');
-          createBtn.style.setProperty('visibility', 'visible', 'important');
-          createBtn.classList.add('show');
+        if (uploadBtn) {
+          uploadBtn.style.setProperty('display', 'inline-block', 'important');
+          uploadBtn.style.setProperty('visibility', 'visible', 'important');
         }
         if (inboxNavLink) {
           inboxNavLink.style.setProperty('display', 'inline-block', 'important');
@@ -1269,7 +1271,7 @@
         // Update profile picture
         updateHeaderProfilePicture();
       } else {
-        // User is not logged in - show sign in/up, hide profile button, create button, and inbox
+        // User is not logged in - show sign in/up, hide profile button, upload button, and inbox
         if (signInBtn) {
           signInBtn.style.setProperty('display', 'inline-block', 'important');
           signInBtn.style.setProperty('visibility', 'visible', 'important');
@@ -1283,10 +1285,9 @@
           profileBtn.style.setProperty('visibility', 'hidden', 'important');
           profileBtn.classList.remove('show');
         }
-        if (createBtn) {
-          createBtn.style.setProperty('display', 'none', 'important');
-          createBtn.style.setProperty('visibility', 'hidden', 'important');
-          createBtn.classList.remove('show');
+        if (uploadBtn) {
+          uploadBtn.style.setProperty('display', 'none', 'important');
+          uploadBtn.style.setProperty('visibility', 'hidden', 'important');
         }
         if (inboxNavLink) {
           inboxNavLink.style.setProperty('display', 'none', 'important');
@@ -1326,8 +1327,7 @@
       updateAuthUI();
     }
     
-    // Update auth UI periodically
-    // Auth UI updated on page load - no polling needed
+    // Auth UI updated on page load - no need for polling
     
     // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
@@ -1454,6 +1454,17 @@
         const tracks = await tracksResponse.json();
         console.log(`Loaded ${tracks.length} tracks for feed`);
         
+        // If no tracks, show empty state immediately
+        if (tracks.length === 0) {
+          const container = document.getElementById('feedPosts');
+          if (container) {
+            container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">🎵 No tracks yet</p><p style="font-size: 14px;">Be the first to upload music!</p><a href="artist-corner.html" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: var(--accent); color: white; text-decoration: none; border-radius: 8px;">Upload Your First Track</a></div>';
+            container.style.display = 'block';
+          }
+          console.log('No tracks found, showing empty state');
+          return;
+        }
+        
         // For Hot 100, sort by engagement score (views + likes + recency factor)
         if (currentFilter === 'hot' && tracks.length > 0) {
           const now = Date.now();
@@ -1522,22 +1533,16 @@
         // Generate featured announcements
         const featuredPosts = generateFeaturedPosts(artists);
         
-        // Generate ad posts
-        const adPosts = generateAdPosts();
-        
-        // Combine all posts - featured ads first, then sort by timestamp
+        // Combine all posts sorted by timestamp
         const allPosts = [
           ...musicPosts,
           ...activityPosts,
           ...textPosts,
-          ...featuredPosts,
-          ...adPosts
+          ...featuredPosts
         ];
         
-        // Sort: featured ads at top, then by timestamp
+        // Sort by timestamp (newest first)
         feedData = allPosts.sort((a, b) => {
-          if (a.type === 'ad' && a.isFeatured && b.type !== 'ad') return -1;
-          if (b.type === 'ad' && b.isFeatured && a.type !== 'ad') return 1;
           return b.timestamp - a.timestamp;
         });
         
@@ -1684,9 +1689,6 @@
           break;
         case 'community':
           filteredData = feedData.filter(post => post.type === 'text' || post.type === 'activity');
-          break;
-        case 'ads':
-          filteredData = feedData.filter(post => post.type === 'ad');
           break;
         case 'following':
         case 'nearby':
@@ -2687,11 +2689,56 @@
     // Development mode check (only show logs in development)
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Service Worker DISABLED - sw.js not deployed
-    // Unregister any existing service workers
-    if ('serviceWorker' in navigator) {
+    // Service Worker Configuration
+    // Set to false to disable service worker (useful if it's causing issues with Cloudflare Workers)
+    const ENABLE_SERVICE_WORKER = false; // Disabled to prevent conflicts with Cloudflare Worker API
+    
+    // Unregister any existing service workers if disabled
+    if (!ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(registration => registration.unregister());
+        registrations.forEach(registration => {
+          registration.unregister().then(() => {
+            if (isDevelopment) {
+              console.log('✅ Service Worker unregistered');
+            }
+          }).catch(error => {
+            if (isDevelopment) {
+              console.error('❌ Service Worker unregistration failed:', error);
+            }
+          });
+        });
+      });
+    }
+    
+    // Register service worker for PWA
+    // Only register if sw.js is available with correct MIME type
+    if (ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Verify sw.js exists and has correct content type before registering
+        fetch('/sw.js', { method: 'HEAD' })
+          .then(response => {
+            const contentType = response.headers.get('content-type') || '';
+            if (response.ok && contentType.includes('javascript')) {
+              return navigator.serviceWorker.register('/sw.js');
+            } else {
+              // File doesn't exist or wrong MIME type - skip registration silently
+              if (isDevelopment) {
+                console.warn('⚠️ Service Worker file not available (404 or wrong MIME type)');
+              }
+              return Promise.reject(new Error('Service worker file not available'));
+            }
+          })
+          .then(registration => {
+            if (isDevelopment) {
+              console.log('✅ Service Worker registered:', registration.scope);
+            }
+          })
+          .catch(error => {
+            // Silently fail - service worker is optional for PWA
+            if (isDevelopment) {
+              console.error('❌ Service Worker registration failed:', error.message);
+            }
+          });
       });
     }
     
