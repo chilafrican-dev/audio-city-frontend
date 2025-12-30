@@ -1,0 +1,263 @@
+# DEPLOY CLOUDFLARE WORKER - Step by Step Guide
+
+## What is the Worker?
+The `worker-d1.js` file is your API backend that:
+- Handles all API requests (`/api/*`)
+- Connects to D1 database (SQLite)
+- Uses R2 bucket for file storage
+- Proxies mastering requests to VPS
+- Handles authentication, tracks, users, etc.
+
+## Prerequisites
+- Cloudflare account (free)
+- Domain `audiocity-ug.com` added to Cloudflare
+- D1 database created (already done: `audio-city-db`)
+- R2 bucket created (already done: `audio-city-tracks`)
+
+---
+
+## METHOD 1: Deploy via Cloudflare Dashboard (EASIEST)
+
+### Step 1: Go to Cloudflare Dashboard
+1. Visit: https://dash.cloudflare.com
+2. Log in to your account
+3. Select domain: **audiocity-ug.com**
+
+### Step 2: Create Worker
+1. Click **"Workers & Pages"** in left sidebar
+2. Click **"Create application"**
+3. Click **"Create Worker"**
+4. Name: `audio-city-api-d1`
+5. Click **"Deploy"** (we'll add code next)
+
+### Step 3: Add Code
+1. Click on your worker name: `audio-city-api-d1`
+2. Click **"Quick edit"** or **"Edit code"**
+3. Delete all default code
+4. Copy entire contents of `worker-d1.js`
+5. Paste into editor
+6. Click **"Save and deploy"**
+
+### Step 4: Configure D1 Database
+1. In worker settings, go to **"Settings"** → **"Variables"**
+2. Scroll to **"D1 Database bindings"**
+3. Click **"Add binding"**
+4. Variable name: `DB`
+5. Database: Select `audio-city-db`
+6. Click **"Save"**
+
+### Step 5: Configure R2 Bucket
+1. Still in **"Settings"** → **"Variables"**
+2. Scroll to **"R2 Bucket bindings"**
+3. Click **"Add binding"**
+4. Variable name: `MEDIA_BUCKET`
+5. Bucket: Select `audio-city-tracks`
+6. Click **"Save"**
+
+### Step 6: Set Environment Variables
+1. In **"Settings"** → **"Variables"** → **"Environment Variables"**
+2. Add these variables (if needed):
+   - `MASTERING_SERVER_URL` = `https://mastering.audiocity-ug.com`
+   - `GOOGLE_CLIENT_ID` = (your Google OAuth client ID)
+
+### Step 7: Configure Custom Domain
+1. Go to **"Triggers"** tab
+2. Scroll to **"Custom Domains"**
+3. Click **"Add Custom Domain"**
+4. Enter: `api.audiocity-ug.com`
+5. Click **"Add Custom Domain"**
+6. Wait for DNS propagation (1-2 minutes)
+
+### Step 8: Test
+```bash
+curl https://api.audiocity-ug.com/api/health
+```
+
+Should return:
+```json
+{
+  "status": "ok",
+  "service": "audio-city-api-worker",
+  "database": "connected",
+  "r2": "connected"
+}
+```
+
+---
+
+## METHOD 2: Deploy via Wrangler CLI (FASTEST)
+
+### Step 1: Install Wrangler
+```bash
+npm install -g wrangler
+```
+
+### Step 2: Login
+```bash
+wrangler login
+```
+This opens browser to authorize.
+
+### Step 3: Deploy Worker
+```bash
+cd "/Users/nicopan/online master"
+wrangler deploy --config wrangler-d1.toml
+```
+
+### Step 4: Set Secrets (if needed)
+```bash
+# Set mastering server URL
+wrangler secret put MASTERING_SERVER_URL
+# Enter: https://mastering.audiocity-ug.com
+
+# Set Google OAuth (if needed)
+wrangler secret put GOOGLE_CLIENT_ID
+# Enter your Google client ID
+```
+
+### Step 5: Verify Deployment
+```bash
+# Check worker status
+wrangler deployments list --config wrangler-d1.toml
+
+# Test endpoint
+curl https://api.audiocity-ug.com/api/health
+```
+
+---
+
+## METHOD 3: Deploy via GitHub Actions (AUTO-DEPLOY)
+
+### Step 1: Create GitHub Actions Workflow
+Create file: `.github/workflows/deploy-worker.yml`
+
+```yaml
+name: Deploy Cloudflare Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'worker-d1.js'
+      - 'wrangler-d1.toml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: '.'
+          command: deploy --config wrangler-d1.toml
+```
+
+### Step 2: Add Secrets to GitHub
+1. Go to GitHub repo → Settings → Secrets → Actions
+2. Add:
+   - `CLOUDFLARE_API_TOKEN` (get from Cloudflare dashboard)
+   - `CLOUDFLARE_ACCOUNT_ID` (get from Cloudflare dashboard)
+
+### Step 3: Push to GitHub
+```bash
+git add .github/workflows/deploy-worker.yml
+git commit -m "Add auto-deploy workflow for worker"
+git push
+```
+
+Now every push to `main` will auto-deploy the worker!
+
+---
+
+## VERIFICATION CHECKLIST
+
+After deployment, verify:
+
+✅ [ ] Worker deployed successfully
+✅ [ ] D1 database binding configured
+✅ [ ] R2 bucket binding configured
+✅ [ ] Custom domain `api.audiocity-ug.com` configured
+✅ [ ] Health endpoint works: `/api/health`
+✅ [ ] Authentication works: `/api/auth/login`
+✅ [ ] Mastering proxy works: `/api/quick-master`
+✅ [ ] No errors in Cloudflare dashboard logs
+
+---
+
+## TROUBLESHOOTING
+
+### Worker Not Responding?
+1. Check **"Logs"** tab in Cloudflare dashboard
+2. Look for error messages
+3. Verify D1 and R2 bindings are correct
+4. Check custom domain DNS is configured
+
+### 404 Errors?
+- Verify custom domain is added in **"Triggers"** → **"Custom Domains"**
+- Check DNS records for `api.audiocity-ug.com`
+- Make sure route pattern matches in `wrangler-d1.toml`
+
+### Database Errors?
+- Verify D1 database exists: `audio-city-db`
+- Check database binding name matches: `DB`
+- Run migrations if needed
+
+### R2 Errors?
+- Verify R2 bucket exists: `audio-city-tracks`
+- Check bucket binding name matches: `MEDIA_BUCKET`
+- Verify bucket permissions
+
+---
+
+## QUICK DEPLOY COMMAND
+
+```bash
+# One command to deploy everything
+cd "/Users/nicopan/online master" && \
+wrangler login && \
+wrangler deploy --config wrangler-d1.toml && \
+echo "✅ Worker deployed! Test: curl https://api.audiocity-ug.com/api/health"
+```
+
+---
+
+## CURRENT CONFIGURATION
+
+Based on `wrangler-d1.toml`:
+
+- **Worker Name**: `audio-city-api-d1`
+- **Main File**: `worker-d1.js`
+- **D1 Database**: `audio-city-db` (ID: 19530b7f-19d0-46c7-ad6b-df0eb8b54447)
+- **R2 Bucket**: `audio-city-tracks`
+- **Custom Domain**: `api.audiocity-ug.com`
+- **Mastering Server**: Set via `MASTERING_SERVER_URL` env var
+
+---
+
+## AFTER DEPLOYMENT
+
+1. **Test the worker:**
+   ```bash
+   curl https://api.audiocity-ug.com/api/health
+   ```
+
+2. **Update frontend** (if needed):
+   - Make sure frontend points to: `https://api.audiocity-ug.com/api`
+
+3. **Monitor logs:**
+   - Cloudflare Dashboard → Workers & Pages → audio-city-api-d1 → Logs
+
+4. **Set up alerts** (optional):
+   - Configure error notifications in Cloudflare dashboard
+
+---
+
+## NEED HELP?
+
+- Check Cloudflare Worker docs: https://developers.cloudflare.com/workers/
+- Check Wrangler CLI docs: https://developers.cloudflare.com/workers/wrangler/
+- View worker logs in Cloudflare dashboard
+
