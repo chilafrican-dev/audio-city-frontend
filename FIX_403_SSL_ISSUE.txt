@@ -1,0 +1,73 @@
+# 🔴 FIX: 403 Error - SSL Certificate Issue
+
+## Problem
+Cloudflare Workers **reject self-signed SSL certificates**. The 403 error is Cloudflare blocking the connection due to invalid SSL.
+
+## Solution Options
+
+### ✅ Option 1: Set Up DNS + Cloudflare SSL (BEST - 5 minutes)
+
+1. **Go to Cloudflare Dashboard** → Your domain (`audiocity-ug.com`)
+2. **DNS** → **Add record**:
+   - Type: `A`
+   - Name: `mastering`
+   - IPv4: `43.245.227.33`
+   - Proxy: 🟠 **ON** (Orange cloud)
+   - TTL: Auto
+3. **Click Save**
+4. **Wait 2-5 minutes** for DNS propagation
+5. **Update Worker secret**:
+   ```bash
+   echo "https://mastering.audiocity-ug.com/api/quick-master" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+   ```
+6. **Test**: The mastering feature should work now!
+
+**Why this works:**
+- Cloudflare automatically provides SSL for proxied domains
+- Workers can connect to Cloudflare-proxied domains
+- No certificate setup needed on server
+
+### Option 2: Use Cloudflare Tunnel (Already Set Up)
+
+The tunnel is running but had path forwarding issues. If you want to try:
+
+1. Get current tunnel URL:
+   ```bash
+   ssh root@43.245.227.33
+   journalctl -u mastering-tunnel.service -n 50 | grep "https://.*trycloudflare" | tail -1
+   ```
+
+2. Update Worker secret with tunnel URL
+
+**Note:** Quick tunnels are unreliable and URLs change on restart.
+
+### Option 3: Get Real SSL Certificate (After DNS)
+
+Once DNS is set up:
+
+```bash
+ssh root@43.245.227.33
+certbot --nginx -d mastering.audiocity-ug.com --non-interactive --agree-tos --email chilafrican@gmail.com --redirect
+```
+
+## Current Status
+
+✅ Server: HTTPS working (self-signed)
+✅ Nginx: Configured and running
+✅ Endpoint: `/api/quick-master` accessible
+❌ Worker: Can't connect (403 - invalid SSL)
+⏳ **Need DNS + Cloudflare SSL**
+
+## Quick Fix (Recommended)
+
+**Just set up the DNS record in Cloudflare** (Option 1 above). It takes 2 minutes and Cloudflare handles everything automatically.
+
+## Test After DNS Setup
+
+```bash
+# Should work after DNS propagates
+curl https://mastering.audiocity-ug.com/api/health
+```
+
+The mastering feature will work once DNS is set up and Cloudflare provides SSL automatically.
+

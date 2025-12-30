@@ -1,0 +1,66 @@
+# 🚀 DNS Setup Instructions for Mastering
+
+## Current Status
+✅ Worker updated to use tunnel (temporary)
+⏳ DNS needs to be set up for permanent solution
+
+## Step-by-Step DNS Setup
+
+### 1. Go to Cloudflare Dashboard
+- Visit: https://dash.cloudflare.com
+- Login to your account
+- Select domain: **audiocity-ug.com**
+
+### 2. Navigate to DNS
+- Click **DNS** in the left sidebar
+- Click **Records** tab
+
+### 3. Add A Record
+Click **Add record** button, then fill in:
+
+```
+Type: A
+Name: mastering
+IPv4 address: 43.245.227.33
+Proxy status: 🟠 Proxied (ON - Orange cloud)
+TTL: Auto
+```
+
+### 4. Save
+- Click **Save**
+- Wait 2-5 minutes for DNS propagation
+
+### 5. Update Worker Secret
+After DNS propagates, run:
+
+```bash
+echo "https://mastering.audiocity-ug.com/api/quick-master" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+```
+
+### 6. Test
+```bash
+curl https://mastering.audiocity-ug.com/api/health
+```
+
+Should return: `{"status":"ok","ffmpeg":true,...}`
+
+## Why This Works
+
+- ✅ Cloudflare automatically provides SSL for proxied domains
+- ✅ Workers can connect to Cloudflare-proxied domains
+- ✅ No certificate setup needed on server
+- ✅ Permanent solution (doesn't change like tunnel URLs)
+
+## Temporary Solution (Current)
+
+Currently using Cloudflare Tunnel:
+- URL: `https://holders-wines-examination-soma.trycloudflare.com`
+- ⚠️ Tunnel URLs change on restart
+- ⚠️ May have path forwarding issues
+
+**For production, set up DNS (steps above).**
+
+## After DNS Setup
+
+Once DNS is set up and Worker secret is updated, the mastering feature will work permanently!
+

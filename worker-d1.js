@@ -1496,10 +1496,18 @@ export default {
         // MASTERING_SERVER_URL should be base URL (e.g., https://mastering.audiocity-ug.com)
         // The endpoint path is appended: /api/master or /api/quick-master
         const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'http://168.119.241.59:3001';
-        // If URL includes /api/master, use it directly; otherwise append /api/quick-master for backward compatibility
-        const MASTERING_SERVER_URL = MASTERING_SERVER_BASE.includes('/api/') 
-          ? MASTERING_SERVER_BASE 
-          : `${MASTERING_SERVER_BASE}/api/quick-master`;
+        // If URL includes /api/master or /api/quick-master, use it directly
+        // If it's a tunnel URL (trycloudflare.com), append /api/quick-master
+        // Otherwise append /api/quick-master for backward compatibility
+        let MASTERING_SERVER_URL;
+        if (MASTERING_SERVER_BASE.includes('/api/')) {
+          MASTERING_SERVER_URL = MASTERING_SERVER_BASE;
+        } else if (MASTERING_SERVER_BASE.includes('trycloudflare.com')) {
+          // Tunnel URLs need the full path
+          MASTERING_SERVER_URL = `${MASTERING_SERVER_BASE}/api/quick-master`;
+        } else {
+          MASTERING_SERVER_URL = `${MASTERING_SERVER_BASE}/api/quick-master`;
+        }
         const formData = await request.formData();
         
         // Forward the request to the mastering server with timeout
