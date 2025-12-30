@@ -1150,9 +1150,11 @@ export default {
       }
     }
 
-    // GET /api/conversations/:id/messages - Get messages in conversation
-    if (url.pathname.match(/\/api\/conversations\/[^\/]+\/messages$/) && request.method === 'GET') {
-      const convId = url.pathname.split('/api/conversations/')[1]?.split('/')[0];
+    // GET /api/conversations/:id/:recipientId?/messages - Get messages in conversation
+    // Handles both /api/conversations/:id/messages and /api/conversations/:id/:recipientId/messages
+    if (url.pathname.includes('/conversations/') && url.pathname.includes('/messages') && !url.pathname.includes('/messages/read') && request.method === 'GET') {
+      const parts = url.pathname.split('/api/conversations/')[1]?.split('/') || [];
+      const convId = parts[0];
       if (!convId || !env.DB) {
         return Response.json([], { headers: corsHeaders });
       }
@@ -1164,22 +1166,60 @@ export default {
           WHERE m.conversation_id = ?
           ORDER BY m.created_at ASC
         `).bind(convId).all();
-        return Response.json(messages.results || [], { headers: corsHeaders });
+        
+        // Format messages for frontend
+        const formatted = (messages.results || []).map(msg => ({
+          id: msg.id,
+          conversation_id: msg.conversation_id,
+          sender_id: msg.sender_id,
+          recipient_id: msg.recipient_id,
+          content: msg.content,
+          is_read: msg.is_read === 1 || msg.is_read === true,
+          created_at: msg.created_at,
+          sender: {
+            id: msg.sender_id,
+            username: msg.sender_username,
+            name: msg.sender_name,
+            avatar: msg.sender_avatar
+          }
+        }));
+        
+        return Response.json(formatted, { headers: corsHeaders });
       } catch (e) {
         console.error('Error fetching messages:', e);
+        // If table doesn't exist, return empty array
+        if (e.message && e.message.includes('no such table')) {
+          console.warn('Messages table does not exist yet. Run create_tables.sql');
+        }
         return Response.json([], { headers: corsHeaders });
       }
     }
 
-    // POST /api/conversations/:id/messages - Send message
-    if (url.pathname.match(/\/api\/conversations\/[^\/]+\/messages$/) && request.method === 'POST') {
-      const convId = url.pathname.split('/api/conversations/')[1]?.split('/')[0];
+    // POST /api/conversations/:id/:recipientId?/messages - Send message
+    // Handles both /api/conversations/:id/messages and /api/conversations/:id/:recipientId/messages
+    if (url.pathname.includes('/conversations/') && url.pathname.includes('/messages') && !url.pathname.includes('/messages/read') && request.method === 'POST') {
+      const parts = url.pathname.split('/api/conversations/')[1]?.split('/') || [];
+      const convId = parts[0];
       const body = await parseBody(request);
       const { sender_id, recipient_id, content } = body || {};
       if (!convId || !sender_id || !content || !env.DB) {
         return Response.json({ error: 'Missing required fields' }, { status: 400, headers: corsHeaders });
       }
       try {
+        // Ensure conversation exists (create if it doesn't)
+        try {
+          const existingConv = await env.DB.prepare('SELECT id FROM conversations WHERE id = ?').bind(convId).first();
+          if (!existingConv && recipient_id) {
+            // Create conversation if it doesn't exist
+            await env.DB.prepare(`
+              INSERT INTO conversations (id, participant1_id, participant2_id, created_at, last_message_at)
+              VALUES (?, ?, ?, datetime('now'), datetime('now'))
+            `).bind(convId, sender_id, recipient_id).run();
+          }
+        } catch (e) {
+          console.warn('Conversation check/create failed (table may not exist):', e);
+        }
+        
         const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         await env.DB.prepare(`
           INSERT INTO messages (id, conversation_id, sender_id, recipient_id, content, is_read, created_at)
@@ -1187,19 +1227,29 @@ export default {
         `).bind(msgId, convId, sender_id, recipient_id || '', content).run();
         
         // Update conversation last_message_at
-        await env.DB.prepare('UPDATE conversations SET last_message_at = datetime("now") WHERE id = ?').bind(convId).run();
+        try {
+          await env.DB.prepare('UPDATE conversations SET last_message_at = datetime("now") WHERE id = ?').bind(convId).run();
+        } catch (e) { /* table may not exist yet */ }
         
-        const msg = await env.DB.prepare('SELECT * FROM messages WHERE id = ?').bind(msgId).first();
-        return Response.json(msg, { headers: corsHeaders });
+        // Return message with sender info
+        const msg = await env.DB.prepare(`
+          SELECT m.*, u.username as sender_username, u.name as sender_name, u.profile_image_url as sender_avatar
+          FROM messages m
+          LEFT JOIN users u ON m.sender_id = u.id
+          WHERE m.id = ?
+        `).bind(msgId).first();
+        return Response.json(msg || { id: msgId, conversation_id: convId, sender_id, recipient_id, content, created_at: new Date().toISOString() }, { headers: corsHeaders });
       } catch (e) {
         console.error('Error sending message:', e);
-        return Response.json({ error: 'Failed to send message' }, { status: 500, headers: corsHeaders });
+        return Response.json({ error: 'Failed to send message: ' + e.message }, { status: 500, headers: corsHeaders });
       }
     }
 
-    // PUT /api/conversations/:id/messages/read - Mark messages as read
+    // PUT /api/conversations/:id/:recipientId?/messages/read - Mark messages as read
+    // Handles both /api/conversations/:id/messages/read and /api/conversations/:id/:recipientId/messages/read
     if (url.pathname.includes('/messages/read') && request.method === 'PUT') {
-      const convId = url.pathname.split('/api/conversations/')[1]?.split('/')[0];
+      const parts = url.pathname.split('/api/conversations/')[1]?.split('/') || [];
+      const convId = parts[0];
       const body = await parseBody(request);
       const userId = body?.user_id;
       if (!convId || !env.DB) {
