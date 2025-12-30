@@ -2683,16 +2683,27 @@ masterBtn.addEventListener('click', async () => {
       data = await res.json();
       console.log('Mastering response received:', data);
       
-      // CRITICAL SAFETY CHECK: If we have a jobId, NEVER try to access wav/downloads - it doesn't exist yet!
-      // This prevents any code from trying to access data.wav or data.downloads.wav before polling completes
+      // 🚫 ABSOLUTE RULE: If we have jobId, wav DOES NOT EXIST - DO NOT ACCESS IT
+      // This prevents ANY code from trying to access data.wav, data.downloads.wav, or any wav property
       if (data && data.jobId) {
         // This is an async job - wav will come later via polling
-        // DO NOT access data.wav or data.downloads here - it will crash!
-        console.log('Async job detected, jobId:', data.jobId, '- WAV will be available after polling');
-        // Ensure downloads object doesn't exist to prevent accidental access
+        // DO NOT access data.wav or data.downloads.wav here - it will crash!
+        console.log('✅ Async job detected, jobId:', data.jobId);
+        console.log('⏳ WAV will be available after polling - DO NOT access it now!');
+        
+        // Remove any wav-related properties to prevent accidental access
+        if (data.wav) {
+          console.warn('⚠️ WARNING: data.wav exists but we have jobId - removing to prevent crash');
+          delete data.wav;
+        }
         if (data.downloads) {
-          console.warn('WARNING: data.downloads exists but we have jobId - ignoring downloads, will poll for status');
-          delete data.downloads; // Remove to prevent accidental access
+          console.warn('⚠️ WARNING: data.downloads exists but we have jobId - removing to prevent crash');
+          delete data.downloads;
+        }
+        // Also check for any nested wav properties
+        if (data.result && data.result.wav) {
+          console.warn('⚠️ WARNING: data.result.wav exists but we have jobId - removing to prevent crash');
+          delete data.result;
         }
       }
     } else {
