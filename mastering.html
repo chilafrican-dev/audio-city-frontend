@@ -2715,11 +2715,21 @@ masterBtn.addEventListener('click', async () => {
       
       // ✅ CORRECT: After quick-master response
       // 🚫 DO NOT TOUCH data.wav here - it doesn't exist yet!
+      // ✅ 2. Log the exact object that's being processed
       console.log("Mastering response:", data);
+      console.log("Response object details:", {
+        success: data?.success,
+        jobId: data?.jobId,
+        hasWav: !!data?.wav,
+        hasDownloads: !!data?.downloads,
+        fullObject: data
+      });
       
-      // Validate response - must have success and jobId
-      if (!data.success || !data.jobId) {
-        throw new Error(data.error || data.message || "Mastering request failed");
+      // ✅ 1. Validate objects before access
+      if (!data || !data.success || !data.jobId) {
+        const errorMsg = data?.error || data?.message || "Mastering request failed";
+        console.error("❌ Mastering request failed:", data);
+        throw new Error(errorMsg);
       }
       
       // ✅ Start polling instead of trying to access wav
