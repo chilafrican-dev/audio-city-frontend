@@ -2009,7 +2009,8 @@ function startPlayback() {
   // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
   // Prefer preview, then MP3, then mastered file
   if (playbackMode === 'after' && !masteredBuffer) {
-    const audioUrl = downloadUrls.preview || downloadUrls.mp3 || downloadUrls.wav;
+    // Safe access - only use wav if it exists (after polling completes)
+    const audioUrl = downloadUrls.preview || downloadUrls.mp3 || (downloadUrls.wav || null);
     console.log('Using HTML5 audio for mastered playback:', audioUrl);
     console.log('Available URLs:', downloadUrls);
     
