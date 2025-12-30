@@ -2756,9 +2756,11 @@ masterBtn.addEventListener('click', async () => {
     // DO NOT access data.wav, data.downloads.wav, or any wav property here
     // It will crash because wav doesn't exist yet!
     const jobId = data.jobId;
+    jobIdReceived = true; // Set flag to prevent any wav access
     console.log('✅ Job submitted successfully, jobId:', jobId);
     console.log('⏳ WAV will be available after polling - DO NOT access it now!');
     console.log('🚫 Safety check - data.wav:', data.wav, 'data.downloads:', data.downloads);
+    console.log('🚫 jobIdReceived flag set to true - any wav access will be blocked');
     
     // 🚫 FINAL SAFETY: Double-check no wav properties exist and remove them
     if (data.wav !== undefined) {
@@ -2819,7 +2821,8 @@ masterBtn.addEventListener('click', async () => {
     // 🚫 SAFETY: Only execute this block if we DON'T have a jobId (old sync format)
     // If we have jobId, we should have returned above - this should NEVER execute with jobId
     // CRITICAL: Check data.downloads exists AND has wav before accessing
-    if (!data.jobId && data.downloads && typeof data.downloads === 'object' && data.downloads.wav) {
+    // Also check that jobIdReceived flag is false (triple safety)
+    if (!jobIdReceived && !data.jobId && data && data.downloads && typeof data.downloads === 'object' && data.downloads.wav) {
       console.log('⚠️ Old sync format (no jobId) - using direct response');
       // Old format - direct response (backward compatibility)
       masterResult = data;
