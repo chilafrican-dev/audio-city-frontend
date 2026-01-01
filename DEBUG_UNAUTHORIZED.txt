@@ -1,0 +1,91 @@
+═══════════════════════════════════════════════════════════════
+  DEBUG UNAUTHORIZED ERROR
+═══════════════════════════════════════════════════════════════
+
+Added extensive logging to help debug the issue.
+
+═══════════════════════════════════════════════════════════════
+  WHAT TO CHECK
+═══════════════════════════════════════════════════════════════
+
+1. CHECK BROWSER CONSOLE:
+   - Open DevTools (F12) → Console tab
+   - Look for: "[Admin Upload] Sending request with:"
+   - Should show: adminEmail: "chilafrican@gmail.com"
+
+2. CHECK NETWORK TAB:
+   - DevTools → Network tab
+   - Find POST /api/tracks request
+   - Click on it → Check:
+     * Headers tab → Request Headers → Should see X-Admin-Email
+     * Payload tab → Should see admin_email field
+
+3. CHECK WORKER LOGS:
+   - Cloudflare Dashboard → Workers → Logs
+   - Look for: "[Track Upload]" messages
+   - Should see:
+     * "FormData keys: [array of keys]"
+     * "Admin email check: {fromForm, fromHeader, final, matches}"
+     * "✅ Admin detected - granting immediate access"
+
+4. CHECK LOCALSTORAGE:
+   Run in browser console:
+   console.log({
+     email: localStorage.getItem('user_email'),
+     is_admin: localStorage.getItem('is_admin'),
+     token: localStorage.getItem('auth_token')
+   });
+
+   If email is missing, set it:
+   localStorage.setItem('user_email', 'chilafrican@gmail.com');
+   localStorage.setItem('is_admin', 'true');
+
+═══════════════════════════════════════════════════════════════
+  QUICK FIX
+═══════════════════════════════════════════════════════════════
+
+If still getting "Unauthorized", try this in browser console:
+
+// Set admin credentials
+localStorage.setItem('user_email', 'chilafrican@gmail.com');
+localStorage.setItem('is_admin', 'true');
+localStorage.setItem('admin_mode', 'true');
+
+// Reload page
+location.reload();
+
+Then try uploading again.
+
+═══════════════════════════════════════════════════════════════
+  TEST DIRECTLY
+═══════════════════════════════════════════════════════════════
+
+Run this in browser console to test the API directly:
+
+const fd = new FormData();
+fd.append('admin_email', 'chilafrican@gmail.com');
+fd.append('title', 'Test Track');
+fd.append('audioFile', new Blob(['test'], {type: 'audio/mp3'}));
+
+fetch('https://api.audiocity-ug.com/api/tracks', {
+  method: 'POST',
+  headers: {
+    'X-Admin-Email': 'chilafrican@gmail.com'
+  },
+  body: fd
+})
+.then(r => r.json())
+.then(d => {
+  console.log('✅ Response:', d);
+  if (d.error) {
+    console.error('❌ Error:', d.error, d.debug);
+  }
+})
+.catch(e => console.error('❌ Request failed:', e));
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

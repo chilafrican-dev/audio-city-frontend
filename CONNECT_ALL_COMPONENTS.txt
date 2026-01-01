@@ -1,0 +1,178 @@
+═══════════════════════════════════════════════════════════════
+  CONNECT ALL DISCONNECTED COMPONENTS - Manual Setup Guide
+═══════════════════════════════════════════════════════════════
+
+This guide will help you connect all components for audio-city-api-d1 Worker
+in the Cloudflare Dashboard manually.
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: Open Worker Settings
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://dash.cloudflare.com
+2. Select your account
+3. Click "Workers & Pages" in left sidebar
+4. Find and click "audio-city-api-d1"
+5. Click "Settings" tab
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: Connect D1 Database
+═══════════════════════════════════════════════════════════════
+
+1. In Settings, scroll to "Resources" section
+2. Find "D1 Database" section
+3. Click "Add binding" or "Edit binding"
+4. Configure:
+   - Binding name: DB
+   - Database: Select "audio-city-db"
+     (If it doesn't exist, create it first:
+      - Go to D1 → Create database
+      - Name: audio-city-db
+      - Click Create)
+5. Click "Save"
+
+Database ID (for reference): 19530b7f-19d0-46c7-ad6b-df0eb8b54447
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: Connect R2 Bucket
+═══════════════════════════════════════════════════════════════
+
+1. In Settings, scroll to "Resources" section
+2. Find "R2 Bucket" section
+3. Click "Add binding" or "Edit binding"
+4. Configure:
+   - Binding name: MEDIA_BUCKET
+   - Bucket: Select "audio-city-tracks"
+     (If it doesn't exist, create it first:
+      - Go to R2 → Create bucket
+      - Name: audio-city-tracks
+      - Click Create bucket)
+5. Click "Save"
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: Configure Custom Domain (Route)
+═══════════════════════════════════════════════════════════════
+
+1. In Settings, click "Triggers" tab
+2. Scroll to "Custom Domains" section
+3. Click "Add Custom Domain"
+4. Enter: api.audiocity-ug.com
+5. Click "Add Custom Domain"
+6. Wait for DNS verification (usually instant if domain is in Cloudflare)
+
+IMPORTANT: Make sure www.audiocity-ug.com is NOT listed here!
+(Static files should go to Cloudflare Pages, not Worker)
+
+═══════════════════════════════════════════════════════════════
+  STEP 5: Verify Routes (Alternative Method)
+═══════════════════════════════════════════════════════════════
+
+If custom domain doesn't work, use Routes:
+
+1. In Settings → Triggers → Routes
+2. Click "Add route"
+3. Enter: api.audiocity-ug.com/*
+4. Select zone: audiocity-ug.com
+5. Click "Add route"
+
+═══════════════════════════════════════════════════════════════
+  STEP 6: Update Worker Code
+═══════════════════════════════════════════════════════════════
+
+1. Go back to "Overview" or "Deployments" tab
+2. Click "Edit code" or "Quick edit"
+3. Copy entire contents of worker-d1.js (from your local project)
+4. Paste into editor
+5. Click "Save and deploy"
+6. Wait for deployment (10-30 seconds)
+
+═══════════════════════════════════════════════════════════════
+  STEP 7: Verify Connections
+═══════════════════════════════════════════════════════════════
+
+Test the health endpoint:
+  Open: https://api.audiocity-ug.com/api/health
+
+Should return:
+{
+  "status": "ok",
+  "service": "audio-city-api-worker",
+  "database": "connected",    ← Should say "connected"
+  "r2": "connected",           ← Should say "connected"
+  "timestamp": "...",
+  "path": "/api/health",
+  "method": "GET"
+}
+
+If it says "not configured", go back to Steps 2-3 and reconnect.
+
+═══════════════════════════════════════════════════════════════
+  STEP 8: Check DNS (if needed)
+═══════════════════════════════════════════════════════════════
+
+1. Go to: DNS → Records
+2. Check for api.audiocity-ug.com record:
+   - Type: CNAME or A
+   - Name: api
+   - Target: (should be auto-configured by Cloudflare)
+   - Proxy: ✅ Enabled (orange cloud)
+
+If record doesn't exist, Cloudflare should create it automatically
+when you add the custom domain in Step 4.
+
+═══════════════════════════════════════════════════════════════
+  CHECKLIST - Verify All Connections
+═══════════════════════════════════════════════════════════════
+
+[ ] D1 Database "DB" is bound to "audio-city-db"
+[ ] R2 Bucket "MEDIA_BUCKET" is bound to "audio-city-tracks"
+[ ] Custom domain "api.audiocity-ug.com" is added
+[ ] Route "api.audiocity-ug.com/*" is configured
+[ ] Worker code is updated (worker-d1.js)
+[ ] Health endpoint shows "connected" for both DB and R2
+[ ] DNS record for api.audiocity-ug.com exists
+[ ] www.audiocity-ug.com is NOT bound to Worker (should be on Pages)
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Issue: Database shows "not configured"
+  → Go to Settings → Resources → D1 Database
+  → Verify binding name is exactly "DB"
+  → Verify database name matches
+  → Save and redeploy
+
+Issue: R2 shows "not configured"
+  → Go to Settings → Resources → R2 Bucket
+  → Verify binding name is exactly "MEDIA_BUCKET"
+  → Verify bucket name is "audio-city-tracks"
+  → Save and redeploy
+
+Issue: Custom domain not working
+  → Check DNS records
+  → Verify domain is in same Cloudflare account
+  → Wait 5-10 minutes for DNS propagation
+  → Try using Routes instead of Custom Domain
+
+Issue: Worker returns 404
+  → Verify route pattern: api.audiocity-ug.com/*
+  → Check if Worker is deployed (not just saved)
+  → Clear Cloudflare cache
+
+═══════════════════════════════════════════════════════════════
+  QUICK REFERENCE
+═══════════════════════════════════════════════════════════════
+
+Worker Name: audio-city-api-d1
+D1 Database: audio-city-db (Binding: DB)
+R2 Bucket: audio-city-tracks (Binding: MEDIA_BUCKET)
+Custom Domain: api.audiocity-ug.com
+Route Pattern: api.audiocity-ug.com/*
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

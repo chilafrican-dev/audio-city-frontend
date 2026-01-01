@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════════
+  QUICK FIX FOR "UNAUTHORIZED" ERROR
+═══════════════════════════════════════════════════════════════
+
+The issue is that admin email might not be getting through.
+Here's a quick fix to test:
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: LOG IN FIRST
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://www.audiocity-ug.com/login.html
+
+2. Login with:
+   Email: chilafrican@gmail.com
+   Password: Semakulanico1
+
+3. This will:
+   - Create/update admin user in database
+   - Set is_admin = 1
+   - Create a valid session token
+   - Set localStorage flags
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: VERIFY IN BROWSER CONSOLE
+═══════════════════════════════════════════════════════════════
+
+Open console (F12) and run:
+
+console.log({
+  email: localStorage.getItem('user_email'),
+  is_admin: localStorage.getItem('is_admin'),
+  token: localStorage.getItem('auth_token'),
+  user_id: localStorage.getItem('user_id')
+});
+
+Expected:
+- email: "chilafrican@gmail.com"
+- is_admin: "true"
+- token: "token_..." (some value)
+- user_id: "admin_..." or user ID
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: MANUALLY SET IF MISSING
+═══════════════════════════════════════════════════════════════
+
+If values are missing, run in console:
+
+localStorage.setItem('user_email', 'chilafrican@gmail.com');
+localStorage.setItem('is_admin', 'true');
+localStorage.setItem('admin_mode', 'true');
+
+Then refresh the page.
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: TEST UPLOAD
+═══════════════════════════════════════════════════════════════
+
+1. Go to: admin-upload.html
+
+2. Open DevTools → Network tab
+
+3. Fill form and upload track
+
+4. Check the POST /api/tracks request:
+   - Headers tab: Should see X-Admin-Email
+   - Payload tab: Should see admin_email field
+
+5. Check Response:
+   - If 401: Check Worker logs for error message
+   - If 200: Success!
+
+═══════════════════════════════════════════════════════════════
+  STEP 5: CHECK WORKER LOGS
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → Your Worker
+3. Click "Logs" tab
+4. Look for messages starting with "[Track Upload]"
+5. Should see:
+   - "Admin email detected"
+   - "Updated admin status"
+
+═══════════════════════════════════════════════════════════════
+  IF STILL NOT WORKING
+═══════════════════════════════════════════════════════════════
+
+Run this SQL in Cloudflare D1:
+
+UPDATE users 
+SET is_admin = 1, 
+    verified = 1,
+    updated_at = datetime('now')
+WHERE email = 'chilafrican@gmail.com';
+
+Then log out and log back in.
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

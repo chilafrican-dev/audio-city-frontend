@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════════
+  MASTERING ENDPOINT FIX - What Was Wrong
+═══════════════════════════════════════════════════════════════
+
+PROBLEM:
+  ❌ Worker was calling: /api/master-status/:jobId
+  ❌ Mastering server doesn't have this endpoint!
+  ❌ Result: "Cannot GET /api/master-status/YOUR_JOB_ID"
+
+SOLUTION:
+  ✅ Changed Worker to call: /api/mastering-progress/:id
+  ✅ This is the correct endpoint on the mastering server
+  ✅ Added response transformation to match frontend format
+
+═══════════════════════════════════════════════════════════════
+  WHAT WAS FIXED
+═══════════════════════════════════════════════════════════════
+
+1. ENDPOINT MAPPING:
+   Before: Worker → /api/master-status/:jobId → ❌ Not found
+   After:  Worker → /api/mastering-progress/:id → ✅ Works!
+
+2. RESPONSE TRANSFORMATION:
+   Mastering server returns:
+     {
+       status: 'complete',
+       result: {
+         downloads: { wav: '/output/file.wav', mp3: '/output/file.mp3' }
+       }
+     }
+   
+   Frontend expects:
+     {
+       status: 'completed',  // Note: 'completed' not 'complete'
+       audioUrl: 'https://mastering.audiocity-ug.com/output/file.wav',
+       mp3: 'https://mastering.audiocity-ug.com/output/file.mp3'
+     }
+   
+   Worker now transforms the response automatically!
+
+═══════════════════════════════════════════════════════════════
+  MASTERING SERVER ENDPOINTS
+═══════════════════════════════════════════════════════════════
+
+The mastering server has these endpoints:
+
+✅ POST /api/quick-master
+   - Submit a mastering job
+   - Returns: { success: true, progressId: 'job-id' }
+
+✅ GET /api/mastering-progress/:id
+   - Check job status
+   - Returns: { status: 'processing'|'complete'|'error', ... }
+
+✅ GET /api/mastering-result/:id
+   - Get final result when complete
+   - Returns: { success: true, downloads: {...} }
+
+❌ GET /api/master-status/:id
+   - DOES NOT EXIST (this was the problem!)
+
+═══════════════════════════════════════════════════════════════
+  WHAT TO DEPLOY
+═══════════════════════════════════════════════════════════════
+
+FILE: worker-d1.js
+
+CHANGES:
+  ✅ Line ~1658: Changed endpoint from /api/master-status/ to /api/mastering-progress/
+  ✅ Lines ~1712-1738: Added response transformation logic
+
+DEPLOY:
+  1. Go to: https://dash.cloudflare.com
+  2. Workers & Pages → audio-city-api-d1
+  3. Copy entire worker-d1.js content
+  4. Paste into Worker editor
+  5. Save and deploy
+
+═══════════════════════════════════════════════════════════════
+  TESTING
+═══════════════════════════════════════════════════════════════
+
+After deploying, test:
+
+1. Submit a mastering job
+2. Check browser console - should see:
+   "🔄 Polling job status: [job-id]"
+   "📊 Job status: { status: 'processing', ... }"
+
+3. When complete, should see:
+   "✅ Mastering completed successfully"
+   Download buttons should appear
+
+4. If you still see 503 errors:
+   - Check mastering server is running: https://mastering.audiocity-ug.com
+   - Check Worker logs in Cloudflare Dashboard
+   - Verify MASTERING_SERVER_URL environment variable
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

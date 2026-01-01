@@ -1,95 +1,9 @@
-# ✅ Mastering Server Domain Update
 
-## Changes Made
 
-### 1. Updated Worker Configuration
-- **Old**: `http://mastering.audiocity-ug.com/api/master` (HTTP)
-- **New**: `https://mastering.audiocity-ug.com/api/master` (HTTPS)
-- **Secret Updated**: `MASTERING_SERVER_URL` in Cloudflare Worker
 
-### 2. Worker Code Updated
-- Now supports full URL with path (e.g., `https://mastering.audiocity-ug.com/api/master`)
-- Backward compatible: if base URL provided, appends `/api/quick-master`
-- All mastering endpoints (progress, result) use same base URL
 
-### 3. Endpoint Path
-**Important**: The Worker now expects the server to respond at:
-- `/api/master` (if MASTERING_SERVER_URL includes `/api/master`)
-- OR `/api/quick-master` (if base URL provided)
 
-## Next Steps
 
-### 1. Ensure Server Has Correct Endpoint
-If your mastering server currently uses `/api/quick-master`, you need to either:
 
-**Option A**: Add `/api/master` endpoint to server
-```javascript
-app.post('/api/master', upload.single('audio'), async (req, res) => {
-  // Same logic as /api/quick-master
-});
-```
 
-**Option B**: Update Worker secret to use base URL
-```bash
-echo "https://mastering.audiocity-ug.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
-```
-Then server should have `/api/quick-master` endpoint.
-
-### 2. Enable HTTPS on Server
-Ensure `mastering.audiocity-ug.com` has valid SSL certificate:
-- Let's Encrypt
-- Cloudflare SSL
-- Or other valid certificate
-
-### 3. Clear Cloudflare Cache
-```bash
-# In Cloudflare Dashboard:
-# Caching → Configuration → Purge Everything
-# OR
-# Add cache rule: Bypass cache for /api/*
-```
-
-### 4. Test Connection
-```bash
-# Test health endpoint
-curl https://mastering.audiocity-ug.com/api/health
-
-# Test mastering endpoint
-curl -X POST https://mastering.audiocity-ug.com/api/master \
-  -F "audio=@test.mp3" \
-  -F "preset=kidandali"
-```
-
-## Current Configuration
-
-- **Worker Secret**: `MASTERING_SERVER_URL = https://mastering.audiocity-ug.com/api/master`
-- **Worker Endpoint**: `/api/quick-master` (receives requests)
-- **Forwards to**: `https://mastering.audiocity-ug.com/api/master` (full URL from secret)
-
-## HTTP → HTTPS Redirect
-
-If server supports it, enable redirect:
-```nginx
-# Nginx example
-server {
-    listen 80;
-    server_name mastering.audiocity-ug.com;
-    return 301 https://$server_name$request_uri;
-}
-```
-
-## Cloudflare Cache Settings
-
-Recommended cache rules:
-- **Bypass cache** for `/api/*` routes
-- **Cache static assets** only
-- **Purge cache** after deployment
-
-## Status
-
-✅ Worker code updated
-✅ Worker secret updated to HTTPS
-✅ Worker deployed
-⏳ Server endpoint verification needed
-⏳ Cloudflare cache clearing recommended
 

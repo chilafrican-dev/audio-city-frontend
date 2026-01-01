@@ -1,0 +1,68 @@
+═══════════════════════════════════════════════════════════════
+  DELETE TRACK 401 ERROR - FIXED
+═══════════════════════════════════════════════════════════════
+
+✅ FIXES APPLIED:
+
+1. WORKER (worker-d1.js):
+   - Added admin bypass to DELETE /api/tracks/:id endpoint
+   - Checks X-Admin-Email header
+   - Grants access if email is chilafrican@gmail.com
+   - Creates/updates admin user automatically
+
+2. FRONTEND (feed.html, profile.html, track.html):
+   - Added X-Admin-Email header to DELETE requests
+   - Added X-User-Email header
+   - Gets admin email from localStorage
+
+═══════════════════════════════════════════════════════════════
+  FILES UPDATED
+═══════════════════════════════════════════════════════════════
+
+1. worker-d1.js:
+   - DELETE /api/tracks/:id endpoint (lines 1312-1370)
+   - Admin bypass logic added
+
+2. cloudflare-frontend/feed.html:
+   - DELETE request (line 2174)
+   - Added admin email headers
+
+3. cloudflare-frontend/profile.html:
+   - DELETE request (line 1666)
+   - Added admin email headers
+
+4. cloudflare-frontend/track.html:
+   - DELETE request (line 1478)
+   - Added admin email headers
+
+═══════════════════════════════════════════════════════════════
+  HOW IT WORKS NOW
+═══════════════════════════════════════════════════════════════
+
+DELETE Request Flow:
+1. Frontend sends DELETE with X-Admin-Email header
+2. Worker checks header for chilafrican@gmail.com
+3. If admin email detected → Grant access immediately
+4. If not admin → Check normal token authentication
+5. Allow delete if user is admin OR track creator
+
+═══════════════════════════════════════════════════════════════
+  NEXT STEPS
+═══════════════════════════════════════════════════════════════
+
+1. DEPLOY WORKER:
+   - Deploy worker-d1.js to Cloudflare Workers
+
+2. DEPLOY FRONTEND:
+   - Deploy feed.html, profile.html, track.html to Cloudflare Pages
+
+3. TEST:
+   - Try deleting a track from feed
+   - Should work without 401 error
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

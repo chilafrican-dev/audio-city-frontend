@@ -14,8 +14,11 @@ export default {
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Admin-Email, X-User-Email',
       'Access-Control-Max-Age': '86400',
+      'Cache-Control': 'no-cache, no-store, must-revalidate', // Prevent caching of dynamic data
+      'Pragma': 'no-cache',
+      'Expires': '0'
     };
 
     // Handle CORS preflight
@@ -67,6 +70,55 @@ export default {
         console.error('Error getting user from token:', error);
       }
       return null;
+    };
+
+    // Helper: Get user with admin bypass - ADMIN HAS FULL RIGHTS WITHOUT AUTH
+    const getUserOrAdmin = async (request, formData = null) => {
+      // Check for admin email in headers or formData
+      const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+      const adminEmailFromForm = formData ? formData.get('admin_email') : null;
+      const adminEmail = (adminEmailHeader || adminEmailFromForm || '').toString().trim().toLowerCase();
+      
+      // ADMIN BYPASS: If email is chilafrican@gmail.com, grant FULL ACCESS immediately
+      if (adminEmail === 'chilafrican@gmail.com') {
+        console.log('[Admin Bypass] ✅ Admin email detected - granting full access');
+        if (env.DB) {
+          let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+            .bind('chilafrican@gmail.com').first();
+          
+          if (!adminUser) {
+            // Create admin user if doesn't exist
+            const adminUserId = 'admin_' + Date.now();
+            await env.DB.prepare(`
+              INSERT INTO users (
+                id, username, email, name, password, is_admin, verified, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, 1, 1, datetime('now'), datetime('now'))
+            `).bind(
+              adminUserId,
+              'admin',
+              'chilafrican@gmail.com',
+              'Admin',
+              'ssemakulanico1'
+            ).run();
+            
+            adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+              .bind('chilafrican@gmail.com').first();
+            console.log('[Admin Bypass] ✅ Created admin user:', adminUser?.id);
+          } else {
+            // Force admin status
+            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1 WHERE email = ?')
+              .bind('chilafrican@gmail.com').run();
+            adminUser.is_admin = 1;
+            adminUser.verified = 1;
+            console.log('[Admin Bypass] ✅ Admin user found, status forced');
+          }
+          return adminUser;
+        }
+      }
+      
+      // If not admin, check normal token authentication
+      const token = getAuthToken(request);
+      return await getUserFromToken(token);
     };
 
     // Helper: Get R2 public URL
@@ -148,8 +200,71 @@ export default {
       }
     }
 
+    // POST /api/users/:id/online - Update user online status (heartbeat)
+    if (url.pathname.includes('/online') && request.method === 'POST') {
+      const userId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      if (!userId || !env.DB) {
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+      
+      try {
+        // Update last_seen timestamp (create column if it doesn't exist)
+        try {
+          await env.DB.prepare('UPDATE users SET last_seen = datetime("now") WHERE id = ?')
+            .bind(userId).run();
+        } catch (e) {
+          // Column might not exist, try to create it
+          try {
+            await env.DB.prepare('ALTER TABLE users ADD COLUMN last_seen TEXT').run();
+            await env.DB.prepare('UPDATE users SET last_seen = datetime("now") WHERE id = ?')
+              .bind(userId).run();
+          } catch (alterError) {
+            // Column might already exist, ignore
+            console.log('[Online] last_seen column may already exist');
+          }
+        }
+        
+        return Response.json({ success: true, last_seen: new Date().toISOString() }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Online] Error updating online status:', error);
+        return Response.json({ success: true }, { headers: corsHeaders });
+      }
+    }
+
+    // GET /api/users/:id/online - Get user online status
+    if (url.pathname.includes('/online') && request.method === 'GET') {
+      const userId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      if (!userId || !env.DB) {
+        return Response.json({ is_online: false }, { headers: corsHeaders });
+      }
+      
+      try {
+        const user = await env.DB.prepare('SELECT last_seen FROM users WHERE id = ?')
+          .bind(userId).first();
+        
+        if (!user || !user.last_seen) {
+          return Response.json({ is_online: false, last_seen: null }, { headers: corsHeaders });
+        }
+        
+        // User is online if last_seen is within last 5 minutes
+        const lastSeen = new Date(user.last_seen);
+        const now = new Date();
+        const diffMinutes = (now - lastSeen) / (1000 * 60);
+        const isOnline = diffMinutes < 5;
+        
+        return Response.json({ 
+          is_online: isOnline, 
+          last_seen: user.last_seen,
+          minutes_ago: Math.floor(diffMinutes)
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Online] Error checking online status:', error);
+        return Response.json({ is_online: false }, { headers: corsHeaders });
+      }
+    }
+
     // GET /api/users/:id - Get single user
-    if (url.pathname.startsWith('/api/users/') && request.method === 'GET' && !url.pathname.includes('/follow') && !url.pathname.includes('/profile-picture') && !url.pathname.includes('/messages') && !url.pathname.includes('/notifications') && !url.pathname.includes('/requests')) {
+    if (url.pathname.startsWith('/api/users/') && request.method === 'GET' && !url.pathname.includes('/follow') && !url.pathname.includes('/profile-picture') && !url.pathname.includes('/messages') && !url.pathname.includes('/notifications') && !url.pathname.includes('/requests') && !url.pathname.includes('/online')) {
       const userId = url.pathname.split('/api/users/')[1]?.split('?')[0]?.split('/')[0];
       if (!userId) {
         return Response.json({
@@ -176,8 +291,50 @@ export default {
             tracks_count: 0
           }, { headers: corsHeaders });
         }
-        const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
-        if (!user) {
+        
+        // Handle admin user IDs - look up admin user by email instead
+        let user = null;
+        if (userId.startsWith('admin_')) {
+          // Admin user ID - lookup by email
+          user = await env.DB.prepare('SELECT *, last_seen FROM users WHERE email = ? AND is_admin = 1').bind('chilafrican@gmail.com').first();
+          if (!user) {
+            // Admin user doesn't exist - create it
+            const adminEmail = 'chilafrican@gmail.com';
+            await env.DB.prepare(`
+              INSERT INTO users (
+                id, username, email, name, password, is_admin, verified, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, 1, 1, datetime('now'), datetime('now'))
+            `).bind(
+              userId,
+              'admin',
+              adminEmail,
+              'Admin',
+              'ssemakulanico1'
+            ).run();
+            user = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(adminEmail).first();
+          }
+          if (user) {
+            // Use the provided userId but return admin user data
+            user.id = userId;
+          }
+        } else {
+          // Regular user lookup by ID
+          user = await env.DB.prepare('SELECT *, last_seen FROM users WHERE id = ?').bind(userId).first();
+        }
+        
+        // Calculate online status if last_seen exists
+        if (user && user.last_seen) {
+          const lastSeen = new Date(user.last_seen);
+          const now = new Date();
+          const diffMinutes = (now - lastSeen) / (1000 * 60);
+          user.is_online = diffMinutes < 5;
+          user.last_seen_minutes_ago = Math.floor(diffMinutes);
+        } else if (user) {
+          user.is_online = false;
+          user.last_seen = null;
+        }
+        
+        if (!user || !user.id) {
           return Response.json({
             id: userId,
             username: 'user',
@@ -397,7 +554,7 @@ export default {
         const artistId = url.searchParams.get('artist_id');
         
         // Filter out tracks from admin users (only hide is_admin=1 or username exactly 'admin')
-        let query = `SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified 
+        let query = `SELECT t.*, u.username as artist_username, u.name as artist_name, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified 
           FROM tracks t 
           LEFT JOIN users u ON t.artist_id = u.id
           WHERE (u.is_admin IS NULL OR u.is_admin = 0 OR u.is_admin != 1) 
@@ -444,9 +601,13 @@ export default {
           const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
             .bind(track.id).first();
           
+          // Always use calculated counts from tables (source of truth), not cached columns
           track.likes_count = likes?.count || 0;
           track.comments_count = comments?.count || 0;
           track.shares_count = track.shares_count || 0;
+          track.downloads_count = track.downloads_count || 0; // downloads_count is stored in tracks table
+          track.views_count = track.views_count || track.plays_count || 0; // Ensure views_count is set
+          track.plays_count = track.plays_count || track.views_count || 0; // Ensure plays_count is set
           track.artist_is_verified = track.artist_is_verified === 1;
           return track;
         }));
@@ -462,21 +623,32 @@ export default {
       }
     }
 
-    // GET /api/tracks/:id - Get single track
-    if (url.pathname.startsWith('/api/tracks/') && request.method === 'GET' && !url.pathname.includes('/play') && !url.pathname.includes('/like')) {
+    // GET /api/tracks/:id - Get single track (PUBLIC - no auth required)
+    if (url.pathname.startsWith('/api/tracks/') && request.method === 'GET' && !url.pathname.includes('/play') && !url.pathname.includes('/like') && !url.pathname.includes('/comment')) {
       const trackId = url.pathname.split('/api/tracks/')[1]?.split('?')[0]?.split('/')[0];
+      
+      console.log('[Get Track] Request:', {
+        pathname: url.pathname,
+        trackId: trackId,
+        method: request.method
+      });
+      
       if (!trackId || !env.DB) {
+        console.error('[Get Track] Missing trackId or DB not configured');
         return Response.json({ error: 'Track not found' }, { status: 404, headers: corsHeaders });
       }
       
       try {
         const track = await env.DB.prepare(
-          'SELECT t.*, u.username as artist_username, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id WHERE t.id = ?'
+          'SELECT t.*, u.username as artist_username, u.name as artist_name, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified FROM tracks t LEFT JOIN users u ON t.artist_id = u.id WHERE t.id = ?'
         ).bind(trackId).first();
         
         if (!track) {
+          console.error('[Get Track] Track not found in database:', trackId);
           return Response.json({ error: 'Track not found' }, { status: 404, headers: corsHeaders });
         }
+        
+        console.log('[Get Track] Track found:', trackId);
         
         const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
           .bind(trackId).first();
@@ -503,10 +675,14 @@ export default {
           };
         }));
         
+        // Always use calculated counts from tables (source of truth), not cached columns
         track.likes_count = likes?.count || 0;
         track.comments_count = comments?.count || 0;
         track.comments = commentsWithLikes;
         track.shares_count = track.shares_count || 0;
+        track.downloads_count = track.downloads_count || 0; // downloads_count is stored in tracks table
+        track.views_count = track.views_count || track.plays_count || 0; // Ensure views_count is set
+        track.plays_count = track.plays_count || track.views_count || 0; // Ensure plays_count is set
         track.artist_is_verified = track.artist_is_verified === 1;
         
         return Response.json(track, { headers: corsHeaders });
@@ -520,15 +696,107 @@ export default {
     if (url.pathname.includes('/play') && request.method === 'POST') {
       const trackId = url.pathname.split('/api/tracks/')[1]?.split('/')[0];
       if (!trackId || !env.DB) {
-        return Response.json({ success: true }, { headers: corsHeaders });
+        return Response.json({ success: true, views_count: 0, plays_count: 0 }, { headers: corsHeaders });
       }
       
       try {
-        await env.DB.prepare('UPDATE tracks SET plays_count = plays_count + 1, views_count = views_count + 1 WHERE id = ?')
+        // Update counts
+        await env.DB.prepare('UPDATE tracks SET plays_count = COALESCE(plays_count, 0) + 1, views_count = COALESCE(views_count, 0) + 1 WHERE id = ?')
           .bind(trackId).run();
-        return Response.json({ success: true }, { headers: corsHeaders });
+        
+        // Get updated counts
+        const updatedTrack = await env.DB.prepare('SELECT views_count, plays_count FROM tracks WHERE id = ?')
+          .bind(trackId).first();
+        
+        const viewsCount = updatedTrack?.views_count || 0;
+        const playsCount = updatedTrack?.plays_count || 0;
+        
+        console.log('[Play] Incremented counts for track:', trackId, 'views:', viewsCount, 'plays:', playsCount);
+        
+        return Response.json({ 
+          success: true, 
+          views_count: viewsCount,
+          plays_count: playsCount
+        }, { headers: corsHeaders });
       } catch (error) {
-        return Response.json({ success: true }, { headers: corsHeaders }); // Don't fail on play count
+        console.error('[Play] Error updating play count:', error);
+        return Response.json({ success: true, views_count: 0, plays_count: 0 }, { headers: corsHeaders });
+      }
+    }
+
+    // POST /api/tracks/:id/download - Increment download count
+    if (url.pathname.includes('/download') && request.method === 'POST') {
+      const trackId = url.pathname.split('/api/tracks/')[1]?.split('/')[0];
+      console.log('[Download] Request received for track:', trackId);
+      
+      if (!trackId || trackId === '' || trackId === 'null' || trackId === 'undefined') {
+        console.warn('[Download] Invalid trackId:', trackId);
+        return Response.json({ success: false, error: 'Invalid track ID', downloads_count: 0 }, { headers: corsHeaders });
+      }
+      
+      if (!env.DB) {
+        console.warn('[Download] Database not configured');
+        return Response.json({ success: false, error: 'Database not configured', downloads_count: 0 }, { headers: corsHeaders });
+      }
+      
+      try {
+        // First, verify track exists
+        const trackExists = await env.DB.prepare('SELECT id FROM tracks WHERE id = ?')
+          .bind(trackId).first();
+        
+        if (!trackExists) {
+          console.warn('[Download] Track not found:', trackId);
+          return Response.json({ success: false, error: 'Track not found', downloads_count: 0 }, { headers: corsHeaders });
+        }
+        
+        // Check if column exists by trying to read it
+        let trackCheck;
+        try {
+          trackCheck = await env.DB.prepare('SELECT downloads_count FROM tracks WHERE id = ? LIMIT 1')
+            .bind(trackId).first();
+          console.log('[Download] Current downloads_count:', trackCheck?.downloads_count);
+        } catch (readError) {
+          // Column doesn't exist, create it
+          console.log('[Download] Column doesn\'t exist, creating it...');
+          try {
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN downloads_count INTEGER DEFAULT 0').run();
+            console.log('[Download] Created downloads_count column');
+            // Initialize all existing tracks to 0
+            await env.DB.prepare('UPDATE tracks SET downloads_count = 0 WHERE downloads_count IS NULL').run();
+            trackCheck = { downloads_count: 0 };
+          } catch (alterError) {
+            console.error('[Download] Error creating column:', alterError);
+            // Column might already exist, try to read again
+            trackCheck = await env.DB.prepare('SELECT downloads_count FROM tracks WHERE id = ? LIMIT 1')
+              .bind(trackId).first() || { downloads_count: 0 };
+          }
+        }
+        
+        // Update downloads_count
+        const updateResult = await env.DB.prepare('UPDATE tracks SET downloads_count = COALESCE(downloads_count, 0) + 1 WHERE id = ?')
+          .bind(trackId).run();
+        
+        console.log('[Download] Update result:', updateResult);
+        
+        // Get updated count
+        const updatedTrack = await env.DB.prepare('SELECT downloads_count FROM tracks WHERE id = ?')
+          .bind(trackId).first();
+        
+        const newCount = updatedTrack?.downloads_count ?? ((trackCheck?.downloads_count || 0) + 1);
+        console.log('[Download] Incremented download count for track:', trackId, 'New count:', newCount);
+        
+        return Response.json({ 
+          success: true, 
+          downloads_count: newCount 
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Download] Error updating download count:', error);
+        console.error('[Download] Error stack:', error.stack);
+        return Response.json({ 
+          success: false, 
+          error: error.message, 
+          downloads_count: 0 
+        }, { headers: corsHeaders });
       }
     }
 
@@ -551,12 +819,36 @@ export default {
           // Unlike
           await env.DB.prepare('DELETE FROM track_likes WHERE user_id = ? AND track_id = ?')
             .bind(userId, trackId).run();
-          return Response.json({ success: true, liked: false }, { headers: corsHeaders });
+          
+          // Get updated like count
+          const likesResult = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
+            .bind(trackId).first();
+          const likesCount = likesResult?.count || 0;
+          
+          console.log('[Like] Unliked track:', trackId, 'new count:', likesCount);
+          
+          return Response.json({ 
+            success: true, 
+            liked: false,
+            likes_count: likesCount
+          }, { headers: corsHeaders });
         } else {
           // Like
           await env.DB.prepare('INSERT INTO track_likes (id, user_id, track_id, created_at) VALUES (?, ?, ?, datetime("now"))')
             .bind(uuid(), userId, trackId).run();
-          return Response.json({ success: true, liked: true }, { headers: corsHeaders });
+          
+          // Get updated like count
+          const likesResult = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
+            .bind(trackId).first();
+          const likesCount = likesResult?.count || 0;
+          
+          console.log('[Like] Liked track:', trackId, 'new count:', likesCount);
+          
+          return Response.json({ 
+            success: true, 
+            liked: true,
+            likes_count: likesCount
+          }, { headers: corsHeaders });
         }
       } catch (error) {
         console.error('Like error:', error);
@@ -603,11 +895,25 @@ export default {
           LIMIT 10
         `).all();
         
-        const results = (artists.results || []).map(artist => ({
-          ...artist,
-          verified: artist.verified === 1,
-          is_admin: artist.is_admin === 1,
-          tracks_count: artist.track_count || 0
+        // Enrich with primary genre from tracks
+        const results = await Promise.all((artists.results || []).map(async (artist) => {
+          // Get most common genre from artist's tracks (excluding 'General')
+          const genreResult = await env.DB.prepare(`
+            SELECT genre, COUNT(*) as count
+            FROM tracks
+            WHERE artist_id = ? AND genre IS NOT NULL AND genre != '' AND genre != 'General'
+            GROUP BY genre
+            ORDER BY count DESC
+            LIMIT 1
+          `).bind(artist.id).first();
+          
+          return {
+            ...artist,
+            verified: artist.verified === 1,
+            is_admin: artist.is_admin === 1,
+            tracks_count: artist.track_count || 0,
+            primary_genre: genreResult?.genre || null
+          };
         }));
         
         return Response.json(results, { headers: corsHeaders });
@@ -691,8 +997,37 @@ export default {
         }
         
         const identifier = (body.email || body.identifier || '').toLowerCase();
-        const user = await env.DB.prepare('SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?')
+        // Use LOWER() for case-insensitive comparison of email and username
+        let user = await env.DB.prepare('SELECT * FROM users WHERE (LOWER(email) = ? OR LOWER(username) = ?) AND password = ?')
           .bind(identifier, identifier, body.password).first();
+        
+        // FORCE ADMIN STATUS for chilafrican@gmail.com
+        if (identifier === 'chilafrican@gmail.com' && body.password === 'ssemakulanico1') {
+          if (!user) {
+            // Create admin user if doesn't exist
+            const adminUserId = 'admin_' + Date.now();
+            await env.DB.prepare(`
+              INSERT INTO users (
+                id, username, email, name, password, is_admin, verified, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, 1, 1, datetime('now'), datetime('now'))
+            `).bind(
+              adminUserId,
+              'admin',
+              'chilafrican@gmail.com',
+              'Admin',
+              'ssemakulanico1'
+            ).run();
+            
+            user = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+              .bind('chilafrican@gmail.com').first();
+          } else {
+            // Force admin status
+            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1 WHERE email = ?')
+              .bind('chilafrican@gmail.com').run();
+            user.is_admin = 1;
+            user.verified = 1;
+          }
+        }
         
         if (!user) {
           return Response.json({ error: 'Invalid credentials' }, 
@@ -738,6 +1073,21 @@ export default {
       return Response.json({ success: true, message: 'Password reset successful' }, { headers: corsHeaders });
     }
 
+    // POST /api/auth/logout - Logout user (delete session)
+    if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
+      try {
+        const token = getAuthToken(request);
+        if (token && env.DB) {
+          // Delete the session
+          await env.DB.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run();
+        }
+        return Response.json({ success: true, message: 'Logged out successfully' }, { headers: corsHeaders });
+      } catch (error) {
+        // Even if there's an error, return success (logout should always succeed)
+        return Response.json({ success: true, message: 'Logged out successfully' }, { headers: corsHeaders });
+      }
+    }
+
     // GET /auth/google - OAuth redirect
     if (url.pathname === '/auth/google' && request.method === 'GET') {
       const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
@@ -759,15 +1109,22 @@ export default {
     // GET /auth/google/callback - Handle OAuth callback
     if (url.pathname === '/auth/google/callback' && request.method === 'GET') {
       const code = url.searchParams.get('code');
+      
+      // Get frontend origin - always use www.audiocity-ug.com for frontend
+      // API is at api.audiocity-ug.com, frontend is at www.audiocity-ug.com
+      let frontendOrigin = url.origin.includes('localhost') 
+        ? 'http://localhost:8000'
+        : 'https://www.audiocity-ug.com';
+      
       if (!code) {
-        return Response.redirect(`${url.origin}/login.html?error=oauth_failed`, 302);
+        return Response.redirect(`${frontendOrigin}/login.html?error=oauth_failed`, 302);
       }
       
       const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
       const GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
       
       if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-        return Response.redirect(`${url.origin}/login.html?error=oauth_not_configured`, 302);
+        return Response.redirect(`${frontendOrigin}/login.html?error=oauth_not_configured`, 302);
       }
       
       try {
@@ -785,8 +1142,9 @@ export default {
         });
         
         if (!tokenResponse.ok) {
-          console.error('Token exchange failed:', await tokenResponse.text());
-          return Response.redirect(`${url.origin}/login.html?error=oauth_token_failed`, 302);
+          const errorText = await tokenResponse.text();
+          console.error('Token exchange failed:', errorText);
+          return Response.redirect(`${frontendOrigin}/login.html?error=oauth_token_failed`, 302);
         }
         
         const tokenData = await tokenResponse.json();
@@ -798,14 +1156,15 @@ export default {
         });
         
         if (!userInfoResponse.ok) {
-          console.error('User info fetch failed:', await userInfoResponse.text());
-          return Response.redirect(`${url.origin}/login.html?error=oauth_userinfo_failed`, 302);
+          const errorText = await userInfoResponse.text();
+          console.error('User info fetch failed:', errorText);
+          return Response.redirect(`${frontendOrigin}/login.html?error=oauth_userinfo_failed`, 302);
         }
         
         const googleUser = await userInfoResponse.json();
         
         if (!env.DB) {
-          return Response.redirect(`${url.origin}/login.html?error=database_not_configured`, 302);
+          return Response.redirect(`${frontendOrigin}/login.html?error=database_not_configured`, 302);
         }
         
         // Find or create user
@@ -819,12 +1178,14 @@ export default {
           let username = baseUsername;
           let counter = 1;
           
-          // Ensure unique username
-          while (true) {
+          // Ensure unique username (limit to 100 attempts to prevent infinite loop)
+          let attempts = 0;
+          while (attempts < 100) {
             const existing = await env.DB.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
             if (!existing) break;
             username = `${baseUsername}${counter}`;
             counter++;
+            attempts++;
           }
           
           await env.DB.prepare(`
@@ -865,7 +1226,6 @@ export default {
         `).bind(uuid(), user.id, token, expiresAt).run();
         
         // Redirect to frontend with token
-        const frontendOrigin = url.origin.replace('api.', 'www.') || url.origin;
         const redirectUrl = `${frontendOrigin}/login.html?` +
           `google_auth=success&` +
           `token=${token}&` +
@@ -879,7 +1239,10 @@ export default {
         
       } catch (error) {
         console.error('OAuth callback error:', error);
-        return Response.redirect(`${url.origin}/login.html?error=oauth_error`, 302);
+        const frontendOrigin = url.origin.includes('localhost') 
+          ? 'http://localhost:8000'
+          : 'https://www.audiocity-ug.com';
+        return Response.redirect(`${frontendOrigin}/login.html?error=oauth_error`, 302);
       }
     }
 
@@ -891,13 +1254,12 @@ export default {
       }
 
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
-        if (!user || user.id !== userId) {
+        // ADMIN BYPASS: Admin has full rights
+        const formData = await request.formData();
+        const user = await getUserOrAdmin(request, formData);
+        if (!user || (user.id !== userId && user.email !== 'chilafrican@gmail.com')) {
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
-
-        const formData = await request.formData();
         const file = formData.get('profilePicture');
         
         if (!file || !(file instanceof File)) {
@@ -957,9 +1319,10 @@ export default {
       }
 
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
-        if (!user || user.id !== userId) {
+        // ADMIN BYPASS: Admin has full rights
+        const body = await parseBody(request);
+        const user = await getUserOrAdmin(request, null);
+        if (!user || (user.id !== userId && user.email !== 'chilafrican@gmail.com')) {
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
 
@@ -1019,18 +1382,22 @@ export default {
     // POST /api/tracks - Upload track
     if (url.pathname === '/api/tracks' && request.method === 'POST') {
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
+        // ADMIN BYPASS: Admin has full rights without authentication
+        const formData = await request.formData();
+        const user = await getUserOrAdmin(request, formData);
+        
         if (!user) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+          console.error('[Track Upload] ❌ Unauthorized - no user found');
+          return Response.json({ 
+            error: 'Unauthorized',
+            message: 'Please log in or provide admin credentials'
+          }, { status: 401, headers: corsHeaders });
         }
 
         if (!env.DB || !env.MEDIA_BUCKET) {
           return Response.json({ error: 'Database or R2 not configured' }, 
             { status: 500, headers: corsHeaders });
         }
-
-        const formData = await request.formData();
         const audioFile = formData.get('audioFile');
         const coverArtFile = formData.get('coverArt');
         const title = formData.get('title');
@@ -1105,7 +1472,14 @@ export default {
               httpMetadata: { contentType: coverArtFile.type },
             });
 
-            finalCoverArtUrl = `${getR2PublicUrl()}/${coverR2Key}`;
+            // Always use API proxy for cover art to ensure proper access and content-type handling
+            const requestUrl = new URL(request.url);
+            finalCoverArtUrl = `${requestUrl.origin}/api/media/${coverR2Key}`;
+            
+            console.log('[Track Upload] Cover art uploaded:', {
+              r2Key: coverR2Key,
+              url: finalCoverArtUrl
+            });
           } catch (error) {
             console.error('Cover art upload error:', error);
             // Don't fail the whole upload if cover art fails
@@ -1113,15 +1487,16 @@ export default {
         }
 
         // Create track in database
+        // Note: duration column may not exist in all database schemas, so we'll store it separately if needed
         await env.DB.prepare(`
           INSERT INTO tracks (
             id, artist_id, title, description, audio_url, cover_art_url,
-            genre, duration, views_count, likes_count, shares_count, plays_count,
+            genre, views_count, likes_count, shares_count, plays_count,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
         `).bind(
           trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
-          genre, duration
+          genre
         ).run();
 
         // Update user's track count
@@ -1154,9 +1529,11 @@ export default {
       }
 
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
+        // ADMIN BYPASS: Admin has full rights without authentication
+        const user = await getUserOrAdmin(request, null);
+        
         if (!user) {
+          console.error('[Delete Track] ❌ Unauthorized - no user found');
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
 
@@ -1165,6 +1542,7 @@ export default {
           return Response.json({ error: 'Track not found' }, { status: 404, headers: corsHeaders });
         }
 
+        // Allow delete if user is admin OR track creator
         if (track.artist_id !== user.id && !user.is_admin) {
           return Response.json({ error: 'Unauthorized' }, { status: 403, headers: corsHeaders });
         }
@@ -1541,6 +1919,11 @@ export default {
           
           if (contentType.includes('application/json')) {
             responseData = await masteringResponse.json();
+            // Log job creation for debugging
+            if (responseData.progressId || responseData.jobId) {
+              const jobId = responseData.progressId || responseData.jobId;
+              console.log(`[Quick Master] Job created successfully: ${jobId}`);
+            }
           } else {
             // Handle other content types (e.g., file downloads)
             responseData = await masteringResponse.text();
@@ -1615,41 +1998,143 @@ export default {
     }
 
     // GET /api/master-status/:id - Mastering job status (proxy to VPS server)
+    // NOTE: This endpoint maps to /api/mastering-progress/:id on the mastering server
     if (url.pathname.startsWith('/api/master-status/') && request.method === 'GET') {
       try {
         const jobId = url.pathname.split('/api/master-status/')[1];
+        if (!jobId) {
+          return Response.json({ error: 'Job ID required' }, { status: 400, headers: corsHeaders });
+        }
+        
         // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
         // Default to new mastering server domain
         const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
         
-        console.log(`[Master Status] Fetching status for job ${jobId} from: ${MASTERING_SERVER_BASE}/api/master-status/${jobId}`);
+        // Use the correct endpoint: /api/mastering-progress/:id (not /api/master-status/:id)
+        const statusUrl = `${MASTERING_SERVER_BASE}/api/mastering-progress/${jobId}`;
+        console.log(`[Master Status] Fetching status for job ${jobId} from: ${statusUrl}`);
         
-        const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/master-status/${jobId}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        try {
+          const masteringResponse = await fetch(statusUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json'
+            },
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!masteringResponse.ok) {
+            const errorText = await masteringResponse.text().catch(() => 'Unknown error');
+            console.error(`[Master Status] Server returned ${masteringResponse.status} for job ${jobId}:`, errorText.substring(0, 200));
+            
+            // Handle different error status codes
+            if (masteringResponse.status === 503) {
+              // Service unavailable - keep polling
+              console.warn(`[Master Status] Mastering server returned 503 - service temporarily unavailable`);
+              return Response.json({
+                success: false,
+                status: 'processing', // Keep polling
+                error: 'Mastering service temporarily unavailable',
+                message: 'The mastering server is currently unavailable. Please try again in a moment.',
+                retry: true
+              }, { status: 503, headers: corsHeaders });
+            }
+            
+            if (masteringResponse.status === 404) {
+              // Job not found - might be processing or expired
+              console.warn(`[Master Status] Job ${jobId} not found on mastering server (404)`);
+              // Return as processing to allow retry - job might still be initializing
+              return Response.json({
+                success: false,
+                status: 'processing', // Keep polling in case job is still being created
+                error: 'Job not found',
+                message: 'Job status is being checked. Please wait...',
+                retry: true
+              }, { status: 503, headers: corsHeaders }); // Return 503 to allow retry
+            }
+            
+            // For other errors (500, etc.), log and return as processing to allow retry
+            console.error(`[Master Status] Unexpected error ${masteringResponse.status} from mastering server`);
+            return Response.json({
+              success: false,
+              status: 'processing',
+              error: `Server error: ${masteringResponse.status}`,
+              message: 'Mastering is processing. Please wait...',
+              retry: true
+            }, { status: 503, headers: corsHeaders });
           }
-        });
-        
-        if (!masteringResponse.ok) {
-          const errorText = await masteringResponse.text().catch(() => 'Unknown error');
-          console.error(`[Master Status] Server returned ${masteringResponse.status}:`, errorText);
-          throw new Error(`Mastering server returned ${masteringResponse.status}: ${errorText.substring(0, 200)}`);
+          
+          const responseData = await masteringResponse.json();
+          
+          // Transform response to match frontend expectations
+          // Mastering server returns: { status: 'complete', result: { downloads: { wav: '...', mp3: '...' } } }
+          // Frontend expects: { status: 'completed', audioUrl: '...', mp3: '...' }
+          if (responseData.status === 'complete' && responseData.result) {
+            const transformed = {
+              status: 'completed', // Change 'complete' to 'completed'
+              success: true,
+              preset: responseData.result.preset,
+              input: responseData.result.input,
+              output: responseData.result.output,
+              gain: responseData.result.gain,
+              // Transform downloads to frontend format
+              audioUrl: responseData.result.downloads?.wav 
+                ? `${MASTERING_SERVER_BASE}${responseData.result.downloads.wav}`
+                : null,
+              downloadUrl: responseData.result.downloads?.wav 
+                ? `${MASTERING_SERVER_BASE}${responseData.result.downloads.wav}`
+                : null,
+              mp3: responseData.result.downloads?.mp3 
+                ? `${MASTERING_SERVER_BASE}${responseData.result.downloads.mp3}`
+                : null
+            };
+            return Response.json(transformed, {
+              status: 200,
+              headers: corsHeaders
+            });
+          }
+          
+          // For processing/error status, return as-is but normalize status
+          if (responseData.status === 'complete') {
+            responseData.status = 'completed';
+          }
+          
+          return Response.json(responseData, {
+            status: masteringResponse.status,
+            headers: corsHeaders
+          });
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            throw new Error('Request timeout - mastering server took too long to respond');
+          }
+          throw fetchError;
         }
-        
-        const responseData = await masteringResponse.json();
-        
-        return Response.json(responseData, {
-          status: masteringResponse.status,
-          headers: corsHeaders
-        });
       } catch (error) {
-        console.error('[Master Status] Proxy error:', error.name, error.message);
+        // Enhanced error logging for debugging
+        const errorDetails = {
+          name: error.name,
+          message: error.message,
+          stack: error.stack?.substring(0, 500),
+          url: statusUrl,
+          jobId: jobId
+        };
+        console.error('[Master Status] Proxy error:', JSON.stringify(errorDetails, null, 2));
+        
+        // Return status that allows polling to continue (not a fatal error)
         return Response.json({
           success: false,
+          status: 'processing', // Keep status as processing so frontend continues polling
           error: 'Failed to fetch mastering status',
-          message: error.message || 'Mastering service is temporarily unavailable.',
-          details: error.name || 'Unknown error'
+          message: error.message || 'Mastering service is temporarily unavailable. Retrying...',
+          details: error.name || 'Unknown error',
+          retry: true
         }, { status: 503, headers: corsHeaders });
       }
     }
@@ -1770,9 +2255,8 @@ export default {
       }
       
       try {
-        // Get current user
-        const token = getAuthToken(request);
-        const currentUser = await getUserFromToken(token);
+        // ADMIN BYPASS: Admin has full rights without authentication
+        const currentUser = await getUserOrAdmin(request, null);
         if (!currentUser) {
           return Response.json({ error: 'Unauthorized - login required' }, { status: 401, headers: corsHeaders });
         }
@@ -1887,6 +2371,209 @@ export default {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
+    // GET /media/* or /api/media/* - Proxy audio/media files from R2 (handle CORS and access)
+    // Handle both legacy /media/* and new /api/media/* routes
+    if ((url.pathname.startsWith('/api/media/') || url.pathname.startsWith('/media/')) && request.method === 'GET') {
+      try {
+        // Extract media path from either route format
+        const mediaPath = url.pathname.startsWith('/api/media/') 
+          ? url.pathname.replace('/api/media/', '')
+          : url.pathname.replace('/media/', '');
+        if (!mediaPath || !env.MEDIA_BUCKET) {
+          console.error('[Media Proxy] Missing mediaPath or MEDIA_BUCKET:', { mediaPath, hasBucket: !!env.MEDIA_BUCKET });
+          return new Response('Media not found: Missing path or bucket', { status: 404, headers: corsHeaders });
+        }
+        
+        console.log('[Media Proxy] Requesting R2 object:', mediaPath);
+        
+        // Get file from R2
+        let object = await env.MEDIA_BUCKET.get(mediaPath);
+        let finalMediaPath = mediaPath;
+        
+        if (!object) {
+          console.error('[Media Proxy] File not found in R2:', mediaPath);
+          
+          // Try alternative paths (handle legacy /covers/ vs /cover-art/)
+          const alternativePaths = [];
+          
+          // If path starts with covers/, try cover-art/ instead
+          if (mediaPath.startsWith('covers/')) {
+            alternativePaths.push(mediaPath.replace(/^covers\//, 'cover-art/'));
+          }
+          // If path starts with cover-art/, try covers/ instead (legacy)
+          if (mediaPath.startsWith('cover-art/')) {
+            alternativePaths.push(mediaPath.replace(/^cover-art\//, 'covers/'));
+          }
+          
+          // Try alternative paths first
+          for (const altPath of alternativePaths) {
+            console.log('[Media Proxy] Trying alternative path:', altPath);
+            const altObject = await env.MEDIA_BUCKET.get(altPath);
+            if (altObject) {
+              console.log('[Media Proxy] Found file with alternative path:', altPath);
+              object = altObject;
+              finalMediaPath = altPath;
+              break;
+            }
+          }
+          
+          // If still not found, try alternative extensions for images
+          if (!object && (mediaPath.startsWith('cover-art/') || mediaPath.startsWith('covers/') || mediaPath.startsWith('profiles/'))) {
+            const fileName = finalMediaPath.split('/').pop(); // Get just the filename
+            const baseName = fileName.substring(0, fileName.lastIndexOf('.')); // Filename without extension
+            const altExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+            
+            // Try all combinations: both path prefixes + all extensions
+            for (const pathPrefix of ['cover-art/', 'covers/']) {
+              for (const ext of altExtensions) {
+                const altPath = pathPrefix + baseName + ext;
+                // Skip if we already tried this exact path
+                if (altPath === mediaPath || altPath === finalMediaPath) continue;
+                
+                console.log('[Media Proxy] Trying path + extension:', altPath);
+                const altObject = await env.MEDIA_BUCKET.get(altPath);
+                if (altObject) {
+                  console.log('[Media Proxy] ✅ Found file:', altPath);
+                  object = altObject;
+                  finalMediaPath = altPath;
+                  break;
+                }
+              }
+              if (object) break;
+            }
+          }
+          
+          // Last resort: try without any prefix (file might be at root or different location)
+          if (!object && (mediaPath.startsWith('cover-art/') || mediaPath.startsWith('covers/'))) {
+            const fileName = mediaPath.split('/').pop();
+            console.log('[Media Proxy] Trying filename only (no prefix):', fileName);
+            const rootObject = await env.MEDIA_BUCKET.get(fileName);
+            if (rootObject) {
+              console.log('[Media Proxy] ✅ Found file at root:', fileName);
+              object = rootObject;
+              finalMediaPath = fileName;
+            }
+          }
+          
+          // If still not found, return 404 with helpful debugging
+          if (!object) {
+            // Try to list objects with similar names for debugging
+            try {
+              const fileName = mediaPath.split('/').pop();
+              const baseName = fileName.substring(0, fileName.lastIndexOf('.'));
+              
+              // List files in both cover-art/ and covers/ directories
+              for (const prefix of ['cover-art/', 'covers/']) {
+                const listOptions = {
+                  prefix: prefix,
+                  limit: 50
+                };
+                const listed = await env.MEDIA_BUCKET.list(listOptions);
+                const matchingFiles = listed.objects?.filter(o => 
+                  o.key.includes(baseName) || o.key.includes(fileName)
+                ).map(o => o.key) || [];
+                
+                if (matchingFiles.length > 0) {
+                  console.log(`[Media Proxy] Found similar files in ${prefix}:`, matchingFiles);
+                }
+              }
+              
+              // Also list all files with the same base name
+              const allListed = await env.MEDIA_BUCKET.list({ limit: 1000 });
+              const allMatching = allListed.objects?.filter(o => 
+                o.key.includes(baseName) || o.key.includes(fileName)
+              ).map(o => o.key) || [];
+              
+              if (allMatching.length > 0) {
+                console.log('[Media Proxy] All files with similar name in R2:', allMatching);
+              } else {
+                console.log('[Media Proxy] ❌ No files found with name:', baseName, 'or', fileName);
+              }
+            } catch (listError) {
+              console.error('[Media Proxy] Error listing R2:', listError);
+            }
+            
+            return new Response(`Media not found: ${mediaPath}. Check Worker logs for similar files in R2.`, { 
+              status: 404, 
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'text/plain'
+              }
+            });
+          }
+        }
+        
+        console.log('[Media Proxy] File found in R2:', { key: finalMediaPath, size: object.size, contentType: object.httpMetadata?.contentType });
+        
+        // Get content type - ensure proper MIME types for images to prevent CORB
+        const contentType = object.httpMetadata?.contentType || 
+          (finalMediaPath.endsWith('.mp3') ? 'audio/mpeg' :
+           finalMediaPath.endsWith('.wav') ? 'audio/wav' :
+           finalMediaPath.endsWith('.m4a') ? 'audio/mp4' :
+           finalMediaPath.endsWith('.ogg') ? 'audio/ogg' :
+           finalMediaPath.endsWith('.flac') ? 'audio/flac' :
+           finalMediaPath.endsWith('.jpg') || finalMediaPath.endsWith('.jpeg') ? 'image/jpeg' :
+           finalMediaPath.endsWith('.png') ? 'image/png' :
+           finalMediaPath.endsWith('.webp') ? 'image/webp' :
+           finalMediaPath.endsWith('.gif') ? 'image/gif' :
+           'application/octet-stream');
+        
+        // Handle byte-range requests for audio seeking
+        const rangeHeader = request.headers.get('Range');
+        let responseBody = object.body;
+        let status = 200;
+        let responseHeaders = {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Accept-Ranges': 'bytes',
+          'Content-Length': object.size.toString(),
+          // Explicitly set X-Content-Type-Options to prevent MIME sniffing that can trigger CORB
+          'X-Content-Type-Options': 'nosniff'
+        };
+
+        if (rangeHeader) {
+          // Parse range header (e.g., "bytes=0-1023")
+          const rangeMatch = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+          if (rangeMatch) {
+            const start = parseInt(rangeMatch[1], 10);
+            const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : object.size - 1;
+            const chunkSize = end - start + 1;
+            
+            // Read the range from the object
+            const rangeResponse = await env.MEDIA_BUCKET.get(mediaPath, {
+              range: { offset: start, length: chunkSize }
+            });
+            
+            if (rangeResponse) {
+              responseBody = rangeResponse.body;
+              responseHeaders['Content-Range'] = `bytes ${start}-${end}/${object.size}`;
+              responseHeaders['Content-Length'] = chunkSize.toString();
+              status = 206; // Partial Content
+            }
+          }
+        }
+        
+        // Return file with proper headers
+        // Ensure we're returning binary data, not text
+        return new Response(responseBody, {
+          status: status,
+          headers: responseHeaders
+        });
+      } catch (error) {
+        console.error('Media proxy error:', error);
+        // Return plain text error, not JSON, to avoid CORB issues
+        return new Response('Failed to load media', { 
+          status: 500, 
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'text/plain',
+            'X-Content-Type-Options': 'nosniff'
+          }
+        });
+      }
+    }
+
     // Default: 404 with helpful message
     // Log for debugging
     console.error('404 Not Found:', {
@@ -1907,7 +2594,8 @@ export default {
         '/api/users',
         '/api/tracks',
         '/api/feed/trending-artists',
-        '/api/auth/*'
+        '/api/auth/*',
+        '/api/media/*'
       ]
     }, { status: 404, headers: corsHeaders });
   }

@@ -1,0 +1,157 @@
+═══════════════════════════════════════════════════════════════
+  TWO DIFFERENT DEPLOYMENTS - SIMPLE EXPLANATION
+═══════════════════════════════════════════════════════════════
+
+You have TWO separate systems that need to be deployed:
+
+═══════════════════════════════════════════════════════════════
+  1. BACKEND (Server-Side) - worker-d1.js
+═══════════════════════════════════════════════════════════════
+
+WHAT IT IS:
+  - This is your API server (backend)
+  - Runs on Cloudflare Workers
+  - Handles all API requests from your website
+
+FILE LOCATION:
+  📁 /Users/nicopan/online master/worker-d1.js
+
+WHAT IT DOES:
+  ✅ Receives mastering job requests
+  ✅ Forwards them to your mastering server
+  ✅ Checks job status
+  ✅ Returns results to the frontend
+
+WHERE TO DEPLOY:
+  🌐 Cloudflare Dashboard → Workers & Pages → audio-city-api-d1
+  🔗 URL: https://api.audiocity-ug.com
+
+HOW TO DEPLOY:
+  1. Go to: https://dash.cloudflare.com
+  2. Click: Workers & Pages
+  3. Click: audio-city-api-d1 (your worker)
+  4. Click: Edit code
+  5. Copy entire content of: worker-d1.js
+  6. Paste into the editor
+  7. Click: Save and deploy
+
+═══════════════════════════════════════════════════════════════
+  2. FRONTEND (Browser-Side) - mastering.js
+═══════════════════════════════════════════════════════════════
+
+WHAT IT IS:
+  - This is JavaScript that runs in the user's browser
+  - Part of your website files
+  - Sends requests to the backend API
+
+FILE LOCATION:
+  📁 /Users/nicopan/online master/cloudflare-frontend/mastering.js
+
+WHAT IT DOES:
+  ✅ Shows the mastering UI to users
+  ✅ Submits mastering jobs
+  ✅ Polls for job status
+  ✅ Displays results
+
+WHERE TO DEPLOY:
+  🌐 Cloudflare Dashboard → Pages → Your Pages Project
+  🔗 URL: https://www.audiocity-ug.com
+
+HOW TO DEPLOY:
+  1. Go to: https://dash.cloudflare.com
+  2. Click: Pages
+  3. Click: Your project (the one with cloudflare-frontend)
+  4. Upload/redeploy the entire: cloudflare-frontend/ folder
+  5. (mastering.js is inside this folder)
+
+═══════════════════════════════════════════════════════════════
+  VISUAL DIAGRAM
+═══════════════════════════════════════════════════════════════
+
+User's Browser
+    │
+    │ (1) User clicks "Master" button
+    │
+    ▼
+mastering.js (Frontend)
+    │
+    │ (2) Sends request to API
+    │
+    ▼
+worker-d1.js (Backend/Worker)
+    │
+    │ (3) Forwards to mastering server
+    │
+    ▼
+Mastering Server (VPS)
+    │
+    │ (4) Processes audio
+    │
+    ▼
+worker-d1.js (Backend/Worker)
+    │
+    │ (5) Returns status
+    │
+    ▼
+mastering.js (Frontend)
+    │
+    │ (6) Updates UI
+    │
+    ▼
+User sees result
+
+═══════════════════════════════════════════════════════════════
+  KEY DIFFERENCES
+═══════════════════════════════════════════════════════════════
+
+worker-d1.js:
+  ❌ NOT visible to users
+  ✅ Runs on Cloudflare servers
+  ✅ Handles API requests
+  ✅ Deployed to: Workers & Pages → audio-city-api-d1
+
+mastering.js:
+  ✅ Visible to users (in browser)
+  ✅ Runs in user's browser
+  ✅ Makes API requests
+  ✅ Deployed to: Pages → cloudflare-frontend folder
+
+═══════════════════════════════════════════════════════════════
+  QUICK CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Backend Deployment:
+  ☐ Open: https://dash.cloudflare.com
+  ☐ Go to: Workers & Pages → audio-city-api-d1
+  ☐ Copy: worker-d1.js content
+  ☐ Paste: Into worker editor
+  ☐ Deploy: Save and deploy
+
+Frontend Deployment:
+  ☐ Open: https://dash.cloudflare.com
+  ☐ Go to: Pages → Your project
+  ☐ Upload: cloudflare-frontend/ folder
+  ☐ Deploy: (mastering.js is inside)
+
+═══════════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════════
+
+Think of it like a restaurant:
+
+  worker-d1.js = Kitchen (backend, handles orders)
+  mastering.js = Menu/Waiter (frontend, shows options to customers)
+
+Both need to work together:
+  - Customer (user) sees menu (mastering.js)
+  - Customer orders (mastering.js sends request)
+  - Kitchen receives order (worker-d1.js)
+  - Kitchen prepares food (mastering server)
+  - Customer gets food (mastering.js shows result)
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

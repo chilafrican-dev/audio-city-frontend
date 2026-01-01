@@ -421,3 +421,424 @@
 
 
 
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-light: #1a1a28;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --success: #22c55e;
+      --error: #ef4444;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 40px;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    header {
+      position: sticky;
+      top: 0;
+      background: #000000;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    
+    .logo-brand .brand-text {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .page-header {
+      margin-bottom: 32px;
+    }
+    
+    .page-title {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    
+    .page-subtitle {
+      font-size: 16px;
+      color: var(--muted);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    }
+    
+    .stat-label {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    
+    .stat-change {
+      font-size: 12px;
+      color: var(--success);
+    }
+    
+    .chart-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    
+    .chart-container {
+      height: 300px;
+      position: relative;
+    }
+    
+    .visitor-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 250px;
+      margin-top: 20px;
+    }
+    
+    .bar-item {
+      flex: 1;
+      background: linear-gradient(to top, var(--accent), var(--accent-light));
+      border-radius: 4px 4px 0 0;
+      min-height: 2px;
+      position: relative;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    .bar-item:hover {
+      opacity: 0.8;
+    }
+    
+    .bar-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+    
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      color: var(--error);
+      margin-bottom: 24px;
+    }
+    
+    .refresh-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: opacity 0.2s;
+    }
+    
+    .refresh-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="feed.html" class="logo-brand">
+        <div class="brand-text">AUDIO CITY</div>
+      </a>
+      <div>
+        <a href="settings.html" style="color: var(--muted); text-decoration: none; margin-right: 16px;">Settings</a>
+        <a href="feed.html" style="color: var(--muted); text-decoration: none;">Back to Feed</a>
+      </div>
+    </div>
+  </header>
+  
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Admin Dashboard</h1>
+      <p class="page-subtitle">Site statistics and visitor analytics</p>
+    </div>
+    
+    <div id="errorMessage" class="error" style="display: none;"></div>
+    
+    <div id="statsContainer">
+      <div class="loading">Loading statistics...</div>
+    </div>
+  </div>
+  
+  <script>
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://api.audiocity-ug.com';
+    
+    // Check if user is admin
+    const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+    
+    if (!isAdmin) {
+      document.body.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0f; color: white; font-family: sans-serif;">
+          <div style="text-align: center; padding: 40px;">
+            <h1 style="font-size: 48px; margin-bottom: 16px;">🔒</h1>
+            <h2 style="font-size: 24px; margin-bottom: 8px;">Access Denied</h2>
+            <p style="color: #a0a0b8; margin-bottom: 24px;">You need admin privileges to access this page.</p>
+            <a href="feed.html" style="color: #8b5cf6; text-decoration: none;">← Back to Feed</a>
+          </div>
+        </div>
+      `;
+    } else {
+      loadStats();
+      
+      // Auto-refresh every 30 seconds
+      setInterval(loadStats, 30000);
+    }
+    
+    async function loadStats() {
+      const container = document.getElementById('statsContainer');
+      const errorDiv = document.getElementById('errorMessage');
+      
+      try {
+        container.innerHTML = '<div class="loading">Loading statistics...</div>';
+        errorDiv.style.display = 'none';
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/stats`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to load statistics');
+        }
+        
+        const data = await response.json();
+        displayStats(data);
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        errorDiv.textContent = `Error: ${error.message}. Make sure the backend server is running.`;
+        errorDiv.style.display = 'block';
+        container.innerHTML = '<div class="loading">Failed to load statistics</div>';
+      }
+    }
+    
+    function displayStats(data) {
+      const container = document.getElementById('statsContainer');
+      
+      // Calculate today's stats
+      const today = new Date().toISOString().split('T')[0];
+      const todayData = data.visitorsByDate[today] || { total: 0, unique: 0 };
+      
+      // Calculate yesterday's stats
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayData = data.visitorsByDate[yesterdayStr] || { total: 0, unique: 0 };
+      
+      // Calculate last 7 days total
+      let last7DaysTotal = 0;
+      let last7DaysUnique = 0;
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayData = data.visitorsByDate[dateStr] || { total: 0, unique: 0 };
+        last7DaysTotal += dayData.total;
+        last7DaysUnique += dayData.unique;
+      }
+      
+      container.innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Visitors</div>
+            <div class="stat-value">${data.totalVisitors.toLocaleString()}</div>
+            <div class="stat-change">All time</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-label">Unique Visitors</div>
+            <div class="stat-value">${data.uniqueVisitors.toLocaleString()}</div>
+            <div class="stat-change">All time</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-label">Today's Visitors</div>
+            <div class="stat-value">${todayData.total.toLocaleString()}</div>
+            <div class="stat-change">${todayData.unique} unique</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-label">Last 7 Days</div>
+            <div class="stat-value">${last7DaysTotal.toLocaleString()}</div>
+            <div class="stat-change">${last7DaysUnique} unique</div>
+          </div>
+        </div>
+        
+        <div class="chart-section">
+          <h2 class="section-title">Visitor Trends (Last 30 Days)</h2>
+          <div class="chart-container">
+            ${renderVisitorChart(data.visitorsByDate)}
+          </div>
+        </div>
+        
+        <button class="refresh-btn" onclick="loadStats()">🔄 Refresh Stats</button>
+      `;
+    }
+    
+    function renderVisitorChart(visitorsByDate) {
+      const dates = Object.keys(visitorsByDate).sort();
+      if (dates.length === 0) {
+        return '<div class="loading">No visitor data available yet</div>';
+      }
+      
+      // Get last 30 days
+      const last30Days = [];
+      const today = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayData = visitorsByDate[dateStr] || { total: 0, unique: 0 };
+        last30Days.push({
+          date: dateStr,
+          total: dayData.total,
+          unique: dayData.unique
+        });
+      }
+      
+      const maxValue = Math.max(...last30Days.map(d => d.total), 1);
+      
+      return `
+        <div class="visitor-bar">
+          ${last30Days.map((day, index) => {
+            const height = (day.total / maxValue) * 100;
+            const dateObj = new Date(day.date);
+            const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+            return `
+              <div class="bar-item" style="height: ${height}%" title="${day.date}: ${day.total} visitors (${day.unique} unique)">
+                <div class="bar-label">${index % 5 === 0 ? label : ''}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

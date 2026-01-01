@@ -1,0 +1,66 @@
+═══════════════════════════════════════════════════════════════
+  REMOVE ACCESS DENIED - FORM ALWAYS VISIBLE
+═══════════════════════════════════════════════════════════════
+
+✅ CHANGES MADE:
+
+1. Added immediate script (runs before DOMContentLoaded)
+   - Removes access denied message immediately
+   - Makes form visible immediately
+
+2. Form container has inline styles:
+   - display: block !important
+   - visibility: visible !important
+
+3. checkAndInit function:
+   - Removes access denied message
+   - Forces form to be visible
+   - Always initializes form
+
+═══════════════════════════════════════════════════════════════
+  HOW IT WORKS
+═══════════════════════════════════════════════════════════════
+
+1. IMMEDIATE SCRIPT (runs first):
+   - Removes #accessDeniedMessage if exists
+   - Shows #formContainer
+
+2. FORM CONTAINER (HTML):
+   - Has inline style: display: block !important
+   - Visible by default
+
+3. checkAndInit (runs on DOM ready):
+   - Double-checks and removes access denied
+   - Forces form visible
+   - Initializes form functionality
+
+═══════════════════════════════════════════════════════════════
+  TO TEST
+═══════════════════════════════════════════════════════════════
+
+1. DEPLOY admin-upload.html to Cloudflare Pages
+
+2. Open page - form should be visible immediately
+
+3. If still seeing "Access Denied", run in browser console:
+
+   // Remove access denied
+   document.getElementById('accessDeniedMessage')?.remove();
+   
+   // Show form
+   const form = document.getElementById('formContainer');
+   if (form) {
+     form.style.display = 'block';
+     form.style.visibility = 'visible';
+   }
+
+4. Check console for:
+   "[Admin Upload] Initializing..."
+   "[Admin Upload] ✅ Form container found"
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

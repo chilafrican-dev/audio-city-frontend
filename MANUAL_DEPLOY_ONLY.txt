@@ -1,0 +1,78 @@
+# 🚀 MANUAL DEPLOYMENT ONLY - No Git Auto-Deploy
+
+## ✅ Current Status
+- Git commits: Still happening (for backup only)
+- Auto-deploy: DISABLED (manual only)
+- Deployment method: Cloudflare Dashboard
+
+---
+
+## 📦 DEPLOY WORKER (worker-d1.js)
+
+### Step 1: Copy Worker Code
+1. Open: `worker-d1.js` in your editor
+2. Select ALL (Cmd+A / Ctrl+A)
+3. Copy (Cmd+C / Ctrl+C)
+
+### Step 2: Deploy in Cloudflare Dashboard
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1`
+3. Click "Quick edit" or "Edit code"
+4. Select ALL existing code (Cmd+A / Ctrl+A)
+5. Delete it
+6. Paste your copied `worker-d1.js` code
+7. Click "Save and deploy"
+
+✅ Done! Worker is deployed.
+
+---
+
+## 📦 DEPLOY FRONTEND (cloudflare-frontend/)
+
+### Step 1: Prepare Folder
+1. Navigate to: `/Users/nicopan/online master/cloudflare-frontend`
+2. Make sure all files are updated
+
+### Step 2: Deploy in Cloudflare Dashboard
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → Create application → Pages
+3. Click "Upload assets" (direct upload)
+4. Navigate to: `/Users/nicopan/online master/cloudflare-frontend`
+5. Select the ENTIRE `cloudflare-frontend` folder
+6. Click "Deploy site"
+7. Wait 30-60 seconds
+
+✅ Done! Frontend is deployed.
+
+---
+
+## 🔄 UPDATE EXISTING DEPLOYMENT
+
+### Update Worker:
+- Same as deploy - just paste new code and save
+
+### Update Frontend:
+- Same as deploy - just upload folder again (it will replace old version)
+
+---
+
+## ⚠️ IMPORTANT NOTES
+
+- Git is ONLY for backup now (not for deployment)
+- All deployments are MANUAL via Cloudflare Dashboard
+- No auto-deploy from GitHub
+- No wrangler CLI needed
+
+---
+
+## 📝 QUICK REFERENCE
+
+**Deploy Worker:**
+1. Copy `worker-d1.js` code
+2. Cloudflare Dashboard → Workers → audio-city-api-d1 → Edit → Paste → Deploy
+
+**Deploy Frontend:**
+1. Go to `cloudflare-frontend/` folder
+2. Cloudflare Dashboard → Pages → Upload assets → Select folder → Deploy
+
+That's it! Simple manual deployment. ✅

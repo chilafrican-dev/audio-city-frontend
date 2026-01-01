@@ -1,0 +1,40 @@
+# Refresh Admin Status - Run in Browser Console
+
+Open browser console (F12) on any Audio City page and paste this:
+
+(async function refreshAdminStatus() {
+  const API_BASE_URL = 'https://api.audiocity-ug.com';
+  const token = localStorage.getItem('auth_token');
+  const userId = localStorage.getItem('user_id');
+  
+  if (!token || !userId) {
+    console.error('❌ Not logged in');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/validate?user_id=${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.valid && data.user) {
+      localStorage.setItem('is_admin', data.user.is_admin ? 'true' : 'false');
+      console.log('✅ Admin status refreshed! is_admin:', data.user.is_admin);
+      window.location.reload();
+    } else {
+      console.error('❌ Validation failed:', data);
+    }
+  } catch (error) {
+    console.error('❌ Error:', error);
+  }
+})();
+
+This will:
+1. Fetch your current user data from the database
+2. Update localStorage with the fresh is_admin value
+3. Reload the page to apply changes
+

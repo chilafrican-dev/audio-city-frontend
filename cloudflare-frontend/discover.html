@@ -6,9 +6,13 @@
   <title>Home — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Manifest loading disabled - Cloudflare WAF blocks JSON files
-    // PWA functionality is optional, app works fine without it
-    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -455,9 +459,10 @@
 
     .hero-tracks-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(170px, 170px));
       gap: 24px;
       margin-bottom: 48px;
+      justify-content: start;
     }
 
     .hero-track-card {
@@ -467,6 +472,7 @@
       overflow: hidden;
       cursor: pointer;
       transition: transform 0.3s ease;
+      background: linear-gradient(135deg, rgba(106, 13, 173, 0.3), rgba(255, 105, 180, 0.3));
     }
 
     .hero-track-card:hover {
@@ -477,6 +483,13 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
     }
 
     .hero-track-overlay {
@@ -663,10 +676,14 @@
     
     /* Track Card */
     .track-card {
-      width: 170px;
-      flex-shrink: 0;
+      width: 170px !important;
+      min-width: 170px !important;
+      max-width: 170px !important;
+      flex-shrink: 0 !important;
+      flex-grow: 0 !important;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       transition: transform 0.2s ease;
+      box-sizing: border-box;
     }
 
     .track-card:hover {
@@ -675,17 +692,77 @@
 
     .cover {
       position: relative;
-      width: 170px;
-      height: 170px;
+      width: 170px !important;
+      min-width: 170px !important;
+      max-width: 170px !important;
+      height: 170px !important;
+      min-height: 170px !important;
+      max-height: 170px !important;
       overflow: hidden;
       cursor: pointer;
       border-radius: 8px;
+      background: transparent;
+      flex-shrink: 0 !important;
+      box-sizing: border-box;
+    }
+    
+    /* Only show gradient background when there's no image */
+    .cover:not(:has(img[src]:not([src=""]):not([src="null"]))) {
+      background: linear-gradient(135deg, rgba(106, 13, 173, 0.3), rgba(255, 105, 180, 0.3));
+    }
+    
+    /* Fallback for browsers that don't support :has() */
+    .cover:has(.cover-fallback.show-fallback),
+    .cover:has(.cover-fallback[style*="display: flex"]) {
+      background: linear-gradient(135deg, rgba(106, 13, 173, 0.3), rgba(255, 105, 180, 0.3));
     }
 
     .cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 2 !important;
+      background: transparent !important;
+    }
+    
+    /* Ensure images with src are always visible */
+    .cover img[src]:not([src=""]):not([src="null"]):not([src="undefined"]) {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .cover .cover-fallback {
+      position: absolute;
+      inset: 0;
+      display: none !important;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(106, 13, 173, 0.3), rgba(255, 105, 180, 0.3));
+      font-size: 48px;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    .cover .cover-fallback.show-fallback {
+      display: flex !important;
+      z-index: 0;
+    }
+    
+    /* Hide fallback when image is present and visible */
+    .cover img:not([style*="display: none"]) ~ .cover-fallback {
+      display: none !important;
+    }
+    
+    /* Force hide fallback when image exists and has loaded */
+    .cover:has(img[src]:not([src=""]):not([src="null"])) .cover-fallback:not(.show-fallback) {
+      display: none !important;
     }
 
     /* overlay */
@@ -697,6 +774,13 @@
       opacity: 0;
       transition: opacity 0.25s ease;
       border-radius: 8px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    
+    .cover:hover::after {
+      opacity: 1;
+      z-index: 2;
     }
 
     /* play button */
@@ -711,7 +795,7 @@
       transition: background 0.2s ease, opacity 0.2s ease;
       opacity: 0;
       pointer-events: none;
-      z-index: 10;
+      z-index: 3;
     }
     
     .cover:hover .cover-play-overlay,
@@ -855,6 +939,33 @@
       width: 0%;
       transition: width 0.1s linear;
     }
+    
+    /* Download button styles */
+    .download-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    
+    .download-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    
+    .download-btn:active {
+      transform: translateY(0);
+      background: rgba(255, 255, 255, 0.2);
+    }
 
     /* Legacy play button (hidden, kept for compatibility) */
     .play-btn {
@@ -882,6 +993,15 @@
     .meta {
       margin-top: 8px;
       min-height: 40px;
+      width: 100%;
+      max-width: 170px;
+      box-sizing: border-box;
+    }
+    
+    .track-actions {
+      width: 100%;
+      max-width: 170px;
+      box-sizing: border-box;
     }
 
     .title {
@@ -1475,7 +1595,7 @@
         <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
         <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none;">Sign in</a>
         <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none;">Create account</a>
-        <a href="artist-corner.html" class="header-btn btn-upload" id="uploadLink" style="display: none !important; visibility: hidden !important; padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border-radius: 8px; font-size: 14px; font-weight: 600;">🎵 Create</a>
+        <a href="artist-corner.html" class="header-btn btn-upload" id="uploadLink" style="display: none !important; visibility: hidden !important;">Upload <span>⋯</span></a>
         <div class="profile-dropdown" id="profileDropdown" style="display: none !important; visibility: hidden !important; position: relative;">
           <div class="profile-btn" id="profileBtn" style="position: relative;">
             <a href="profile.html" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer;">
@@ -1581,7 +1701,10 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2025 Audio City. All rights reserved.</p>
+      <p>&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </footer>
   
@@ -1748,15 +1871,7 @@
     async function loadFeaturedTracks() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/tracks?order=views_count.desc&limit=6`);
-        let tracks = [];
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Ensure data is an array
-          tracks = Array.isArray(data) ? data : [];
-        } else {
-          console.warn('Failed to load featured tracks:', response.status, response.statusText);
-        }
+        let tracks = response.ok ? await response.json() : [];
         
         const container = document.getElementById('featuredTracks');
         const section = container ? container.closest('.hero-section') : null;
@@ -1778,9 +1893,54 @@
         // Normalize URLs for cover/audio so play works
         const makeAbsoluteUrl = (url) => {
           if (!url) return null;
-          // Leave data URIs and absolute URLs untouched
-          if (url.startsWith('data:') || url.startsWith('http')) return url;
-          if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+          // Leave data URIs untouched
+          if (url.startsWith('data:')) return url;
+          // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+          if (url.includes('.r2.dev/')) {
+            const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+            if (r2PathMatch) {
+              const r2Path = r2PathMatch[1];
+              // Use API_BASE_URL like track page does (Worker is on api.audiocity-ug.com)
+              return `${API_BASE_URL}/api/media/${r2Path}`;
+            }
+          }
+          
+          // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Fix URLs that have /media/ but are missing /api/
+            if (url.includes('/media/') && !url.includes('/api/media/')) {
+              try {
+                const urlObj = new URL(url);
+                if (urlObj.pathname.startsWith('/media/')) {
+                  urlObj.pathname = '/api' + urlObj.pathname;
+                  return urlObj.toString();
+                }
+              } catch (e) {
+                // If URL parsing fails, try string replacement
+                return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+              }
+            }
+            return url; // Leave working URLs alone
+          }
+          
+          // Handle relative URLs
+          if (url.startsWith('/')) {
+            // If it's an R2 URL pattern (tracks/, cover-art/, profiles/), proxy through API
+            if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+              return `${API_BASE_URL}/api/media${url}`;
+            }
+            // If URL already has /media/ but missing /api/, fix it
+            if (url.startsWith('/media/')) {
+              return `${API_BASE_URL}/api${url}`;
+            }
+            return `${API_BASE_URL}${url}`;
+          }
+          
+          // If it's a relative path without leading slash, check if it's an R2 path
+          if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+            return `${API_BASE_URL}/api/media/${url}`;
+          }
+          
           return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
         };
         
@@ -1827,15 +1987,7 @@
     async function loadHot100Tracks() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/tracks?order=views_count.desc&limit=100`);
-        let tracks = [];
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Ensure data is an array
-          tracks = Array.isArray(data) ? data : [];
-        } else {
-          console.warn('Failed to load Hot 100 tracks:', response.status, response.statusText);
-        }
+        let tracks = response.ok ? await response.json() : [];
         
         // Sort by plays (views_count) - simple ranking by plays
         if (tracks.length > 0) {
@@ -1865,9 +2017,54 @@
         // Debug: Log sample track to see what we're getting
         const makeAbsoluteUrl = (url) => {
           if (!url) return null;
-          // Leave data URIs and absolute URLs untouched
-          if (url.startsWith('data:') || url.startsWith('http')) return url;
-          if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+          // Leave data URIs untouched
+          if (url.startsWith('data:')) return url;
+          // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+          if (url.includes('.r2.dev/')) {
+            const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+            if (r2PathMatch) {
+              const r2Path = r2PathMatch[1];
+              // Use API_BASE_URL like track page does (Worker is on api.audiocity-ug.com)
+              return `${API_BASE_URL}/api/media/${r2Path}`;
+            }
+          }
+          
+          // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Fix URLs that have /media/ but are missing /api/
+            if (url.includes('/media/') && !url.includes('/api/media/')) {
+              try {
+                const urlObj = new URL(url);
+                if (urlObj.pathname.startsWith('/media/')) {
+                  urlObj.pathname = '/api' + urlObj.pathname;
+                  return urlObj.toString();
+                }
+              } catch (e) {
+                // If URL parsing fails, try string replacement
+                return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+              }
+            }
+            return url; // Leave working URLs alone
+          }
+          
+          // Handle relative URLs
+          if (url.startsWith('/')) {
+            // If it's an R2 URL pattern (tracks/, cover-art/, profiles/), proxy through API
+            if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+              return `${API_BASE_URL}/api/media${url}`;
+            }
+            // If URL already has /media/ but missing /api/, fix it
+            if (url.startsWith('/media/')) {
+              return `${API_BASE_URL}/api${url}`;
+            }
+            return `${API_BASE_URL}${url}`;
+          }
+          
+          // If it's a relative path without leading slash, check if it's an R2 path
+          if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+            return `${API_BASE_URL}/api/media/${url}`;
+          }
+          
           return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
         };
         
@@ -1964,20 +2161,12 @@
       }
     }
 
-    // Load trending tracks
-    async function loadTrendingTracks() {
+    // Load explore tracks with filter
+    let currentExploreFilter = 'all';
+    
+    async function loadExploreTracks(filter = 'all') {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/tracks?order=views_count.desc&limit=12`);
-        let tracks = [];
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Ensure data is an array
-          tracks = Array.isArray(data) ? data : [];
-        } else {
-          console.warn('Failed to load trending tracks:', response.status, response.statusText);
-        }
-        
+        currentExploreFilter = filter;
         const container = document.getElementById('trendingTracks');
         const section = document.getElementById('exploreSection');
         
@@ -1986,14 +2175,106 @@
           return;
         }
         
+        // Show loading state
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">Loading...</div>';
+        container.style.display = 'flex';
+        if (section) section.style.display = 'block';
+        
+        let orderParam = 'order=created_at.desc';
+        let limit = 12;
+        
+        // Set filter parameters
+        switch (filter) {
+          case 'trending':
+            orderParam = 'order=views_count.desc,likes_count.desc';
+            break;
+          case 'new':
+            orderParam = 'order=created_at.desc';
+            break;
+          case 'genre':
+            // For genre, we'll show all tracks sorted by popularity
+            orderParam = 'order=views_count.desc';
+            limit = 20;
+            break;
+          case 'all':
+          default:
+            orderParam = 'order=created_at.desc';
+            break;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/api/tracks?${orderParam}&limit=${limit}`);
+        let tracks = response.ok ? await response.json() : [];
+        
         if (tracks.length === 0) {
-          if (container) container.style.display = 'none';
-          if (section) section.style.display = 'none';
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">No tracks found</div>';
+          container.style.display = 'flex';
+          if (section) section.style.display = 'block';
           return;
         }
         
         // Clear any existing content first
         container.innerHTML = '';
+        
+        // Normalize URLs for cover/audio so they work properly
+        const makeAbsoluteUrl = (url) => {
+          if (!url) return null;
+          // Leave data URIs untouched
+          if (url.startsWith('data:')) return url;
+          // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+          if (url.includes('.r2.dev/')) {
+            const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+            if (r2PathMatch) {
+              const r2Path = r2PathMatch[1];
+              // Use API_BASE_URL like track page does (Worker is on api.audiocity-ug.com)
+              return `${API_BASE_URL}/api/media/${r2Path}`;
+            }
+          }
+          
+          // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Fix URLs that have /media/ but are missing /api/
+            if (url.includes('/media/') && !url.includes('/api/media/')) {
+              try {
+                const urlObj = new URL(url);
+                if (urlObj.pathname.startsWith('/media/')) {
+                  urlObj.pathname = '/api' + urlObj.pathname;
+                  return urlObj.toString();
+                }
+              } catch (e) {
+                // If URL parsing fails, try string replacement
+                return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+              }
+            }
+            return url; // Leave working URLs alone
+          }
+          
+          // Handle relative URLs
+          if (url.startsWith('/')) {
+            // If it's an R2 URL pattern (tracks/, cover-art/, profiles/), proxy through API
+            if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+              return `${API_BASE_URL}/api/media${url}`;
+            }
+            // If URL already has /media/ but missing /api/, fix it
+            if (url.startsWith('/media/')) {
+              return `${API_BASE_URL}/api${url}`;
+            }
+            return `${API_BASE_URL}${url}`;
+          }
+          
+          // If it's a relative path without leading slash, check if it's an R2 path
+          if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+            return `${API_BASE_URL}/api/media/${url}`;
+          }
+          
+          return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
+        };
+        
+        // Normalize URLs for all tracks
+        tracks = tracks.map(t => ({
+          ...t,
+          cover_art_url: makeAbsoluteUrl(t.cover_art_url || t.coverArtUrl),
+          audio_url: makeAbsoluteUrl(t.audio_url || t.audioUrl)
+        }));
         
         // Render track cards
         const trackCards = tracks.map(track => renderTrackCard(track, true)).join('');
@@ -2006,12 +2287,20 @@
         // Attach event listeners
         attachTrackListeners();
       } catch (error) {
-        console.error('Error loading trending tracks:', error);
+        console.error('Error loading explore tracks:', error);
         const container = document.getElementById('trendingTracks');
         const section = document.getElementById('exploreSection');
-        if (container) container.style.display = 'none';
-        if (section) section.style.display = 'none';
+        if (container) {
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">Error loading tracks. Please try again.</div>';
+          container.style.display = 'flex';
+        }
+        if (section) section.style.display = 'block';
       }
+    }
+    
+    // Legacy function for backwards compatibility
+    async function loadTrendingTracks() {
+      return loadExploreTracks('trending');
     }
 
     // Load featured artists
@@ -2044,7 +2333,7 @@
     async function loadNewTracks() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/tracks?order=created_at.desc&limit=12`);
-        const tracks = response.ok ? await response.json() : [];
+        let tracks = response.ok ? await response.json() : [];
         
         const container = document.getElementById('newTracks');
         if (tracks.length === 0) {
@@ -2054,6 +2343,68 @@
           if (section) section.style.display = 'none';
           return;
         }
+        
+        // Normalize URLs for cover/audio so they work properly
+        const makeAbsoluteUrl = (url) => {
+          if (!url) return null;
+          // Leave data URIs untouched
+          if (url.startsWith('data:')) return url;
+          // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+          if (url.includes('.r2.dev/')) {
+            const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+            if (r2PathMatch) {
+              const r2Path = r2PathMatch[1];
+              // Use API_BASE_URL like track page does (Worker is on api.audiocity-ug.com)
+              return `${API_BASE_URL}/api/media/${r2Path}`;
+            }
+          }
+          
+          // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Fix URLs that have /media/ but are missing /api/
+            if (url.includes('/media/') && !url.includes('/api/media/')) {
+              try {
+                const urlObj = new URL(url);
+                if (urlObj.pathname.startsWith('/media/')) {
+                  urlObj.pathname = '/api' + urlObj.pathname;
+                  return urlObj.toString();
+                }
+              } catch (e) {
+                // If URL parsing fails, try string replacement
+                return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+              }
+            }
+            return url; // Leave working URLs alone
+          }
+          
+          // Handle relative URLs
+          if (url.startsWith('/')) {
+            // If it's an R2 URL pattern (tracks/, cover-art/, profiles/), proxy through API
+            if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+              return `${API_BASE_URL}/api/media${url}`;
+            }
+            // If URL already has /media/ but missing /api/, fix it
+            if (url.startsWith('/media/')) {
+              return `${API_BASE_URL}/api${url}`;
+            }
+            return `${API_BASE_URL}${url}`;
+          }
+          
+          // If it's a relative path without leading slash, check if it's an R2 path
+          if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+            return `${API_BASE_URL}/api/media/${url}`;
+          }
+          
+          return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
+        };
+        
+        // Normalize URLs for all tracks
+        tracks = tracks.map(t => ({
+          ...t,
+          cover_art_url: makeAbsoluteUrl(t.cover_art_url || t.coverArtUrl),
+          audio_url: makeAbsoluteUrl(t.audio_url || t.audioUrl)
+        }));
+        
         container.style.display = '';
         const section = container.closest('.section');
         if (section) section.style.display = 'block';
@@ -2092,14 +2443,14 @@
     function renderHeroTrackCard(track) {
       const cover = track.cover_art_url || track.coverArtUrl || null;
       const title = track.title || track.song_title || 'Untitled';
-      const artist = track.artist_name || track.artistName || 'Unknown Creator';
+      const artist = track.artist_name || track.artistName || track.artist_username || 'Unknown Creator';
       const audioUrl = makeAbsoluteUrl(track.audio_url || track.audioUrl || null);
       const scUrl = track.soundcloud_url || SAMPLE_SC_TRACK_URL;
       
       return `
         <div class="hero-track-card" ${track.id ? `data-track-id-hidden="${track.id}" style="cursor: pointer; position: relative;"` : 'style="position: relative;"'}>
-          ${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(title)}" class="hero-track-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
-          <div style="${cover ? 'display: none;' : 'display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(106, 13, 173, 0.3), rgba(255, 105, 180, 0.3)); font-size: 64px;'}">🎵</div>
+          ${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(title)}" class="hero-track-cover" onerror="console.error('Cover art failed to load:', '${escapeHtml(cover)}'); this.style.display='none'; this.nextElementSibling.classList.add('show-fallback');" onload="this.style.display='block'; this.style.visibility='visible'; this.style.opacity='1'; this.nextElementSibling.classList.remove('show-fallback'); this.nextElementSibling.style.display='none';" loading="lazy" style="display: block !important; visibility: visible !important; opacity: 1 !important; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">` : ''}
+          <div class="cover-fallback" style="${cover ? 'display: none !important;' : 'display: flex;'} font-size: 64px; align-items: center; justify-content: center; width: 100%; height: 100%;">🎵</div>
           <!-- SoundCloud-style play button overlay -->
           <div class="cover-play-overlay">
             <button class="cover-play-button" aria-label="Play" data-src="${escapeHtml(audioUrl || '')}" data-title="${escapeHtml(title)}" data-artist="${escapeHtml(artist)}" data-cover="${escapeHtml(cover || '')}">
@@ -2180,7 +2531,7 @@
       
       // Get raw artist from multiple possible fields
       const rawArtist = track.artist_name || track.artistName || track.artist || 
-                        track.creator_name || track.user_name || track.username || '';
+                        track.artist_username || track.creator_name || track.user_name || track.username || '';
       
       // Better artist extraction - aggressively filter IDs
       let artist = cleanText(rawArtist);
@@ -2216,8 +2567,8 @@
         <div class="track-card" ${(trackId && includeTrackId) ? `data-track-id="${trackId}" style="position: relative;"` : 'style="position: relative;"'}>
           ${adminDeleteBtn}
           <div class="cover" data-audio="${escapeHtml(audioUrl || '')}" ${(trackId && includeTrackId) ? `data-track-id="${trackId}"` : ''} data-track-title="${escapeHtml(title)}" data-track-artist="${escapeHtml(artist)}" data-track-cover="${escapeHtml(cover || '')}" data-sc-url="${escapeHtml(scUrl)}" style="position: relative;">
-            ${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(title)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
-            <div style="${cover ? 'display: none;' : 'display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(106, 13, 173, 0.3), rgba(255, 105, 180, 0.3)); font-size: 48px;'}">🎵</div>
+            ${cover ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(title)}" onerror="console.error('Cover art failed to load:', '${escapeHtml(cover)}'); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) { fallback.classList.add('show-fallback'); fallback.style.setProperty('display', 'flex', 'important'); }" onload="this.style.display='block'; this.style.visibility='visible'; this.style.opacity='1'; const fallback = this.nextElementSibling; if(fallback) { fallback.classList.remove('show-fallback'); fallback.style.setProperty('display', 'none', 'important'); }" loading="lazy" style="display: block !important; visibility: visible !important; opacity: 1 !important; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2;">` : ''}
+            <div class="cover-fallback" style="${cover ? 'display: none !important;' : 'display: flex !important;'}">🎵</div>
             <!-- SoundCloud-style play button overlay -->
             <div class="cover-play-overlay">
               <button class="cover-play-button" aria-label="Play" data-src="${escapeHtml(audioUrl || '')}" data-title="${escapeHtml(title)}" data-artist="${escapeHtml(artist)}" data-cover="${escapeHtml(cover || '')}">
@@ -2243,6 +2594,12 @@
               ${track.artist_is_verified || track.is_verified ? '<span style="color: var(--accent-purple); margin-left: 6px; font-size: 12px;">✓</span>' : ''}
             </p>
             <p class="plays" style="color: var(--muted); font-size: 11px; margin-top: 4px; font-weight: 500;">${plays.toLocaleString()} plays</p>
+            <div class="track-actions" style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+              <button class="download-btn" data-track-id="${trackId || ''}" data-audio-url="${escapeHtml(audioUrl || '')}" data-track-title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 11px; cursor: pointer; transition: all 0.2s;">
+                <span>📥</span>
+                <span>${(track.downloads_count || 0).toLocaleString()}</span>
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -2252,7 +2609,7 @@
     function renderFeaturedArtistCard(artist) {
       const avatar = artist.profile_image_url || null;
       const name = artist.name || 'Unknown Artist';
-      const genre = artist.genre || 'General';
+      const genre = artist.genre || artist.primary_genre || null;
       
       return `
         <div class="artist-promo-card" onclick="window.location.href='profile.html?id=${artist.id}'">
@@ -2262,7 +2619,7 @@
             ${escapeHtml(name)}
             ${artist.is_verified || artist.verified ? '<span style="color: var(--accent-purple); margin-left: 6px; font-size: 14px;">✓</span>' : ''}
           </div>
-          <div class="artist-promo-genre">${escapeHtml(genre)}</div>
+          ${genre && genre !== 'General' ? `<div class="artist-promo-genre">${escapeHtml(genre)}</div>` : ''}
         </div>
       `;
     }
@@ -2307,17 +2664,68 @@
     // Ensure makeAbsoluteUrl is available
     function makeAbsoluteUrl(url) {
       if (!url) return null;
-      if (url.startsWith('data:') || url.startsWith('http')) return url;
-      if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+      
+      // Keep data URIs as-is
+      if (url.startsWith('data:')) return url;
+      
+      // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+      if (url.includes('.r2.dev/')) {
+        const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+        if (r2PathMatch) {
+          const r2Path = r2PathMatch[1];
+          // Use API_BASE_URL like track page does (Worker is on api.audiocity-ug.com)
+          return `${API_BASE_URL}/api/media/${r2Path}`;
+        }
+      }
+      
+      // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Fix URLs that have /media/ but are missing /api/
+        if (url.includes('/media/') && !url.includes('/api/media/')) {
+          try {
+            const urlObj = new URL(url);
+            if (urlObj.pathname.startsWith('/media/')) {
+              urlObj.pathname = '/api' + urlObj.pathname;
+              return urlObj.toString();
+            }
+          } catch (e) {
+            // If URL parsing fails, try string replacement
+            return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+          }
+        }
+        return url; // Leave working URLs alone
+      }
+      
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        // If it's an R2 URL pattern (tracks/, cover-art/, profiles/, covers/), proxy through API
+        if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+          return `${API_BASE_URL}/api/media${url}`;
+        }
+        // If URL already has /media/ but missing /api/, fix it
+        if (url.startsWith('/media/')) {
+          return `${API_BASE_URL}/api${url}`;
+        }
+        return `${API_BASE_URL}${url}`;
+      }
+      
+      // If it's a relative path without leading slash, check if it's an R2 path
+      if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+        return `${API_BASE_URL}/api/media/${url}`;
+      }
+      
       return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
     }
     
     // SoundCloud Logic: Event delegation (ONE listener for all buttons)
+    // Use capture phase (true) to catch clicks BEFORE inline onclick handlers fire
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.cover-play-button');
       if (!btn) return;
       
-          e.stopPropagation();
+      // Stop propagation immediately to prevent any parent onclick handlers
+      e.stopPropagation();
+      e.stopImmediatePropagation();
       e.preventDefault();
       
       const src = btn.dataset.src;
@@ -2378,11 +2786,72 @@
             return;
           }
           
-      player.src = resolvedSrc;
-      player.play().catch(err => {
-        console.error('Error playing audio:', err);
-        alert('Failed to play audio: ' + err.message);
-      });
+      // Validate audio source before setting
+      if (!resolvedSrc || resolvedSrc === 'null' || resolvedSrc === 'undefined') {
+        console.error('Invalid audio URL:', resolvedSrc);
+        alert('Audio URL is invalid. Please try another track.');
+        return;
+      }
+      
+      // Set source and handle errors
+      try {
+        player.src = resolvedSrc;
+        
+        // Add error listener for better error handling
+        const handleError = (e) => {
+          console.error('Audio load error:', {
+            url: player.src,
+            error: player.error,
+            code: player.error?.code,
+            message: player.error?.message || 'Unknown error'
+          });
+          
+          // Remove error listener to prevent multiple alerts
+          player.removeEventListener('error', handleError);
+          
+          // Show user-friendly error
+          const errorMsg = player.error?.code === 4 
+            ? 'Audio format not supported. Please try another track.'
+            : player.error?.message || 'Failed to load audio. Please try another track.';
+          alert(errorMsg);
+          
+          // Reset UI
+          btn.classList.remove('playing');
+          const coverEl = btn.closest('.cover') || btn.closest('.hero-track-card');
+          if (coverEl) coverEl.classList.remove('playing');
+          currentButton = null;
+        };
+        
+        player.addEventListener('error', handleError, { once: true });
+        
+        // Play with error handling
+        const playPromise = player.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(err => {
+            // Ignore AbortError (happens when switching tracks quickly)
+            if (err && (err.name === 'AbortError' || err.code === 20)) {
+              return;
+            }
+            console.error('Error playing audio:', err);
+            const errorMsg = err.message || err.name || 'Failed to play audio';
+            if (errorMsg !== 'AbortError') {
+              alert('Failed to play audio: ' + errorMsg);
+            }
+            // Reset UI on play error
+            btn.classList.remove('playing');
+            const coverEl = btn.closest('.cover') || btn.closest('.hero-track-card');
+            if (coverEl) coverEl.classList.remove('playing');
+            currentButton = null;
+          });
+        }
+      } catch (err) {
+        console.error('Error setting audio source:', err);
+        alert('Failed to load audio. Please try another track.');
+        btn.classList.remove('playing');
+        const coverEl = btn.closest('.cover') || btn.closest('.hero-track-card');
+        if (coverEl) coverEl.classList.remove('playing');
+        currentButton = null;
+      }
       
       // Update UI
       btn.classList.add('playing');
@@ -2413,7 +2882,41 @@
       if (coverContainer) {
         coverContainer.classList.add('playing');
       }
-    });
+    }, true); // Use capture phase (true) to catch clicks BEFORE inline onclick handlers
+    
+    // Download button event delegation (works with dynamically loaded tracks)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.download-btn');
+      if (!btn) return;
+      
+      // Stop propagation to prevent any parent handlers
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      
+      const trackId = btn.dataset.trackId;
+      const audioUrl = btn.dataset.audioUrl;
+      const trackTitle = btn.dataset.trackTitle || 'track';
+      
+      // Validate trackId - if empty string, try to get from parent track card
+      let validTrackId = trackId;
+      if (!validTrackId || validTrackId === '' || validTrackId === 'null' || validTrackId === 'undefined') {
+        const trackCard = btn.closest('.track-card');
+        if (trackCard) {
+          validTrackId = trackCard.dataset.trackId || null;
+        }
+      }
+      
+      if (!audioUrl || audioUrl === 'null' || audioUrl === 'undefined' || audioUrl.trim() === '') {
+        alert('Audio file not available for download.');
+        return;
+      }
+      
+      console.log('Download clicked:', { trackId: validTrackId, audioUrl, trackTitle });
+      
+      // Call download function
+      downloadTrack(validTrackId, audioUrl, trackTitle);
+    }, true); // Use capture phase
     
     // Initialize global player event listeners
     function initGlobalPlayer() {
@@ -2655,7 +3158,135 @@
     }
 
     // Attach track listeners (legacy - now handled by event delegation above)
+    // Ensure all cover images are visible
+    function ensureCoverImagesVisible() {
+      document.querySelectorAll('.cover img[src]:not([src=""]):not([src="null"])').forEach(img => {
+        img.style.setProperty('display', 'block', 'important');
+        img.style.setProperty('visibility', 'visible', 'important');
+        img.style.setProperty('opacity', '1', 'important');
+        img.style.setProperty('position', 'absolute', 'important');
+        img.style.setProperty('top', '0', 'important');
+        img.style.setProperty('left', '0', 'important');
+        img.style.setProperty('width', '100%', 'important');
+        img.style.setProperty('height', '100%', 'important');
+        img.style.setProperty('z-index', '1', 'important');
+      });
+    }
+    
+    // Download track function (global for inline handlers and event delegation)
+    window.downloadTrack = async function downloadTrack(trackId, audioUrl, trackTitle) {
+      if (!audioUrl || audioUrl === 'null' || audioUrl === 'undefined' || audioUrl.trim() === '') {
+        alert('Audio file not available for download.');
+        return;
+      }
+
+      try {
+        // Get the absolute URL first
+        const resolvedUrl = makeAbsoluteUrl(audioUrl);
+        if (!resolvedUrl) {
+          alert('Could not resolve audio URL for download.');
+          return;
+        }
+
+        console.log('Downloading from URL:', resolvedUrl, 'Track ID:', trackId);
+
+        // Increment download count on server
+        let newDownloadCount = null;
+        if (trackId && trackId !== '' && trackId !== 'null' && trackId !== 'undefined') {
+          try {
+            console.log('Incrementing download count for track:', trackId);
+            const response = await fetch(`${API_BASE_URL}/api/tracks/${trackId}/download`, { method: 'POST' });
+            console.log('Download count response status:', response.status);
+            if (response.ok) {
+              const data = await response.json();
+              newDownloadCount = data.downloads_count;
+              console.log('Download count updated:', newDownloadCount, 'Full response:', data);
+            } else {
+              const errorText = await response.text();
+              console.error('Download count update failed:', response.status, errorText);
+            }
+          } catch (err) {
+            console.error('Download count update error:', err);
+          }
+        } else {
+          console.warn('No valid trackId provided, skipping download count update');
+        }
+
+        // Fetch the file as a blob to ensure we download the actual file
+        const response = await fetch(resolvedUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio file: ${response.status} ${response.statusText}`);
+        }
+
+        // Get the file as a blob
+        const blob = await response.blob();
+        console.log('Downloaded blob size:', blob.size, 'bytes');
+
+        if (blob.size < 1000) {
+          // If file is too small, it's probably an error page
+          const text = await blob.text();
+          console.error('Downloaded file is too small, likely an error:', text.substring(0, 200));
+          alert('Failed to download: File appears to be invalid. Please try again.');
+          return;
+        }
+
+        // Create blob URL and download
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${trackTitle || 'track'}.mp3`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up blob URL after a short delay
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 100);
+
+        // Update download count in UI
+        if (trackId && trackId !== '' && trackId !== 'null' && trackId !== 'undefined') {
+          // Try multiple selectors to find the download button
+          let downloadBtn = document.querySelector(`.download-btn[data-track-id="${trackId}"]`);
+          
+          // If not found, try to find by parent track card
+          if (!downloadBtn) {
+            const trackCard = document.querySelector(`.track-card[data-track-id="${trackId}"]`);
+            if (trackCard) {
+              downloadBtn = trackCard.querySelector('.download-btn');
+            }
+          }
+          
+          if (downloadBtn) {
+            const countSpan = downloadBtn.querySelector('span:last-child');
+            if (countSpan) {
+              if (newDownloadCount !== null && newDownloadCount !== undefined) {
+                // Use server response if available
+                console.log('Updating UI count to:', newDownloadCount);
+                countSpan.textContent = newDownloadCount.toLocaleString();
+              } else {
+                // Fallback to incrementing local count
+                const currentCount = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+                const newCount = currentCount + 1;
+                console.log('Updating UI count (fallback) to:', newCount);
+                countSpan.textContent = newCount.toLocaleString();
+              }
+            } else {
+              console.warn('Count span not found in download button');
+            }
+          } else {
+            console.warn('Download button not found for trackId:', trackId);
+          }
+        }
+      } catch (error) {
+        console.error('Download error:', error);
+        alert('Failed to download track. Please try again.');
+      }
+    }
+
     function attachTrackListeners() {
+      // Ensure images are visible after rendering
+      setTimeout(ensureCoverImagesVisible, 100);
       // Initialize player if needed
       initGlobalPlayer();
       
@@ -2795,23 +3426,11 @@
       
       // Track card click to navigate (but not when clicking cover or play button)
       document.querySelectorAll('.track-card').forEach(card => {
-        // For Hot 100 cards with onclick, prevent navigation when clicking play button
-        if (card.getAttribute('onclick')) {
-          // Override onclick for play button clicks
-          const playButton = card.querySelector('.cover-play-button');
-          if (playButton && !playButton.dataset.clickHandlerAdded) {
-            playButton.dataset.clickHandlerAdded = 'true';
-            playButton.addEventListener('click', (e) => {
-              e.stopPropagation();
-              // Prevent the card's onclick from firing
-              const originalOnclick = card.getAttribute('onclick');
-              card.removeAttribute('onclick');
-              setTimeout(() => {
-                card.setAttribute('onclick', originalOnclick);
-              }, 100);
-            });
-          }
-          return;
+        // For Hot 100 cards with inline onclick, remove it and use proper event listener
+        const originalOnclick = card.getAttribute('onclick');
+        if (originalOnclick) {
+          // Remove inline onclick to prevent conflicts with play button
+          card.removeAttribute('onclick');
         }
         
         // Remove old listeners
@@ -2819,14 +3438,30 @@
         card.parentNode.replaceChild(newCard, card);
         
         newCard.addEventListener('click', (e) => {
-          // Don't navigate if clicking play button or cover
-          if (e.target.closest('.cover-play-button') || e.target.closest('.cover-play-overlay') || e.target.closest('.cover')) {
+          // Don't navigate if clicking play button, overlay, cover, or play icon
+          if (e.target.closest('.cover-play-button') || 
+              e.target.closest('.cover-play-overlay') || 
+              e.target.closest('.cover') ||
+              e.target.closest('.cover-play-icon') ||
+              e.target.classList.contains('cover-play-button')) {
             e.stopPropagation();
+            e.stopImmediatePropagation();
             return;
           }
           
-          // Check for both data-track-id (regular sections) and data-rank-id (Hot 100 section)
-          const trackId = newCard.dataset.trackId || newCard.dataset.rankId;
+          // Check for both data-track-id (regular sections) and data-rank (Hot 100 section)
+          const trackId = newCard.dataset.trackId;
+          const rank = newCard.dataset.rank;
+          
+          // For Hot 100, extract track ID from original onclick if available
+          if (!trackId && rank && originalOnclick) {
+            const match = originalOnclick.match(/track\.html\?id=([^'"]+)/);
+            if (match && match[1]) {
+              window.location.href = `track.html?id=${match[1]}`;
+              return;
+            }
+          }
+          
           if (trackId) {
             window.location.href = `track.html?id=${trackId}`;
           }
@@ -3207,12 +3842,86 @@
         updateAuthUI();
         updateHeaderProfilePicture();
         wireDonateButtons();
+        wireExploreFilterTabs(); // Wire up filter tabs early
       });
     } else {
       updateAuthUI();
       updateHeaderProfilePicture();
       wireDonateButtons();
+      wireExploreFilterTabs(); // Wire up filter tabs early
     }
+    
+    // Wire up filter tabs in explore section
+    function wireExploreFilterTabs() {
+      const exploreSection = document.getElementById('exploreSection');
+      if (!exploreSection) return;
+      
+      const filterTabs = exploreSection.querySelectorAll('.filter-tab');
+      filterTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Remove active class from all tabs
+          filterTabs.forEach(t => t.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          tab.classList.add('active');
+          
+          // Get filter value
+          const filter = tab.dataset.filter || 'all';
+          
+          // Load tracks with selected filter
+          loadExploreTracks(filter);
+        });
+      });
+    }
+    
+    // Auto-refresh for home page (where necessary)
+    let homeRefreshInterval = null;
+    
+    function startHomeAutoRefresh() {
+      // Clear existing interval if any
+      if (homeRefreshInterval) {
+        clearInterval(homeRefreshInterval);
+      }
+      
+      // Auto-refresh Hot 100 and featured tracks every 2 minutes (only if page is visible)
+      homeRefreshInterval = setInterval(() => {
+        if (!document.hidden) {
+          console.log('Auto-refreshing home page content...');
+          // Refresh Hot 100 and featured tracks (most dynamic content)
+          loadHot100Tracks();
+          loadFeaturedTracks();
+          // Refresh explore section if it's visible
+          const exploreSection = document.getElementById('exploreSection');
+          if (exploreSection && exploreSection.style.display !== 'none') {
+            const activeTab = document.querySelector('#exploreSection .filter-tab.active');
+            const currentFilter = activeTab ? (activeTab.dataset.filter || 'all') : 'all';
+            loadExploreTracks(currentFilter);
+          }
+        }
+      }, 120000); // 2 minutes
+    }
+    
+    function stopHomeAutoRefresh() {
+      if (homeRefreshInterval) {
+        clearInterval(homeRefreshInterval);
+        homeRefreshInterval = null;
+      }
+    }
+    
+    // Pause auto-refresh when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopHomeAutoRefresh();
+      } else {
+        startHomeAutoRefresh();
+        // Also refresh immediately when tab becomes visible
+        loadHot100Tracks();
+        loadFeaturedTracks();
+      }
+    });
     
     window.addEventListener('load', () => {
       updateAuthUI();
@@ -3221,12 +3930,17 @@
       initGlobalPlayer();
       loadFeaturedTracks();
       loadHot100Tracks();
-      loadTrendingTracks();
+      // Ensure images are visible after all tracks load
+      setTimeout(ensureCoverImagesVisible, 1000);
+      loadExploreTracks('all'); // Load explore tracks with default filter
+      wireExploreFilterTabs(); // Wire up filter tabs
       loadFeaturedArtists();
+      // Start auto-refresh
+      startHomeAutoRefresh();
     });
     
     // Also check auth state periodically (in case of logout from another tab)
-    // Auth UI updated on page load - no polling needed
+    setInterval(updateAuthUI, 1000);
   </script>
   
   <!-- Moderation System -->
@@ -3235,3 +3949,4 @@
   <script src="js/moderation-integration.js"></script>
 </body>
 </html>
+

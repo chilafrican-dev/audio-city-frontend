@@ -1,0 +1,131 @@
+═══════════════════════════════════════════════════════════════
+  CHECK ADMIN UPLOAD PAGE DEPLOYMENT
+═══════════════════════════════════════════════════════════════
+
+The file exists on your computer. Let's verify it's deployed correctly.
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: Verify File Location
+═══════════════════════════════════════════════════════════════
+
+File should be at:
+  cloudflare-frontend/admin-upload.html
+
+Check:
+  ✅ File exists: YES (1339 lines, 44KB)
+  ✅ File is complete: YES
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: Check Cloudflare Pages Deployment
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://dash.cloudflare.com
+2. Pages → Your project
+3. Check: Latest deployment
+4. Verify: admin-upload.html is in the file list
+5. Check: Deployment status (should be "Success")
+
+IF FILE IS MISSING:
+  → Re-upload the cloudflare-frontend/ folder
+  → Make sure admin-upload.html is included
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: Test the URL
+═══════════════════════════════════════════════════════════════
+
+Try these URLs (replace with your actual domain):
+
+1. https://www.audiocity-ug.com/admin-upload.html
+2. https://www.audiocity-ug.com/cloudflare-frontend/admin-upload.html
+
+EXPECTED:
+  ✅ Should see "Admin Track Upload" page
+  ✅ Should see two-column form (Track | Artist)
+  ✅ Should see Cover Art Designer section
+
+IF YOU SEE 404:
+  → File not deployed
+  → Check Cloudflare Pages file list
+
+IF YOU SEE BLANK PAGE:
+  → Check browser console (F12) for errors
+  → Check if you're logged in as admin
+
+IF YOU SEE OLD PAGE:
+  → Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
+  → Clear Cloudflare cache (if enabled)
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: Clear Caches
+═══════════════════════════════════════════════════════════════
+
+BROWSER CACHE:
+  1. Open browser DevTools (F12)
+  2. Right-click refresh button
+  3. Select "Empty Cache and Hard Reload"
+
+CLOUDFLARE CACHE:
+  1. Go to Cloudflare Dashboard
+  2. Caching → Configuration
+  3. Click "Purge Everything"
+  4. Wait 30 seconds
+  5. Try accessing page again
+
+═══════════════════════════════════════════════════════════════
+  STEP 5: Verify File Content
+═══════════════════════════════════════════════════════════════
+
+Check if deployed file has correct content:
+
+1. Go to: https://www.audiocity-ug.com/admin-upload.html
+2. Right-click → View Page Source
+3. Look for: "Admin Track Upload" in the title
+4. Look for: "Two-column layout" or "form-section" in HTML
+
+IF CONTENT IS DIFFERENT:
+  → File wasn't updated
+  → Re-deploy cloudflare-frontend/ folder
+
+═══════════════════════════════════════════════════════════════
+  COMMON ISSUES
+═══════════════════════════════════════════════════════════════
+
+ISSUE: Page shows 404
+FIX: File not in deployment. Re-upload cloudflare-frontend/
+
+ISSUE: Page shows old content
+FIX: Clear browser cache + Cloudflare cache
+
+ISSUE: Page is blank
+FIX: Check browser console for JavaScript errors
+
+ISSUE: "Access Denied" message
+FIX: Make sure you're logged in as admin
+     Check: localStorage.getItem('is_admin') === 'true'
+
+ISSUE: File exists but page doesn't load
+FIX: Check Cloudflare Pages build logs for errors
+
+═══════════════════════════════════════════════════════════════
+  QUICK TEST
+═══════════════════════════════════════════════════════════════
+
+Open browser console (F12) and run:
+
+fetch('https://www.audiocity-ug.com/admin-upload.html')
+  .then(r => r.text())
+  .then(text => {
+    if (text.includes('Admin Track Upload')) {
+      console.log('✅ File is deployed correctly');
+    } else {
+      console.log('❌ File content is wrong');
+    }
+  })
+  .catch(err => console.error('❌ File not found:', err));
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

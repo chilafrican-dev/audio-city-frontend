@@ -1,55 +1,9 @@
-# ============================================
-# TUNNEL 404 ISSUE - SOLUTION
-# ============================================
 
-Current Issue: Quick tunnels return 404 for /api paths
 
-Current Tunnel URL: https://spectrum-diane-invention-pop.trycloudflare.com
-Status: ✅ Tunnel is running, but paths may not forward correctly
 
-# ============================================
-# QUICK FIX: Test if root path works
-# ============================================
 
-The tunnel might work if we test without /api prefix first.
-Quick tunnels can have path forwarding limitations.
 
-# ============================================
-# PRODUCTION SOLUTION: Named Tunnel
-# ============================================
 
-For production stability, set up a NAMED TUNNEL with persistent URL:
 
-1. On HostKey server (43.245.227.33), run:
-   cloudflared tunnel login
-   cloudflared tunnel create mastering-tunnel
-   
-2. Create config file:
-   cat > ~/.cloudflared/config.yml << 'EOF'
-   tunnel: <TUNNEL_ID>
-   credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
-   
-   ingress:
-     - hostname: mastering-api.audiocity-ug.com
-       service: http://168.119.241.59:3001
-     - service: http_status:404
-   EOF
 
-3. Create DNS record:
-   cloudflared tunnel route dns mastering-tunnel mastering-api.audiocity-ug.com
-
-4. Update service to use config:
-   ExecStart=/usr/local/bin/cloudflared tunnel --config ~/.cloudflared/config.yml run
-
-5. Update Worker secret:
-   MASTERING_SERVER_URL = https://mastering-api.audiocity-ug.com
-
-# ============================================
-# ALTERNATIVE: Direct connection test
-# ============================================
-
-If tunnel continues to have issues, we can test direct connection
-from Cloudflare Worker to 168.119.241.59:3001 (but this may be blocked).
-
-# ============================================
 

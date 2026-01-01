@@ -1,0 +1,115 @@
+═══════════════════════════════════════════════════════════════
+  FIX: ERR_FAILED on www.audiocity-ug.com
+═══════════════════════════════════════════════════════════════
+
+PROBLEM:
+The site returns ERR_FAILED because the Worker intercepts ALL requests,
+including static HTML files. Workers should only handle API requests.
+
+SOLUTION:
+Configure proper routing:
+- www.audiocity-ug.com → Cloudflare Pages (static files)
+- api.audiocity-ug.com → Cloudflare Worker (API only)
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: Check Worker Configuration
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → Your Worker → Settings → Triggers
+3. Check "Custom Domains":
+   ❌ If "www.audiocity-ug.com" is listed → REMOVE IT
+   ✅ Only "api.audiocity-ug.com" should be listed
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: Deploy Static Files to Cloudflare Pages
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://dash.cloudflare.com → Pages
+2. Click "Create a project"
+3. Choose "Upload assets" (direct upload)
+4. Select the "cloudflare-frontend" folder
+5. Click "Deploy site"
+6. After deployment:
+   - Go to "Custom domains"
+   - Click "Set up a custom domain"
+   - Enter: www.audiocity-ug.com
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: Update Worker Configuration
+═══════════════════════════════════════════════════════════════
+
+The worker-d1.js has been updated to:
+- Only handle /api/* and /auth/* routes
+- Return helpful errors for static file requests
+
+Deploy the updated Worker:
+  npx wrangler deploy --config wrangler-d1.toml
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: Verify DNS Configuration
+═══════════════════════════════════════════════════════════════
+
+In Cloudflare DNS:
+
+For www.audiocity-ug.com:
+  Type: CNAME
+  Name: www
+  Target: your-pages-project.pages.dev
+  Proxy: ✅ Enabled (orange cloud)
+
+For api.audiocity-ug.com:
+  Type: CNAME
+  Name: api
+  Target: (Worker URL or leave for auto-config)
+  Proxy: ✅ Enabled (orange cloud)
+
+═══════════════════════════════════════════════════════════════
+  STEP 5: Test
+═══════════════════════════════════════════════════════════════
+
+Test static files:
+  curl https://www.audiocity-ug.com/discover.html
+  Should return HTML (not 503)
+
+Test API:
+  curl https://api.audiocity-ug.com/api/health
+  Should return: {"status":"ok",...}
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Issue: Still getting ERR_FAILED
+  → Check if Pages is deployed and active
+  → Verify Worker is NOT bound to www.audiocity-ug.com
+  → Wait 5-10 minutes for DNS propagation
+  → Clear Cloudflare cache (Caching → Purge Everything)
+
+Issue: Worker returns 503 for static files
+  → This is expected if Worker is bound to main domain
+  → Solution: Unbind Worker, deploy Pages
+
+Issue: API not working
+  → Check Worker is deployed
+  → Verify api.audiocity-ug.com is bound to Worker
+  → Check Worker logs in Dashboard
+
+═══════════════════════════════════════════════════════════════
+  VERIFICATION CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+[ ] Worker only bound to api.audiocity-ug.com
+[ ] Worker NOT bound to www.audiocity-ug.com
+[ ] Cloudflare Pages project deployed
+[ ] www.audiocity-ug.com bound to Pages
+[ ] DNS records correct
+[ ] Static files load (www.audiocity-ug.com/discover.html)
+[ ] API works (api.audiocity-ug.com/api/health)
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

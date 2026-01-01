@@ -1,0 +1,70 @@
+# Signup System Status
+
+## ✅ Signup System Should Work
+
+The signup endpoint is functional and has been updated with:
+- Password trimming (to match login behavior)
+- Input validation (email, username, password required)
+- Password length validation (minimum 6 characters)
+- Duplicate user check (email and username must be unique)
+- Automatic session creation after signup
+
+## 📋 Signup Endpoint: POST /api/auth/signup
+
+**Required Fields:**
+- `email` (will be lowercased and trimmed)
+- `username` (will be trimmed)
+- `password` (will be trimmed, minimum 6 characters)
+- `name` (optional, defaults to username)
+
+**Response:**
+- Returns `success: true`, `token`, and `user` object
+- Automatically creates a session
+- User is logged in immediately after signup
+
+## 🔧 Changes Made:
+
+1. **Backend (worker-d1.js):**
+   - Added password trimming
+   - Added email trimming and lowercasing
+   - Added username trimming
+   - Added password length validation (6+ characters)
+   - Improved input validation
+
+2. **Frontend (signup.html):**
+   - Added password trimming to match backend
+
+## 🧪 Test Signup:
+
+### Option 1: Use the signup page
+Go to: https://www.audiocity-ug.com/signup.html
+
+### Option 2: Test API directly
+Run in browser console:
+
+fetch('https://api.audiocity-ug.com/api/auth/signup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'testuser123',
+    email: 'test@example.com',
+    password: 'testpass123'
+  })
+})
+.then(r => r.json())
+.then(console.log)
+.catch(console.error);
+
+## ⚠️ Important Notes:
+
+1. **Passwords are stored in plain text** (TODO: Hash in production)
+2. **Email must be unique** - cannot sign up with existing email
+3. **Username must be unique** - cannot sign up with existing username
+4. **After signup, user is automatically logged in** (session created)
+
+## 🚀 After Deploying Worker:
+
+1. Deploy updated worker-d1.js
+2. Test signup with a new email/username
+3. Verify user can log in with the password they set
+

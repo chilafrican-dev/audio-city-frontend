@@ -11,27 +11,38 @@
   <script data-cfasync="false">
     // CRITICAL: Check auth state IMMEDIATELY - data-cfasync="false" prevents Cloudflare Rocket Loader from deferring this
     (function() {
+      var authCheckLogged = false; // Flag to only log once
+      
       function checkAuth() {
         var token = localStorage.getItem('auth_token');
         var userId = localStorage.getItem('user_id');
         var isLoggedIn = !!(token && userId);
-        console.log('🔍 [Inbox] Early auth check - token:', !!token, 'userId:', userId, 'isLoggedIn:', isLoggedIn);
+        
+        // Only log once to reduce console spam
+        if (!authCheckLogged) {
+          if (isLoggedIn) {
+            console.log('🔍 [Inbox] Auth check: User logged in');
+          }
+          // Don't log for guests - it's normal for them not to be logged in
+          authCheckLogged = true;
+        }
         
         if (isLoggedIn) {
           document.documentElement.classList.add('user-logged-in');
-          console.log('🔐 [Inbox] Auth: User logged in - added user-logged-in class');
         } else {
           document.documentElement.classList.remove('user-logged-in');
-          console.log('🔓 [Inbox] Auth: User NOT logged in - removed class');
         }
       }
       
       // Run immediately
       checkAuth();
       
-      // Run again after tiny delays to catch race conditions
-      setTimeout(checkAuth, 10);
-      setTimeout(checkAuth, 100);
+      // Run once more after DOM is ready (reduced calls to prevent spam)
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAuth);
+      } else {
+        setTimeout(checkAuth, 100);
+      }
     })();
   </script>
   <style>
@@ -231,6 +242,32 @@
       font-size: 13px;
       color: #888;
     }
+    
+    .status-online {
+      color: #25d366 !important;
+    }
+    
+    .status-offline {
+      color: #888;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    
+    .status-indicator.online {
+      background: #25d366;
+      box-shadow: 0 0 4px rgba(37, 211, 102, 0.5);
+    }
+    
+    .status-indicator.offline {
+      background: #666;
+    }
 
     /* Messages Area */
     .messages-area {
@@ -263,6 +300,21 @@
       background: #262626;
       color: #fff;
       border-bottom-left-radius: 4px;
+    }
+    
+    .message.new-message {
+      animation: messageSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes messageSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .message-time {
@@ -468,7 +520,10 @@
     let currentChatUserId = null;
     let currentConversationId = null;
     
-    console.log('🔍 [Inbox] Auth check on load:', { hasToken: !!authToken, hasUserId: !!userId, currentUserId });
+    // Only log if user is logged in (to reduce console spam for guests)
+    if (currentUserId) {
+      console.log('🔍 [Inbox] Auth check on load: User logged in');
+    }
 
     // Generate conversation ID (sorted for consistency)
     function getConversationId(userId1, userId2) {
@@ -503,7 +558,7 @@
       currentUserId = (authToken && userId) ? userId : null;
       
       if (!currentUserId) {
-        console.log('❌ [Inbox] No auth - showing login prompt');
+        // Don't log - it's normal for guests to not be logged in
         document.getElementById('conversationsList').innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">🔒</div>
@@ -523,7 +578,9 @@
         
         if (res.ok) {
           const data = await res.json();
-          renderConversations(data);
+          // Ensure data is an array
+          const conversations = Array.isArray(data) ? data : [];
+          renderConversations(conversations);
         } else {
           renderConversations([]);
         }
@@ -682,6 +739,7 @@
             console.log('No avatar URL found for user');
             avatar.innerHTML = '👤';
           }
+          
         } else {
           const errorText = await res.text();
           console.error('Failed to load user:', res.status, res.statusText, errorText);
@@ -692,8 +750,27 @@
         document.getElementById('chatName').textContent = 'User';
       }
 
+      // Update online status immediately and start polling
+      updateOnlineStatus(userId);
+      // Restart status updates for new chat
+      if (onlineStatusInterval) {
+        clearInterval(onlineStatusInterval);
+      }
+      onlineStatusInterval = setInterval(() => {
+        if (currentChatUserId) {
+          updateOnlineStatus(currentChatUserId);
+        }
+      }, 5000);
+
+      // Reset message tracking for new chat
+      lastMessageCount = 0;
+      lastMessageIds.clear();
+
       // Load messages
       await loadMessages();
+      
+      // Restart message polling for this chat
+      startMessagePolling();
 
       // Mark as read
       try {
@@ -724,7 +801,9 @@
         });
 
         if (res.ok) {
-          const messages = await res.json();
+          const messagesData = await res.json();
+          // Ensure messages is an array
+          const messages = Array.isArray(messagesData) ? messagesData : [];
           renderMessages(messages);
         } else {
           container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">Start the conversation!</div></div>';
@@ -735,12 +814,18 @@
       }
     }
 
+    // Track last message count to detect new messages
+    let lastMessageCount = 0;
+    let lastMessageIds = new Set();
+    
     // Render messages
-    function renderMessages(messages) {
+    function renderMessages(messages, isNewMessage = false) {
       const container = document.getElementById('messagesArea');
 
       if (!messages || messages.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">Start the conversation!</div></div>';
+        lastMessageCount = 0;
+        lastMessageIds.clear();
         return;
       }
 
@@ -749,21 +834,66 @@
         new Date(a.created_at || 0) - new Date(b.created_at || 0)
       );
 
+      // Detect new messages
+      const currentMessageIds = new Set(sorted.map(m => m.id || m.created_at));
+      const newMessages = sorted.filter(m => {
+        const msgId = m.id || m.created_at;
+        return !lastMessageIds.has(msgId) && (m.sender_id || m.senderId) !== currentUserId;
+      });
+
+      // Update last message tracking
+      lastMessageCount = sorted.length;
+      lastMessageIds = currentMessageIds;
+
+      // Show notification for new messages if not in active chat or page is hidden
+      if (newMessages.length > 0) {
+        // Show browser notification if page is hidden or chat is not open
+        if (!currentChatUserId || document.hidden) {
+          // Get sender info for notification
+          const newMsg = newMessages[0];
+          if (newMsg.sender_id) {
+            fetch(`${API_BASE_URL}/api/users/${newMsg.sender_id}`)
+              .then(res => res.json())
+              .then(user => {
+                showMessageNotification({
+                  ...newMsg,
+                  sender_name: user.name || user.username || 'Someone',
+                  sender_avatar: user.profile_image_url || user.avatar_url
+                });
+              })
+              .catch(() => {
+                showMessageNotification(newMsg);
+              });
+          } else {
+            showMessageNotification(newMsg);
+          }
+        }
+        
+        // Play sound for new received messages (only if chat is open and page is visible)
+        if (currentChatUserId && !document.hidden) {
+          playNotificationSound();
+        }
+      }
+
       container.innerHTML = sorted.map(msg => {
         const isSent = (msg.sender_id || msg.senderId) === currentUserId;
         const content = msg.content || msg.text || msg.message || '';
         const time = formatMessageTime(msg.created_at);
+        const isNew = newMessages.some(m => (m.id || m.created_at) === (msg.id || msg.created_at));
 
         return `
-          <div class="message ${isSent ? 'sent' : 'received'}">
+          <div class="message ${isSent ? 'sent' : 'received'} ${isNew ? 'new-message' : ''}" data-message-id="${msg.id || msg.created_at}">
             <div>${escapeHtml(content)}</div>
             <div class="message-time">${time}</div>
           </div>
         `;
       }).join('');
 
-      // Scroll to bottom
-      container.scrollTop = container.scrollHeight;
+      // Scroll to bottom if new message or user is at bottom
+      const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+      if (isNewMessage || wasAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
 
     // Send message
@@ -830,10 +960,198 @@
       }
     }
 
+    // Update online status for current chat user
+    let onlineStatusInterval = null;
+    
+    async function updateOnlineStatus(userId) {
+      if (!userId) return;
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/online`);
+        if (res.ok) {
+          const data = await res.json();
+          const statusEl = document.getElementById('chatStatus');
+          if (statusEl) {
+            if (data.is_online) {
+              statusEl.innerHTML = '<span class="status-indicator online"></span>Online';
+              statusEl.className = 'status-online';
+            } else {
+              const minutesAgo = data.minutes_ago || 0;
+              let statusText = 'Offline';
+              if (minutesAgo > 0 && minutesAgo < 60) {
+                statusText = `Offline (${minutesAgo}m ago)`;
+              } else if (minutesAgo >= 60 && minutesAgo < 1440) {
+                const hoursAgo = Math.floor(minutesAgo / 60);
+                statusText = `Offline (${hoursAgo}h ago)`;
+              } else if (minutesAgo >= 1440) {
+                const daysAgo = Math.floor(minutesAgo / 1440);
+                statusText = `Offline (${daysAgo}d ago)`;
+              }
+              statusEl.innerHTML = `<span class="status-indicator offline"></span>${statusText}`;
+              statusEl.className = 'status-offline';
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error checking online status:', e);
+      }
+    }
+    
+    // Send heartbeat to keep current user online
+    function sendHeartbeat() {
+      if (!currentUserId) return;
+      
+      fetch(`${API_BASE_URL}/api/users/${currentUserId}/online`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+      }).catch(e => console.error('Heartbeat error:', e));
+    }
+    
+    // Start heartbeat (every 2 minutes) and status polling
+    function startStatusUpdates() {
+      // Send heartbeat immediately
+      sendHeartbeat();
+      // Then every 2 minutes
+      setInterval(sendHeartbeat, 120000);
+    }
+    
+    // Request notification permission
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+    
+    // Show browser notification for new message
+    function showMessageNotification(message) {
+      if (!('Notification' in window)) return;
+      
+      if (Notification.permission === 'granted') {
+        const senderName = message.sender_name || message.name || 'Someone';
+        const content = message.content || message.text || message.message || 'New message';
+        
+        const notification = new Notification(`${senderName} sent a message`, {
+          body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+          icon: message.sender_avatar || message.avatar || '/favicon.ico',
+          tag: `message-${message.sender_id || message.id}`,
+          requireInteraction: false
+        });
+        
+        notification.onclick = () => {
+          window.focus();
+          if (message.sender_id) {
+            openChat(message.sender_id);
+          }
+          notification.close();
+        };
+        
+        // Auto-close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+      }
+    }
+    
+    // Play notification sound
+    function playNotificationSound() {
+      try {
+        // Create a simple beep sound using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+      } catch (e) {
+        console.log('Could not play notification sound:', e);
+      }
+    }
+    
+    // Poll for new messages
+    let messagePollInterval = null;
+    let conversationPollInterval = null;
+    
+    function startMessagePolling() {
+      // Poll for new messages in active chat (every 3 seconds)
+      if (messagePollInterval) {
+        clearInterval(messagePollInterval);
+      }
+      messagePollInterval = setInterval(async () => {
+        if (currentChatUserId && currentUserId) {
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/conversations/${currentUserId}/${currentChatUserId}/messages`, {
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
+            });
+            
+            if (res.ok) {
+              const messagesData = await res.json();
+              const messages = Array.isArray(messagesData) ? messagesData : [];
+              
+              // Only update if message count changed
+              if (messages.length !== lastMessageCount) {
+                renderMessages(messages, true);
+              }
+            }
+          } catch (e) {
+            console.error('Error polling messages:', e);
+          }
+        }
+      }, 3000);
+      
+      // Poll for new conversations (every 5 seconds)
+      if (conversationPollInterval) {
+        clearInterval(conversationPollInterval);
+      }
+      conversationPollInterval = setInterval(() => {
+        if (currentUserId) {
+          loadConversations();
+        }
+      }, 5000);
+    }
+    
+    function stopMessagePolling() {
+      if (messagePollInterval) {
+        clearInterval(messagePollInterval);
+        messagePollInterval = null;
+      }
+      if (conversationPollInterval) {
+        clearInterval(conversationPollInterval);
+        conversationPollInterval = null;
+      }
+    }
+
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       loadConversations();
       checkUrlParams();
+      startStatusUpdates();
+      requestNotificationPermission();
+      startMessagePolling();
+      
+      // Request notification permission when user interacts
+      document.addEventListener('click', requestNotificationPermission, { once: true });
+    });
+    
+    // Stop polling when page is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // Page is hidden - continue polling but don't update UI aggressively
+      } else {
+        // Page is visible - refresh immediately
+        if (currentUserId) {
+          loadConversations();
+          if (currentChatUserId) {
+            loadMessages();
+          }
+        }
+      }
     });
   </script>
 </body>

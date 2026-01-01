@@ -1823,8 +1823,24 @@
               }
             }, 1500);
           } else {
-            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
-            throw new Error(error.error || 'Failed to upload track');
+            // Get error details from response
+            let errorMessage = 'Upload failed';
+            try {
+              const errorData = await uploadResponse.json();
+              errorMessage = errorData.error || errorData.message || `Server returned ${uploadResponse.status}`;
+              console.error('Upload error response:', errorData);
+            } catch (e) {
+              // Response is not JSON, get text instead
+              try {
+                const errorText = await uploadResponse.text();
+                errorMessage = errorText || `Server returned ${uploadResponse.status}: ${uploadResponse.statusText}`;
+                console.error('Upload error (non-JSON):', errorText);
+              } catch (textError) {
+                errorMessage = `Server returned ${uploadResponse.status}: ${uploadResponse.statusText}`;
+                console.error('Upload error (could not read response):', uploadResponse.status, uploadResponse.statusText);
+              }
+            }
+            throw new Error(errorMessage);
           }
         } catch (error) {
           console.error('Upload error:', error);

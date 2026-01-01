@@ -336,15 +336,15 @@
     /* Artists Grid */
     .artists-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
     }
     
     .artist-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: 12px;
+      padding: 16px;
       text-align: center;
       transition: all 0.3s;
       cursor: pointer;
@@ -357,16 +357,17 @@
     }
     
     .artist-avatar {
-      width: 100px;
-      height: 100px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--cyan));
-      margin: 0 auto 16px;
+      margin: 0 auto 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 28px;
       overflow: hidden;
+      flex-shrink: 0;
     }
     
     .artist-avatar img {
@@ -376,23 +377,26 @@
     }
     
     .artist-name {
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 700;
       margin-bottom: 4px;
+      line-height: 1.3;
     }
     
     .artist-handle {
       color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 12px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.3;
     }
     
     .artist-stats {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      font-size: 13px;
+      gap: 12px;
+      font-size: 11px;
       color: var(--muted);
+      margin-bottom: 8px;
     }
     
     .artist-stats span {
@@ -408,9 +412,9 @@
     
     .artist-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       width: 100%;
-      margin-top: 16px;
+      margin-top: 10px;
     }
     
     .message-btn-artist {
@@ -436,10 +440,11 @@
     }
     
     .follow-btn {
-      padding: 10px 24px;
+      padding: 6px 16px;
       background: transparent;
       border: 1px solid var(--accent);
-      border-radius: 20px;
+      border-radius: 16px;
+      font-size: 13px;
       color: var(--accent);
       font-size: 13px;
       font-weight: 600;
@@ -539,7 +544,7 @@
       </div>
     </div>
     
-    <div class="artists-grid" id="artistsGrid" style="display: none;">
+    <div class="artists-grid" id="artistsGrid" style="display: grid;">
       <!-- Content will appear here when available -->
     </div>
   </main>
@@ -812,55 +817,50 @@
     
     // Load artists from API and show verification badges
     async function loadArtists() {
+      const artistsGrid = document.getElementById('artistsGrid');
+      // Show grid immediately (instant display like home page)
+      if (artistsGrid) {
+        artistsGrid.style.display = 'grid';
+      }
+      
       try {
         // Use local API for development, production API for deployed site
         const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
           ? 'http://localhost:3002'
           : 'https://api.audiocity-ug.com';
-        // Fetch all users (backend doesn't support select parameter, returns all fields)
-        const response = await fetch(`${API_BASE_URL}/api/users?_t=${Date.now()}`);
+        
+        // Fetch users with limit (optimize initial load)
+        const limit = 30; // Limit initial load to 30 artists for faster page load
+        const response = await fetch(`${API_BASE_URL}/api/users?limit=${limit}&_t=${Date.now()}`);
         
         // Handle 404 or other errors gracefully
         if (!response.ok) {
           console.warn('Failed to load artists:', response.status, response.statusText);
-          // Return empty array to prevent errors
           const artistsGrid = document.getElementById('artistsGrid');
           if (artistsGrid) {
-            artistsGrid.innerHTML = '';
-            artistsGrid.style.display = 'none';
-          }
-          const mainContent = document.querySelector('main');
-          if (mainContent) {
-            const pageTitle = mainContent.querySelector('.page-title');
-            const searchSection = mainContent.querySelector('.search-filters');
-            if (pageTitle) pageTitle.style.display = 'none';
-            if (searchSection) searchSection.style.display = 'none';
+            artistsGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Failed to load artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
           }
           return;
         }
         
         if (response.ok) {
-          const artists = await response.json();
+          const artistsData = await response.json();
+          // Ensure artists is an array
+          const artists = Array.isArray(artistsData) ? artistsData : [];
           const artistsGrid = document.getElementById('artistsGrid');
           
           if (artists.length === 0) {
             if (artistsGrid) {
-              artistsGrid.innerHTML = '';
-              artistsGrid.style.display = 'none';
-            }
-            // Hide the entire artists section
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-              const pageTitle = mainContent.querySelector('.page-title');
-              const searchSection = mainContent.querySelector('.search-filters');
-              if (pageTitle) pageTitle.style.display = 'none';
-              if (searchSection) searchSection.style.display = 'none';
+              artistsGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">No artists found</p></div>';
             }
             return;
           }
           
           if (artistsGrid && artists.length > 0) {
-            artistsGrid.style.display = '';
+            // Show grid immediately (like home page - instant display)
+            artistsGrid.style.display = 'grid';
+            
+            // Show main content immediately
             const mainContent = document.querySelector('main');
             if (mainContent) {
               const pageTitle = mainContent.querySelector('.page-title');
@@ -871,51 +871,22 @@
             // Store artists for filtering
             allArtists = artists;
             
-            // Load track counts for each artist
-            const artistsWithStats = await Promise.all(artists.map(async (artist) => {
-              try {
-                // Fetch tracks for this artist
-                const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=${artist.id}`);
-                const tracks = tracksResponse.ok ? await tracksResponse.json() : [];
-                const trackCount = tracks.length || 0;
-                
-                // Calculate total likes across all tracks
-                const totalLikes = tracks.reduce((sum, track) => sum + (track.likes_count || 0), 0);
-                
-                return {
-                  ...artist,
-                  trackCount,
-                  totalLikes
-                };
-              } catch (error) {
-                console.error(`Error loading stats for artist ${artist.id}:`, error);
-                return {
-                  ...artist,
-                  trackCount: 0,
-                  totalLikes: 0
-                };
-              }
-            }));
-            
-            // Check follow status for current user
+            // OPTIMIZATION: Render immediately without follow status checks
+            // Follow status will be loaded asynchronously after initial render
             const currentUserId = localStorage.getItem('user_id');
-            const artistsWithFollowStatus = await Promise.all(artistsWithStats.map(async (artist) => {
-              let isFollowing = false;
-              if (currentUserId && artist.id) {
-                try {
-                  const followResponse = await fetch(`${API_BASE_URL}/api/users/${artist.id}/follow-status?user_id=${currentUserId}`);
-                  if (followResponse.ok) {
-                    const followData = await followResponse.json();
-                    isFollowing = followData.is_following || false;
-                  }
-                } catch (error) {
-                  console.error('Error checking follow status:', error);
-                }
-              }
-              return { ...artist, isFollowing };
+            
+            // Prepare artists data (no API calls yet - instant render)
+            const artistsWithDefaults = artists.map(artist => ({
+              ...artist,
+              trackCount: 0,
+              totalLikes: 0,
+              isFollowing: false // Default to false, will update async
             }));
             
-            artistsGrid.innerHTML = artistsWithFollowStatus.map(artist => {
+            // Use document fragment for better performance
+            const fragment = document.createDocumentFragment();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = artistsWithDefaults.map(artist => {
               const isVerified = artist.is_verified || artist.verified || false;
               // Check all possible profile picture fields
               const avatar = artist.profile_image_url || artist.profile_image || artist.avatar_url || null;
@@ -938,8 +909,8 @@
                   </div>
                   <div class="artist-handle">@${handle}</div>
                   <div class="artist-stats">
-                    <span>🎵 ${trackCount} ${trackCount === 1 ? 'track' : 'tracks'}</span>
-                    <span>❤️ ${totalLikes}</span>
+                    <span>🎵 ${trackCount || 0} ${(trackCount || 0) === 1 ? 'track' : 'tracks'}</span>
+                    <span>❤️ ${totalLikes || 0}</span>
                   </div>
                   <div class="artist-actions">
                     ${currentUserId && artist.id && String(currentUserId) !== String(artist.id) ? `<button class="message-btn-artist" data-artist-id="${artist.id}" onclick="event.stopPropagation(); window.location.href='inbox.html?user=${artist.id}';" title="Message">💬</button>` : ''}
@@ -948,6 +919,22 @@
                 </div>
               `;
             }).join('');
+            
+            // Move all children to fragment
+            while (tempDiv.firstChild) {
+              fragment.appendChild(tempDiv.firstChild);
+            }
+            
+            // Clear and append in one operation
+            artistsGrid.innerHTML = '';
+            artistsGrid.appendChild(fragment);
+            
+            // Load follow status asynchronously AFTER rendering (non-blocking)
+            if (currentUserId) {
+              setTimeout(() => {
+                loadFollowStatusAsync(artists, currentUserId);
+              }, 100);
+            }
             
             // Re-attach follow button listeners with API calls
             // currentUserId is already declared above, reuse it
@@ -1028,27 +1015,66 @@
         console.error('Error loading artists:', error);
         const artistsGrid = document.getElementById('artistsGrid');
         if (artistsGrid) {
-          artistsGrid.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error loading artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
-          artistsGrid.style.display = 'block';
+          artistsGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error loading artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
+          artistsGrid.style.display = 'grid';
         }
       }
     }
     
-    // Load artists on page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-    loadArtists();
-      });
-    } else {
-      loadArtists();
+    // Load follow status asynchronously (non-blocking)
+    async function loadFollowStatusAsync(artists, currentUserId) {
+      if (!currentUserId || !artists || artists.length === 0) return;
+      
+      // Process in small batches to avoid overwhelming the server
+      const batchSize = 5;
+      for (let i = 0; i < artists.length; i += batchSize) {
+        const batch = artists.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (artist) => {
+          if (!artist.id) return;
+          
+          try {
+            const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+              ? 'http://localhost:3002'
+              : 'https://api.audiocity-ug.com';
+            
+            const followResponse = await fetch(`${API_BASE_URL}/api/users/${artist.id}/follow-status?user_id=${currentUserId}`);
+            if (followResponse.ok) {
+              const followData = await followResponse.json();
+              const isFollowing = followData.is_following || false;
+              
+              // Update the button state
+              const followBtn = document.querySelector(`.follow-btn[data-artist-id="${artist.id}"]`);
+              if (followBtn) {
+                followBtn.dataset.isFollowing = isFollowing;
+                if (isFollowing) {
+                  followBtn.textContent = 'Following';
+                  followBtn.style.background = 'var(--accent)';
+                  followBtn.style.color = '#fff';
+                }
+              }
+            }
+          } catch (error) {
+            // Silently fail - don't block UI
+            console.debug('Follow status check failed for artist:', artist.id);
+          }
+        }));
+        
+        // Small delay between batches to avoid rate limiting
+        if (i + batchSize < artists.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
     }
     
-    // Also load on window load as fallback
+    // Load artists on page load (same pattern as home page - instant display)
     window.addEventListener('load', () => {
-      if (allArtists.length === 0) {
-        loadArtists();
-      }
+      loadArtists();
     });
+    
+    // Also try to load immediately if DOM is already ready
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      loadArtists();
+    }
   </script>
   
   <!-- Footer -->
@@ -1090,7 +1116,10 @@
       </div>
     </div>
     <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+      <p style="color: var(--muted); font-size: 14px;">&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </footer>
   

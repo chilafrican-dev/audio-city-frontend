@@ -6,9 +6,13 @@
   <title>Create Account — Audio City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script>
-    // Manifest loading disabled - Cloudflare WAF blocks JSON files
-    // PWA functionality is optional, app works fine without it
-    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -381,11 +385,21 @@
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
     
-    // If already logged in, go to feed
-    const hasAuth = localStorage.getItem('auth_token');
-    const hasUserId = localStorage.getItem('user_id');
-    if (hasAuth && hasUserId) {
-      window.location.replace('feed.html');
+    // Check if already logged in
+    if (localStorage.getItem('auth_token')) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = 'status';
+      statusEl.style.display = 'block';
+      statusEl.style.background = 'rgba(139, 92, 246, 0.15)';
+      statusEl.style.border = '1px solid rgba(139, 92, 246, 0.3)';
+      statusEl.style.color = 'var(--accent)';
+      statusEl.innerHTML = 'You are already logged in. <a href="#" id="logoutLink" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Log out</a> or <a href="feed.html" style="color: var(--accent); text-decoration: underline; margin-left: 8px;">Go to Feed</a>';
+      
+      document.getElementById('logoutLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.reload();
+      });
     }
     
     // Password strength indicator
@@ -472,48 +486,27 @@
         statusEl.className = 'status';
         
         try {
-          console.log('Attempting signup with:', { username, email });
           const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password }),
           });
           
-          console.log('Signup response status:', response.status);
-          
-          let data;
-          try {
-            data = await response.json();
-            console.log('Signup response data:', data);
-          } catch (jsonError) {
-            console.error('Failed to parse JSON response:', jsonError);
-            const text = await response.text();
-            console.error('Response text:', text);
-            throw new Error(`Server error (${response.status}): ${text || 'Invalid response'}`);
-          }
+          const data = await response.json();
           
           if (!response.ok) {
-            const errorMsg = data.error || data.details || `Signup failed (${response.status})`;
-            console.error('Signup failed:', errorMsg);
-            throw new Error(errorMsg);
+            throw new Error(data.error || 'Signup failed');
           }
           
           statusEl.className = 'status success';
           statusEl.textContent = '✅ Account created successfully! Redirecting...';
           
-          // Store user data if provided - store ALL data
+          // Store user data if provided
           if (data.user) {
-            if (data.user.id) {
-              localStorage.setItem('user_id', data.user.id);
-              console.log('✅ User ID stored:', data.user.id);
-            }
+            if (data.user.id) localStorage.setItem('user_id', data.user.id);
             if (data.user.name) localStorage.setItem('user_name', data.user.name);
             if (data.user.username) localStorage.setItem('username', data.user.username);
             if (data.user.email) localStorage.setItem('user_email', data.user.email);
-            if (data.user.user_type) localStorage.setItem('user_type', data.user.user_type);
-            if (data.user.is_admin !== undefined) {
-              localStorage.setItem('is_admin', data.user.is_admin ? 'true' : 'false');
-            }
             if (data.user.avatar_url || data.user.profile_image) {
               localStorage.setItem('profile_image_url', data.user.avatar_url || data.user.profile_image);
             }
@@ -522,13 +515,6 @@
           // If token is provided, log them in automatically
           if (data.token) {
             localStorage.setItem('auth_token', data.token);
-            console.log('✅ Token stored:', data.token.substring(0, 20) + '...');
-            
-            // Verify storage
-            const storedToken = localStorage.getItem('auth_token');
-            const storedUserId = localStorage.getItem('user_id');
-            console.log('✅ Verification - Token:', !!storedToken, 'User ID:', storedUserId);
-            
             setTimeout(() => {
               window.location.href = 'feed.html';
             }, 1500);
@@ -540,22 +526,10 @@
           }
           
         } catch (error) {
-          console.error('Signup error:', error);
-          console.error('Error stack:', error.stack);
-          
-          // Ensure status element exists and show error
-          if (statusEl) {
-            statusEl.className = 'status error';
-            statusEl.textContent = '❌ ' + (error.message || 'Signup failed. Please try again.');
-            statusEl.style.display = 'block';
-          } else {
-            alert('❌ Signup failed: ' + (error.message || 'Please try again.'));
-          }
-          
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Account';
-          }
+          statusEl.className = 'status error';
+          statusEl.textContent = '❌ ' + error.message;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
           isSubmitting = false; // Reset flag on error
         }
       });

@@ -14,6 +14,13 @@
   <meta name="apple-mobile-web-app-title" content="Audio City" />
   <meta name="description" content="Audio City - Uganda's music community platform. Discover your next obsession, or become someone else's.">
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  
+  <!-- Performance: Preconnect to API domain -->
+  <link rel="preconnect" href="https://api.audiocity-ug.com" crossorigin>
+  <link rel="dns-prefetch" href="https://api.audiocity-ug.com">
+  
+  <!-- Security: X-Content-Type-Options (X-Frame-Options is set in _headers file) -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -855,7 +862,7 @@
   <!-- Header -->
   <header class="header">
     <a href="index.html" class="logo">
-      <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <img src="assets/audio-city-logo.webp" alt="Audio City" width="40" height="40" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
       <span style="display: none;">🎵 AUDIO CITY</span>
     </a>
     <div class="header-actions" id="headerActions">
@@ -870,11 +877,12 @@
   </header>
 
   <!-- Hero Section -->
+  <main role="main">
   <section class="hero">
     <div class="hero-content">
       <div class="hero-text">
         <div class="hero-logo">
-          <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <img src="assets/audio-city-logo.webp" alt="Audio City" width="40" height="40" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <div style="display: none; font-size: 36px; font-weight: 900; color: #ffffff !important;">AUDIO CITY</div>
         </div>
         <p class="hero-tagline">FROM SOUND TO STARDOM</p>
@@ -889,7 +897,7 @@
         <div class="carousel-container">
           <!-- Slide 1 -->
           <div class="carousel-slide active">
-            <img src="assets/hero-1.png" alt="Create. Connect. Celebrate Your Sound.">
+            <img src="assets/hero-1.webp" alt="Create. Connect. Celebrate Your Sound." width="800" height="600" loading="lazy">
             <div class="carousel-content">
               <div class="carousel-quote">Create. Connect. Celebrate Your Sound.</div>
               <div class="carousel-subtitle">Join Uganda's premier music community</div>
@@ -898,7 +906,7 @@
           
           <!-- Slide 2 -->
           <div class="carousel-slide">
-            <img src="assets/hero-2.png" alt="Your Music, Your Story, Your Success">
+            <img src="assets/hero-2.webp" alt="Your Music, Your Story, Your Success" width="800" height="600" loading="lazy">
             <div class="carousel-content">
               <div class="carousel-quote">Your Music, Your Story, Your Success</div>
               <div class="carousel-subtitle">Share your talent with the world</div>
@@ -907,7 +915,7 @@
 
           <!-- Slide 3 - Using hero-1 with different message -->
           <div class="carousel-slide">
-            <img src="assets/hero-1.png" alt="Master Your Craft">
+            <img src="assets/hero-1.webp" alt="Master Your Craft" width="800" height="600" loading="lazy">
             <div class="carousel-content">
               <div class="carousel-quote">Master Your Craft</div>
               <div class="carousel-subtitle">Professional tools for professional artists</div>
@@ -916,7 +924,7 @@
 
           <!-- Slide 4 - Using hero-2 with different message -->
           <div class="carousel-slide">
-            <img src="assets/hero-2.png" alt="Build Your Legacy">
+            <img src="assets/hero-2.webp" alt="Build Your Legacy" width="800" height="600" loading="lazy">
             <div class="carousel-content">
               <div class="carousel-quote">Build Your Legacy</div>
               <div class="carousel-subtitle">From studio to stardom, we've got you</div>
@@ -939,7 +947,7 @@
   <!-- Promotional Section 2 - Black Minimalist Music YouTube Banner (Animated) -->
   <section class="promo-section promo-full animated-slide-in-delay">
     <div class="promo-full-image">
-      <img src="assets/premium-artist.png" alt="Black Minimalist Music YouTube Banner" style="width: 100%; height: auto; max-height: 800px; object-fit: contain; object-position: center; display: block; margin: 0 auto;">
+      <img src="assets/premium-artist.webp" alt="Black Minimalist Music YouTube Banner" width="1200" height="800" loading="lazy" style="width: 100%; height: auto; max-height: 800px; object-fit: contain; object-position: center; display: block; margin: 0 auto;">
     </div>
   </section>
 
@@ -958,6 +966,7 @@
     <p class="cta-text">Hear what's trending for free in the Audio City community</p>
     <a href="discover.html" class="btn-explore">Start Exploring</a>
   </section>
+  </main>
 
   <script>
     // Update header based on authentication status
@@ -984,27 +993,6 @@
       }
     })();
     
-    // Check if user wants to view landing page even when logged in
-    (function() {
-      const authToken = localStorage.getItem('auth_token');
-      const userId = localStorage.getItem('user_id');
-      const urlParams = new URLSearchParams(window.location.search);
-      const skipRedirect = urlParams.get('skip_redirect') === 'true' || urlParams.get('view_landing') === 'true';
-      
-      // If user is authenticated and hasn't explicitly requested to view landing page,
-      // show a banner with option to go to home or stay
-      if (authToken && userId && !skipRedirect) {
-        // Create a banner to let authenticated users know they can go to their home
-        const banner = document.createElement('div');
-        banner.id = 'authBanner';
-        banner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: rgba(139, 92, 246, 0.15); border-bottom: 1px solid rgba(139, 92, 246, 0.3); padding: 12px 24px; z-index: 1000; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(10px);';
-        banner.innerHTML = `
-          <span style="color: var(--accent); font-size: 14px;">You're logged in. <a href="discover.html" style="color: var(--accent-light); text-decoration: underline; font-weight: 600;">Go to Home</a> or <a href="index.html?skip_redirect=true" style="color: var(--muted); text-decoration: underline;">stay on landing page</a></span>
-          <button onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px 8px;">×</button>
-        `;
-        document.body.insertBefore(banner, document.body.firstChild);
-      }
-    })();
 
     // Auto-hide promo banner after 5 seconds
     setTimeout(() => {
@@ -1088,17 +1076,17 @@
     <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
       <div>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
+          <img src="assets/audio-city-logo.webp" alt="Audio City" width="32" height="32" style="height: 32px;" loading="lazy" onerror="this.style.display='none';">
           <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
         </div>
         <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
           Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
         </p>
         <div style="display: flex; gap: 12px;">
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
+          <a href="#" aria-label="Facebook" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
+          <a href="#" aria-label="Twitter" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
+          <a href="#" aria-label="Instagram" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
+          <a href="#" aria-label="YouTube" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
         </div>
       </div>
       <div>
@@ -1122,7 +1110,10 @@
       </div>
     </div>
     <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+      <p style="color: var(--muted); font-size: 14px;">&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </footer>
 </body>

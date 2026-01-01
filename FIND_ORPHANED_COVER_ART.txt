@@ -1,0 +1,124 @@
+═══════════════════════════════════════════════════════════════
+  TRACK NOT FOUND - INVESTIGATION NEEDED
+═══════════════════════════════════════════════════════════════
+
+ISSUE:
+------
+Track ID: 6b5db164-a8d5-467f-8fdc-cb516873e28f
+❌ Does NOT exist in tracks table
+❌ But frontend is trying to load: cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png
+
+POSSIBLE CAUSES:
+---------------
+1. Track was deleted but image URL is cached in frontend
+2. Track ID is different in database (typo/mismatch)
+3. Image is referenced from localStorage or sessionStorage
+4. Image is referenced from a different table (posts, comments, etc.)
+5. Browser cache has old data
+
+═══════════════════════════════════════════════════════════════
+  INVESTIGATION QUERIES
+═══════════════════════════════════════════════════════════════
+
+1. CHECK IF TRACK EXISTS WITH SIMILAR ID:
+   
+   SELECT id, title, cover_art_url 
+   FROM tracks 
+   WHERE id LIKE '%6b5db164%' 
+      OR id LIKE '%a8d5-467f%'
+      OR id LIKE '%cb516873e28f%';
+
+2. SEARCH FOR THIS UUID IN COVER ART URLS:
+   
+   SELECT id, title, cover_art_url 
+   FROM tracks 
+   WHERE cover_art_url LIKE '%6b5db164-a8d5-467f-8fdc-cb516873e28f%';
+
+3. CHECK ALL RECENT TRACKS:
+   
+   SELECT id, title, cover_art_url, created_at 
+   FROM tracks 
+   ORDER BY created_at DESC 
+   LIMIT 20;
+
+4. CHECK IF IT'S IN POSTS TABLE (if exists):
+   
+   SELECT * FROM posts 
+   WHERE content LIKE '%6b5db164-a8d5-467f-8fdc-cb516873e28f%'
+      OR cover_url LIKE '%6b5db164-a8d5-467f-8fdc-cb516873e28f%';
+
+5. COUNT TOTAL TRACKS:
+   
+   SELECT COUNT(*) as total_tracks FROM tracks;
+
+═══════════════════════════════════════════════════════════════
+  FRONTEND INVESTIGATION
+═══════════════════════════════════════════════════════════════
+
+The image URL is being requested, which means:
+
+1. CHECK BROWSER CONSOLE:
+   - Open browser DevTools (F12)
+   - Go to Console tab
+   - Look for the error: "6b5db164-a8d5-467f-8fdc-cb516873e28f.png:1 Failed to load resource"
+   - Check the "Network" tab to see which page/script is requesting it
+
+2. CHECK LOCALSTORAGE:
+   Run in browser console:
+   
+   // Check for cached track data
+   Object.keys(localStorage).forEach(key => {
+     const value = localStorage.getItem(key);
+     if (value && value.includes('6b5db164-a8d5-467f-8fdc-cb516873e28f')) {
+       console.log(key, value);
+     }
+   });
+
+3. CHECK SESSIONSTORAGE:
+   
+   Object.keys(sessionStorage).forEach(key => {
+     const value = sessionStorage.getItem(key);
+     if (value && value.includes('6b5db164-a8d5-467f-8fdc-cb516873e28f')) {
+       console.log(key, value);
+     }
+   });
+
+4. CHECK CURRENT PAGE:
+   - Look at the HTML source
+   - Search for: "6b5db164-a8d5-467f-8fdc-cb516873e28f"
+   - Check if it's in an img src attribute
+
+═══════════════════════════════════════════════════════════════
+  SOLUTIONS
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: IGNORE THE ERROR (IF ORPHANED)
+----------------------------------------
+If this is just an orphaned image reference:
+- The error is harmless (404 on missing image)
+- Frontend should handle it with onerror handler
+- No action needed
+
+OPTION 2: CLEAR BROWSER CACHE
+-----------------------------
+If it's cached data:
+- Clear browser cache
+- Clear localStorage/sessionStorage
+- Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
+
+OPTION 3: DELETE ORPHANED IMAGE FROM R2
+---------------------------------------
+If the image exists in R2 but track doesn't exist:
+- Delete from R2: cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png
+- This prevents future 404 errors
+
+OPTION 4: FIND THE ACTUAL TRACK
+--------------------------------
+Run the investigation queries above to find:
+- If track exists with different ID
+- If it's referenced elsewhere
+- What the actual track data is
+
+═══════════════════════════════════════════════════════════════
+
+

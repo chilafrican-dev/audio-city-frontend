@@ -1,0 +1,152 @@
+═══════════════════════════════════════════════════════════════
+  503 ERROR DIAGNOSTIC GUIDE
+═══════════════════════════════════════════════════════════════
+
+You're seeing continuous 503 errors. Let's diagnose the issue:
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: Check if Mastering Server is Running
+═══════════════════════════════════════════════════════════════
+
+The Worker tries to connect to:
+  🌐 https://mastering.audiocity-ug.com
+
+TEST IT:
+  1. Open browser
+  2. Go to: https://mastering.audiocity-ug.com/api/health
+  3. Or: https://mastering.audiocity-ug.com
+
+EXPECTED:
+  ✅ Should return JSON or HTML (not 503/404/ERR_CONNECTION_REFUSED)
+  ✅ "Cannot GET /" is OK - means server is running but no root route
+
+IF YOU SEE "Cannot GET /":
+  ✅ This is GOOD - server is running!
+  ✅ The server just doesn't have a root route (normal for API servers)
+  ✅ Check the actual API endpoint: /api/master-status/:jobId
+
+IF IT'S DOWN:
+  ❌ You need to start your mastering server
+  ❌ Check your VPS/server where mastering runs
+  ❌ Verify the domain DNS is pointing correctly
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: Verify Worker is Deployed
+═══════════════════════════════════════════════════════════════
+
+CHECK:
+  1. Go to: https://dash.cloudflare.com
+  2. Workers & Pages → audio-city-api-d1
+  3. Check: Last deployed time
+  4. Verify: Code includes 503 handling (lines 1680-1687)
+
+TEST WORKER DIRECTLY:
+  Open browser console and run:
+  
+  fetch('https://api.audiocity-ug.com/api/master-status/test-job-id')
+    .then(r => r.json())
+    .then(console.log)
+    .catch(console.error)
+
+EXPECTED:
+  ✅ Should return JSON with error (not HTML/404)
+  ✅ Should include "retry: true" if 503
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: Verify Frontend is Deployed
+═══════════════════════════════════════════════════════════════
+
+CHECK:
+  1. Go to: https://dash.cloudflare.com
+  2. Pages → Your project
+  3. Check: Last deployed time
+  4. Verify: mastering.js includes retry limits
+
+TEST IN BROWSER:
+  1. Open: https://www.audiocity-ug.com/mastering.html
+  2. Open browser console (F12)
+  3. Look for: "ACTIVE FILE CONFIRMED - mastering.js v20241230-4"
+  4. Try mastering a file
+  5. Check console for retry messages like:
+     "⚠️ Service temporarily unavailable. Retrying... (5/20)"
+
+IF YOU DON'T SEE RETRY COUNTS:
+  ❌ The updated mastering.js hasn't been deployed yet
+  ❌ Deploy cloudflare-frontend/ folder to Pages
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: Check Worker Environment Variables
+═══════════════════════════════════════════════════════════════
+
+CHECK:
+  1. Go to: https://dash.cloudflare.com
+  2. Workers & Pages → audio-city-api-d1
+  3. Settings → Variables
+  4. Look for: MASTERING_SERVER_URL
+
+IF IT'S SET:
+  ✅ Worker will use that URL instead of default
+  ✅ Verify the URL is correct and accessible
+
+IF IT'S NOT SET:
+  ✅ Worker uses default: https://mastering.audiocity-ug.com
+  ✅ Make sure that domain is working
+
+═══════════════════════════════════════════════════════════════
+  COMMON ISSUES & FIXES
+═══════════════════════════════════════════════════════════════
+
+ISSUE: Continuous 503s, no retry counts shown
+FIX: Deploy updated mastering.js to Cloudflare Pages
+
+ISSUE: 503s but retry counts show (e.g., "5/20")
+FIX: This is normal - server is temporarily down, will retry
+
+ISSUE: Mastering server returns 503
+FIX: Check your VPS/server where mastering runs
+     - Is the service running?
+     - Check server logs
+     - Verify domain DNS
+
+ISSUE: Worker can't reach mastering server
+FIX: Check:
+     - DNS configuration
+     - Firewall rules
+     - Server is listening on correct port
+     - SSL certificate is valid
+
+ISSUE: Worker returns 503 but server is up
+FIX: Check Worker logs in Cloudflare Dashboard
+     - Look for error messages
+     - Verify MASTERING_SERVER_URL is correct
+
+═══════════════════════════════════════════════════════════════
+  QUICK FIX CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+☐ Check mastering server: https://mastering.audiocity-ug.com
+☐ Deploy worker-d1.js → Cloudflare Workers
+☐ Deploy cloudflare-frontend/ → Cloudflare Pages
+☐ Verify Worker environment variables
+☐ Check browser console for retry messages
+☐ Test Worker endpoint directly
+
+═══════════════════════════════════════════════════════════════
+  WHAT THE CODE DOES
+═══════════════════════════════════════════════════════════════
+
+WORKER (worker-d1.js):
+  ✅ Tries to reach mastering server
+  ✅ If server returns 503 → Returns 503 with retry: true
+  ✅ If network error → Returns 503 with retry: true
+  ✅ Timeout after 10 seconds
+
+FRONTEND (mastering.js):
+  ✅ Receives 503 response
+  ✅ Shows retry count: "Retrying... (5/20)"
+  ✅ Waits 3-10 seconds (exponential backoff)
+  ✅ Retries up to 20 times for 503s
+  ✅ Stops after max retries with clear error
+
+═══════════════════════════════════════════════════════════════
+

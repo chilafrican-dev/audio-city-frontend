@@ -1,0 +1,129 @@
+═══════════════════════════════════════════════════════════════
+  WHERE TO DEPLOY - Complete Deployment Guide
+═══════════════════════════════════════════════════════════════
+
+You have TWO things to deploy:
+1. Cloudflare Worker (API backend) - worker-d1.js
+2. Cloudflare Pages (Frontend) - cloudflare-frontend/ folder
+
+═══════════════════════════════════════════════════════════════
+  PART 1: Deploy Cloudflare Worker (API Backend)
+═══════════════════════════════════════════════════════════════
+
+LOCATION: https://dash.cloudflare.com
+
+⚠️ INCLUDES: Mastering fixes (503 error handling, retry logic)
+
+STEPS:
+1. Go to: https://dash.cloudflare.com
+2. Click "Workers & Pages" in left sidebar
+3. Find "audio-city-api-d1" (or create it if it doesn't exist)
+4. Click on it to open
+5. Click "Edit code" or "Quick edit" button
+6. Copy ENTIRE contents of: worker-d1.js
+   (This includes mastering endpoints: /api/quick-master, /api/master-status)
+7. Paste into the Cloudflare editor
+8. Click "Save and deploy"
+9. Wait for deployment (10-30 seconds)
+
+VERIFY:
+- Go to Settings → Resources
+- Check D1 Database is bound: "DB" → "audio-city-db"
+- Check R2 Bucket is bound: "MEDIA_BUCKET" → "audio-city-tracks"
+- Go to Settings → Triggers → Custom Domains
+- Verify: api.audiocity-ug.com is listed
+- Make sure: www.audiocity-ug.com is NOT listed
+
+TEST:
+Open: https://api.audiocity-ug.com/api/health
+Should return: {"status":"ok","database":"connected","r2":"connected"}
+
+═══════════════════════════════════════════════════════════════
+  PART 2: Deploy Cloudflare Pages (Frontend)
+═══════════════════════════════════════════════════════════════
+
+LOCATION: https://dash.cloudflare.com
+
+⚠️ INCLUDES: Mastering frontend fixes (503 retry logic in mastering.js)
+
+STEPS:
+1. Go to: https://dash.cloudflare.com
+2. Click "Pages" in left sidebar
+3. Click "Create a project"
+4. Choose "Upload assets" (direct upload)
+5. Select the ENTIRE "cloudflare-frontend" folder
+   (NOT the root folder, just cloudflare-frontend/)
+   (This includes mastering.js with 503 retry fixes)
+6. Click "Deploy site"
+7. Wait for deployment (30-60 seconds)
+
+BIND DOMAIN:
+1. After deployment, go to "Custom domains" tab
+2. Click "Set up a custom domain"
+3. Enter: www.audiocity-ug.com
+4. Follow DNS instructions if needed
+
+VERIFY:
+- Deployment shows "Active" status
+- www.audiocity-ug.com is bound to the Pages project
+- Test: https://www.audiocity-ug.com/discover.html should load
+
+═══════════════════════════════════════════════════════════════
+  PART 3: Configure Environment Variables (Optional)
+═══════════════════════════════════════════════════════════════
+
+For Worker (if needed):
+1. Workers & Pages → audio-city-api-d1 → Settings
+2. Go to "Variables" section
+3. Add if needed:
+   - MASTERING_SERVER_URL = https://mastering.audiocity-ug.com
+   - R2_PUBLIC_URL = (your R2 public URL if different)
+
+═══════════════════════════════════════════════════════════════
+  QUICK CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+WORKER DEPLOYMENT:
+[ ] Worker code updated (worker-d1.js)
+[ ] D1 Database bound (DB → audio-city-db)
+[ ] R2 Bucket bound (MEDIA_BUCKET → audio-city-tracks)
+[ ] Custom domain: api.audiocity-ug.com
+[ ] www.audiocity-ug.com NOT bound to Worker
+[ ] Health endpoint works: /api/health
+
+PAGES DEPLOYMENT:
+[ ] cloudflare-frontend folder uploaded
+[ ] Deployment is Active
+[ ] Custom domain: www.audiocity-ug.com
+[ ] Static files load correctly
+
+TESTING:
+[ ] www.audiocity-ug.com/discover.html loads
+[ ] api.audiocity-ug.com/api/health returns OK
+[ ] Audio playback works
+[ ] Login/signup works
+[ ] Messages work
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Issue: Worker returns 503
+→ Check D1 and R2 are bound correctly
+→ Check Worker logs in Dashboard
+
+Issue: Pages shows 404
+→ Verify cloudflare-frontend folder was uploaded
+→ Check deployment status is "Active"
+
+Issue: Static files don't load
+→ Verify Worker is NOT bound to www.audiocity-ug.com
+→ Verify Pages IS bound to www.audiocity-ug.com
+
+Issue: API returns 404
+→ Verify Worker is deployed
+→ Verify api.audiocity-ug.com is bound to Worker
+→ Check Worker logs
+
+═══════════════════════════════════════════════════════════════
+

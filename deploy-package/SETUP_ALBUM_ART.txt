@@ -1,0 +1,41 @@
+# Album Art Embedding - Complete Setup
+
+## Quick Setup (Copy & Paste)
+
+1. Install ffmpeg:
+   sudo apt update && sudo apt install -y ffmpeg
+
+2. Create directories (already done):
+   mkdir -p assets temp
+   chmod 755 temp
+
+3. Add logo file:
+   Upload nico-city-logo.jpg to: deploy-package/assets/nico-city-logo.jpg
+
+4. Restart server:
+   pm2 restart api-server
+
+## Testing
+
+Upload a test MP3 and check logs:
+pm2 logs api-server
+
+Look for: "✅ Album art embedded successfully"
+
+## Logo File Names Supported
+
+- assets/nico-city-logo.jpg (recommended)
+- assets/nico-city-logo.png
+- assets/NICO-CITY-LOGO.jpg
+- assets/NICO-CITY-LOGO.png
+
+## What's Already Done
+
+✅ Code updated in api-server.js
+✅ Directories created (assets/, temp/)
+✅ Error handling added
+✅ Multiple logo path fallbacks
+
+## Next Step
+
+Just add the logo file and restart the server!

@@ -1388,7 +1388,7 @@
     // Validate token with backend - DO NOT clear localStorage on failure
     // Trust localStorage - only use this for refreshing user data
     async function validateAndUpdateToken() {
-      const authToken = localStorage.getItem('auth_token');
+            const authToken = localStorage.getItem('auth_token');
       const userId = localStorage.getItem('user_id');
       
       // Trust localStorage - if we have token and user_id, user is logged in
@@ -1476,11 +1476,11 @@
             signOutBtn.style.display = 'inline-block';
             signOutBtn.style.visibility = 'visible';
           }
-          if (signInBtn) {
+        if (signInBtn) {
             signInBtn.style.display = 'none';
             signInBtn.style.visibility = 'hidden';
-          }
-          if (signUpBtn) {
+        }
+        if (signUpBtn) {
             signUpBtn.style.display = 'none';
             signUpBtn.style.visibility = 'hidden';
           }
@@ -1592,7 +1592,7 @@
         updateAuthUI(); // Show UI immediately based on localStorage
         checkAuthStateOnLoad(); // Then validate with backend
       });
-    } else {
+      } else {
       updateAuthUI(); // Show UI immediately
       checkAuthStateOnLoad(); // Then validate with backend
     }
@@ -2779,6 +2779,413 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
             <h2 style="font-size: 24px; font-weight: 700; color: var(--accent);">💜 Donate to Audio City</h2>
             <button class="close-donate-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+          </div>
+          <p style="color: var(--muted); margin-bottom: 24px; line-height: 1.6;">
+            Help us keep Audio City running! Click the button below to make a secure donation via Julypay. You'll be redirected to a secure payment page where you can enter your amount and mobile money details.
+          </p>
+          <div style="margin-bottom: 24px; padding: 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <span style="font-size: 24px;">🔒</span>
+              <div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Secure Payment</div>
+                <div style="font-size: 12px; color: var(--muted);">All transactions are encrypted and secure</div>
+            </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📱</span>
+              <div>
+                <div style="font-weight: 600; margin-bottom: 4px;">MTN & Airtel Uganda</div>
+                <div style="font-size: 12px; color: var(--muted);">Supports both mobile money networks</div>
+            </div>
+            </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+            <a href="https://app.julypay.net/pay/user/nico-d7oz" target="_blank" rel="noopener noreferrer" id="donateLinkBtn" style="flex: 1; padding: 16px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>💜</span>
+              <span>Donate via Julypay</span>
+              <span style="font-size: 14px;">↗</span>
+            </a>
+            <button type="button" class="close-donate-modal" style="padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Close modal handlers
+      modal.querySelectorAll('.close-donate-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.remove());
+      });
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+      
+      // Track when user clicks donate link
+      const donateLinkBtn = modal.querySelector('#donateLinkBtn');
+      if (donateLinkBtn) {
+        donateLinkBtn.addEventListener('click', () => {
+          // Store donation intent locally
+          const donationIntent = {
+            timestamp: new Date().toISOString(),
+            source: 'feed.html'
+          };
+          const donations = JSON.parse(localStorage.getItem('audio_city_donations') || '[]');
+          donations.push(donationIntent);
+          localStorage.setItem('audio_city_donations', JSON.stringify(donations));
+          
+          // Close modal after a short delay to show the link was clicked
+    setTimeout(() => {
+            modal.remove();
+    }, 500);
+        });
+      }
+    }
+    
+    // Show create modal
+    function showCreateModal() {
+      const modal = document.createElement('div');
+      modal.id = 'createModal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 400px; width: 90%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700;">Create</h2>
+            <button class="close-create-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;">×</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button class="create-option-btn" data-action="upload" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">🎵</span>
+              <div style="flex: 1;">
+                <div>Upload Audio</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Share your music</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="post" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">💬</span>
+              <div style="flex: 1;">
+                <div>Write Post</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Share your thoughts</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="playlist" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📀</span>
+              <div style="flex: 1;">
+                <div>Create Playlist</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Curate tracks</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="ad" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📢</span>
+              <div style="flex: 1;">
+                <div>Post Ad</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Promote your business</div>
+              </div>
+            </button>
+            <button class="create-option-btn" data-action="master" style="padding: 16px 20px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.3s; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">🎚️</span>
+              <div style="flex: 1;">
+                <div>Master Audio</div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;">Professional audio mastering</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Add hover effects
+      modal.querySelectorAll('.create-option-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = 'rgba(139, 92, 246, 0.1)';
+          btn.style.borderColor = 'var(--accent)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = 'var(--glass)';
+          btn.style.borderColor = 'var(--border)';
+        });
+      });
+      
+      // Close modal handlers
+      modal.querySelectorAll('.close-create-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.remove());
+      });
+      
+      // Close on background click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      // Handle option clicks
+      modal.querySelectorAll('.create-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action;
+          modal.remove();
+          
+          switch (action) {
+            case 'upload':
+              window.location.href = 'artist-corner.html';
+              break;
+            case 'post':
+              alert('Text posts coming soon!');
+              break;
+            case 'playlist':
+              alert('Playlists coming soon!');
+              break;
+            case 'ad':
+              showPostAdModal();
+              break;
+            case 'master':
+              window.location.href = 'mastering.html';
+              break;
+          }
+        });
+      });
+    }
+    
+    // Show Post Ad Modal
+    function showPostAdModal() {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700;">Post Business Ad</h2>
+            <button class="close-modal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer;">×</button>
+          </div>
+          <form id="postAdForm">
+            <div style="margin-bottom: 20px;">
+              <label for="adBusinessName" style="display: block; margin-bottom: 8px; font-weight: 600;">Business Name *</label>
+              <input type="text" id="adBusinessName" name="adBusinessName" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Nia Clothing" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adBusinessHandle" style="display: block; margin-bottom: 8px; font-weight: 600;">Business Handle *</label>
+              <input type="text" id="adBusinessHandle" name="adBusinessHandle" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="niaclothing" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adDescription" style="display: block; margin-bottom: 8px; font-weight: 600;">Ad Description *</label>
+              <textarea id="adDescription" name="adDescription" rows="3" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell people about your business..."></textarea>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adWebsiteUrl" style="display: block; margin-bottom: 8px; font-weight: 600;">Website URL *</label>
+              <input type="url" id="adWebsiteUrl" name="adWebsiteUrl" required style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="https://yourbusiness.com" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adCategory" style="display: block; margin-bottom: 8px; font-weight: 600;">Category</label>
+              <input type="text" id="adCategory" name="adCategory" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Fashion, Music, Services, etc." />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label for="adFeatured" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="adFeatured" name="adFeatured" />
+                <span>Make this a Featured Ad (Paid)</span>
+              </label>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button type="submit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 12px; font-weight: 600; cursor: pointer;">Post Ad</button>
+              <button type="button" class="close-modal" style="padding: 12px 24px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Close modal handlers
+      modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => modal.remove());
+      });
+      
+      // Form submission
+      modal.querySelector('#postAdForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const adData = {
+          businessName: document.getElementById('adBusinessName').value,
+          businessHandle: document.getElementById('adBusinessHandle').value,
+          text: document.getElementById('adDescription').value,
+          websiteUrl: document.getElementById('adWebsiteUrl').value,
+          category: document.getElementById('adCategory').value || 'Business',
+          isFeatured: document.getElementById('adFeatured').checked
+        };
+        
+        // Would send to API
+        console.log('Posting ad:', adData);
+        alert('Ad posted! (This would normally save to the database)');
+        modal.remove();
+        // Reload feed to show new ad
+        loadFeed();
+      });
+    }
+    
+    // Utility functions
+    function getTimeAgo(timestamp) {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      return `${Math.floor(seconds / 86400)}d ago`;
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Force fresh load - prevent any caching
+    if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_BACK_FORWARD) {
+      window.location.reload(true);
+    }
+    
+    // Update header profile picture and wire donate on load
+    window.addEventListener('load', () => {
+      updateHeaderProfilePicture();
+      // Load feed on page load
+      loadFeed();
+    });
+    
+    // Also load feed when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        loadFeed();
+      });
+    } else {
+      // DOM already loaded
+      loadFeed();
+    }
+    
+    // Development mode check (only show logs in development)
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // Service Worker Configuration
+    // Set to false to disable service worker (useful if it's causing issues with Cloudflare Workers)
+    const ENABLE_SERVICE_WORKER = false; // Disabled to prevent conflicts with Cloudflare Worker API
+    
+    // Unregister any existing service workers if disabled
+    if (!ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          registration.unregister().then(() => {
+            if (isDevelopment) {
+              console.log('✅ Service Worker unregistered');
+            }
+          }).catch(error => {
+            if (isDevelopment) {
+              console.error('❌ Service Worker unregistration failed:', error);
+            }
+          });
+        });
+      });
+    }
+    
+    // Register service worker for PWA
+    // Only register if sw.js is available with correct MIME type
+    if (ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Verify sw.js exists and has correct content type before registering
+        fetch('/sw.js', { method: 'HEAD' })
+          .then(response => {
+            const contentType = response.headers.get('content-type') || '';
+            if (response.ok && contentType.includes('javascript')) {
+              return navigator.serviceWorker.register('/sw.js');
+            } else {
+              // File doesn't exist or wrong MIME type - skip registration silently
+              if (isDevelopment) {
+                console.warn('⚠️ Service Worker file not available (404 or wrong MIME type)');
+              }
+              return Promise.reject(new Error('Service worker file not available'));
+            }
+          })
+          .then(registration => {
+            if (isDevelopment) {
+            console.log('✅ Service Worker registered:', registration.scope);
+            }
+          })
+          .catch(error => {
+            // Silently fail - service worker is optional for PWA
+            if (isDevelopment) {
+              console.error('❌ Service Worker registration failed:', error.message);
+            }
+          });
+      });
+    }
+    
+    // Check if we're seeing old design and force reload
+    setTimeout(() => {
+      const hasGlassmorphism = document.querySelector('.bg-layer');
+      const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      const hasNewAccent = accentColor.includes('8b5cf6') || accentColor === '#8b5cf6';
+      
+      if (isDevelopment) {
+      console.log('Design Check:', {
+        hasGlassmorphism: !!hasGlassmorphism,
+        accentColor: accentColor,
+        hasNewAccent: hasNewAccent
+      });
+      }
+      
+      if (!hasGlassmorphism || !hasNewAccent) {
+        console.warn('❌ OLD DESIGN DETECTED - Forcing reload with cache-busting');
+        const url = new URL(window.location.href);
+        url.searchParams.set('v', Date.now());
+        url.searchParams.set('nocache', '1');
+        window.location.href = url.toString();
+      } else if (isDevelopment) {
+        console.log('✅ NEW DESIGN CONFIRMED - All styles loaded correctly');
+      }
+    }, 500);
+  </script>
+  
+  <!-- Footer -->
+  <footer style="background: var(--bg); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
+          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
+          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
+        </p>
+        <div style="display: flex; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
+          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
+          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
+          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
+          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
+          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+    </div>
+  </footer>
+  
+  <!-- Moderation System -->
+  <script src="js/moderation-system.js"></script>
+  <script src="js/moderation-ui.js"></script>
+  <script src="js/moderation-integration.js"></script>
+</body>
+</html>
+
           </div>
           <p style="color: var(--muted); margin-bottom: 24px; line-height: 1.6;">
             Help us keep Audio City running! Click the button below to make a secure donation via Julypay. You'll be redirected to a secure payment page where you can enter your amount and mobile money details.

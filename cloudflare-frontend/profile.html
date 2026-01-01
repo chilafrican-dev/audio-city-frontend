@@ -28,6 +28,184 @@
       }
     })();
     
+    // Update header profile picture
+    async function updateHeaderProfilePicture() {
+      const userId = localStorage.getItem('user_id');
+      const headerImg = document.getElementById('headerProfileImg');
+      const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+      
+      if (!headerImg || !headerPlaceholder) return;
+      
+      // Only update if user is logged in
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken || !userId) {
+        // User not logged in - hide profile picture
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+        return;
+      }
+      
+      let avatar = null;
+      
+      // Try to fetch from backend API first
+      if (typeof API_BASE_URL !== 'undefined') {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+          if (response.ok) {
+            const userData = await response.json();
+            avatar = userData?.profile_image || userData?.avatar_url || userData?.profile_image_url;
+            
+            // If avatar URL is relative, make it absolute
+            if (avatar && avatar.startsWith('/media/')) {
+              avatar = `${API_BASE_URL.replace('/api', '')}${avatar}`;
+            } else if (avatar && avatar.startsWith('/uploads/')) {
+              avatar = `${API_BASE_URL}${avatar}`;
+            }
+            // Force HTTPS for any http avatar URLs to avoid mixed-content blocks
+            if (avatar && avatar.startsWith('http://')) {
+              avatar = avatar.replace('http://', 'https://');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load profile picture from API:', error);
+        }
+      }
+      
+      // Update header image
+      if (avatar) {
+        headerImg.src = avatar;
+        headerImg.style.display = 'block';
+        headerPlaceholder.style.display = 'none';
+      } else {
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+      }
+    }
+    
+    // Update header authentication UI based on login status
+    function updateHeaderAuth() {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const isLoggedIn = !!(authToken && userId);
+      
+      const signInBtn = document.getElementById('signInBtn');
+      const signUpBtn = document.getElementById('signUpBtn');
+      const signOutBtn = document.getElementById('signOutBtnHeader');
+      const profileBtn = document.getElementById('profileBtn');
+      const masteringBtn = document.getElementById('masteringBtn');
+      const inboxLink = document.getElementById('inboxNavLink');
+      
+      // Get all elements with auth classes
+      const loggedOutElements = document.querySelectorAll('.auth-logged-out');
+      const loggedInElements = document.querySelectorAll('.auth-logged-in');
+      
+      if (isLoggedIn) {
+        // User is logged in - hide sign in/up, show sign out and profile
+        if (signInBtn) {
+          signInBtn.style.display = 'none';
+          signInBtn.style.visibility = 'hidden';
+        }
+        if (signUpBtn) {
+          signUpBtn.style.display = 'none';
+          signUpBtn.style.visibility = 'hidden';
+        }
+        if (signOutBtn) {
+          signOutBtn.style.display = 'inline-block';
+          signOutBtn.style.visibility = 'visible';
+        }
+        if (profileBtn) {
+          profileBtn.style.display = 'flex';
+          profileBtn.style.visibility = 'visible';
+        }
+        if (inboxLink) {
+          inboxLink.style.display = 'inline-block';
+          inboxLink.style.visibility = 'visible';
+        }
+        if (masteringBtn) {
+          masteringBtn.style.display = 'inline-block';
+        }
+        
+        // Hide logged-out elements, show logged-in elements
+        loggedOutElements.forEach(el => {
+          if (el) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+          }
+        });
+        loggedInElements.forEach(el => {
+          if (el && el.id !== 'profileBtn') {
+            el.style.display = 'inline-block';
+            el.style.visibility = 'visible';
+          } else if (el && el.id === 'profileBtn') {
+            el.style.display = 'flex';
+            el.style.visibility = 'visible';
+          }
+        });
+        
+        // Update header profile picture
+        updateHeaderProfilePicture();
+      } else {
+        // User is not logged in - show sign in/up, hide sign out and profile
+        if (signInBtn) {
+          signInBtn.style.display = 'inline-block';
+          signInBtn.style.visibility = 'visible';
+        }
+        if (signUpBtn) {
+          signUpBtn.style.display = 'inline-block';
+          signUpBtn.style.visibility = 'visible';
+        }
+        if (signOutBtn) {
+          signOutBtn.style.display = 'none';
+          signOutBtn.style.visibility = 'hidden';
+        }
+        if (profileBtn) {
+          profileBtn.style.display = 'none';
+          profileBtn.style.visibility = 'hidden';
+        }
+        if (inboxLink) {
+          inboxLink.style.display = 'none';
+          inboxLink.style.visibility = 'hidden';
+        }
+        if (masteringBtn) {
+          masteringBtn.style.display = 'inline-block';
+        }
+        
+        // Show logged-out elements, hide logged-in elements
+        loggedOutElements.forEach(el => {
+          if (el) {
+            el.style.display = 'inline-block';
+            el.style.visibility = 'visible';
+          }
+        });
+        loggedInElements.forEach(el => {
+          if (el) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+          }
+        });
+        
+        // Hide profile picture for guests
+        const headerImg = document.getElementById('headerProfileImg');
+        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+        if (headerImg) {
+          headerImg.style.display = 'none';
+        }
+        if (headerPlaceholder) {
+          headerPlaceholder.style.display = 'flex';
+        }
+      }
+    }
+    
+    // Run header auth update immediately and on load
+    (function() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateHeaderAuth);
+      } else {
+        updateHeaderAuth();
+      }
+      window.addEventListener('load', updateHeaderAuth);
+    })();
+    
     // Manifest loading disabled - Cloudflare WAF blocks JSON files
   </script>
   <meta name="theme-color" content="#8b5cf6" />
@@ -591,12 +769,14 @@
             <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
           </div>
         </div>
-        <a href="inbox.html" class="nav-item">Inbox</a>
+        <a href="inbox.html" class="nav-item auth-logged-in" id="inboxNavLink" style="display: none;">Inbox</a>
       </nav>
       <div class="nav-right">
         <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
-        <button id="signOutBtnHeader" onclick="signOut()" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
-        <div class="profile-btn" id="profileBtn" style="position: relative;" onclick="toggleProfileMenu(event)">
+        <a href="login.html" class="header-btn btn-signin auth-logged-out" id="signInBtn" style="padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create auth-logged-out" id="signUpBtn" style="padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <button id="signOutBtnHeader" class="auth-logged-in" onclick="signOut()" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer; display: none;">Sign out</button>
+        <div class="profile-btn auth-logged-in" id="profileBtn" style="position: relative; display: none;" onclick="toggleProfileMenu(event)">
           <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
           <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px;">👤</div>
           <div class="dropdown-menu" id="profileMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000;">
@@ -794,7 +974,15 @@
       var urlParams = new URLSearchParams(window.location.search);
     }
     if (typeof profileUserId === 'undefined') {
-      var profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
+      // Always prioritize URL parameter - if ?id= exists in URL, use it (even if empty)
+      const urlId = urlParams.get('id');
+      if (urlId !== null) {
+        // URL has ?id= parameter (could be empty string)
+        profileUserId = urlId || null;
+      } else {
+        // No ?id= parameter in URL, use logged-in user
+        profileUserId = localStorage.getItem('user_id');
+      }
     }
     
     // Initialize buttons and UI when DOM is ready
@@ -881,16 +1069,16 @@
       if (editProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
           document.getElementById('editProfileModal').style.display = 'flex';
-      // Load current values
-      const currentName = document.getElementById('profileName')?.textContent?.trim() || localStorage.getItem('user_name') || '';
-      const currentUsername = document.getElementById('profileHandle')?.textContent?.replace('@', '') || localStorage.getItem('username') || '';
-      const currentBio = document.getElementById('profileBio')?.textContent?.trim() || localStorage.getItem('bio') || '';
-      const currentLocation = document.getElementById('locationText')?.textContent?.trim() || localStorage.getItem('location') || '';
-      const currentPhone = localStorage.getItem('phone_number') || '';
+      // Load current values from DOM (already loaded from API)
+      const currentName = document.getElementById('profileName')?.textContent?.trim() || '';
+      const currentUsername = document.getElementById('profileHandle')?.textContent?.replace('@', '') || '';
+      const currentBio = document.getElementById('profileBio')?.textContent?.trim() || '';
+      const currentLocation = document.getElementById('locationText')?.textContent?.trim() || '';
+      const currentPhone = document.getElementById('phoneNumber')?.textContent?.trim() || '';
       
-      // Check if user is a producer
-      const userType = localStorage.getItem('user_type') || '';
-      const isProducer = userType === 'producer' || userType === 'Producer';
+      // Check if user is a producer - fetch from API if needed
+      // For now, show phone field if phone number exists
+      const isProducer = !!currentPhone;
       const phoneField = document.getElementById('phoneNumberField');
       if (phoneField) {
         phoneField.style.display = isProducer ? 'block' : 'none';
@@ -903,21 +1091,15 @@
       if (document.getElementById('editLocation')) document.getElementById('editLocation').value = currentLocation;
       if (document.getElementById('editPhoneNumber')) document.getElementById('editPhoneNumber').value = currentPhone;
       
-      const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || '';
+      // Get existing avatar from DOM (already loaded from API)
+      const avatarImg = document.querySelector('#profileAvatar img');
+      const existingAvatar = avatarImg?.src || '';
       if (existingAvatar) {
-        if (existingAvatar.startsWith('data:image')) {
-          // It's a data URL (uploaded image) - show in preview
-          document.getElementById('avatarPreview').src = existingAvatar;
-          document.getElementById('avatarPreview').style.display = 'block';
-          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
-          document.getElementById('editAvatarUrl').value = '';
-        } else {
-          // It's a URL
-          document.getElementById('editAvatarUrl').value = existingAvatar;
-          document.getElementById('avatarPreview').src = existingAvatar;
-          document.getElementById('avatarPreview').style.display = 'block';
-          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
-        }
+        // Show in preview
+        document.getElementById('avatarPreview').src = existingAvatar;
+        document.getElementById('avatarPreview').style.display = 'block';
+        document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+        document.getElementById('editAvatarUrl').value = existingAvatar;
       } else {
         // No avatar - reset preview
         document.getElementById('avatarPreview').style.display = 'none';
@@ -968,7 +1150,8 @@
           document.getElementById('editAvatar').value = '';
         } else {
           // Clear preview if URL is empty
-          const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+          const avatarImg = document.querySelector('#profileAvatar img');
+          const existingAvatar = avatarImg?.src || '';
           if (!existingAvatar) {
             document.getElementById('avatarPreview').style.display = 'none';
             document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
@@ -1041,10 +1224,13 @@
             avatarUrl = uploadData.avatar_url || uploadData.profile_image;
             // Also save to localStorage as backup
             if (avatarUrl) {
-              localStorage.setItem('profile_image_url', avatarUrl);
-              localStorage.setItem('profile_image_data', avatarUrl);
+              // Don't save to localStorage - data comes from API
             }
             console.log('✅ Profile picture uploaded successfully:', avatarUrl);
+            // Immediately update the profile picture display
+            if (avatarUrl) {
+              updateProfilePicture(avatarUrl);
+            }
           } else {
             const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
             console.error('❌ Profile picture upload failed:', error);
@@ -1058,7 +1244,7 @@
           const avatarUrlInput = document.getElementById('editAvatarUrl').value.trim();
           if (avatarUrlInput) {
             avatarUrl = avatarUrlInput;
-            localStorage.setItem('profile_image_url', avatarUrl);
+            // Don't save to localStorage - data comes from API
           }
         }
         
@@ -1076,7 +1262,7 @@
         if (username) profileData.username = username;
         if (phoneNumber) {
           profileData.phone_number = phoneNumber;
-          localStorage.setItem('phone_number', phoneNumber);
+          // Don't save to localStorage - data comes from API
         }
         
         if (Object.keys(profileData).length > 0) {
@@ -1090,30 +1276,25 @@
           });
           
           if (updateResponse.ok) {
-            // Persist returned user details so they show up after reload and across tabs
+            // Reload profile from API to get fresh data
             const updated = await updateResponse.json().catch(() => null);
             const updatedUser = updated?.user;
             if (updatedUser) {
-              if (updatedUser.name) localStorage.setItem('user_name', updatedUser.name);
-              if (updatedUser.username) localStorage.setItem('username', updatedUser.username);
-              if (updatedUser.bio) localStorage.setItem('bio', updatedUser.bio);
-              if (updatedUser.location) localStorage.setItem('location', updatedUser.location);
-              if (updatedUser.avatar_url || updatedUser.profile_image) {
-                const avatarPersisted = updatedUser.avatar_url || updatedUser.profile_image;
-                localStorage.setItem('profile_image_url', avatarPersisted);
+              // Update profile picture if avatar was updated
+              if (updatedUser.profile_image_url || updatedUser.avatar_url || updatedUser.profile_image) {
+                const avatarPersisted = updatedUser.profile_image_url || updatedUser.avatar_url || updatedUser.profile_image;
                 updateProfilePicture(avatarPersisted);
               }
+              // Reload profile to get all fresh data from API
+              await loadProfile();
             }
           } else {
             console.warn('Profile update failed, but continuing...');
           }
         }
         
-        // Save to localStorage as backup
-        if (bio) localStorage.setItem('bio', bio);
-        if (location) localStorage.setItem('location', location);
-        
-          // Close modal and reload
+        // Don't save to localStorage - reload profile from API to get fresh data
+        // Close modal and reload
           document.getElementById('editProfileModal').style.display = 'none';
           loadProfile();
         } catch (error) {
@@ -1220,13 +1401,13 @@
       }
     });
     
-    // Helper function to update profile picture display
+    // Helper function to update profile picture display (only for the profile being viewed, not header)
     function updateProfilePicture(imageSrc) {
       if (imageSrc) {
         // Force HTTPS to avoid mixed-content blocks
         imageSrc = imageSrc.replace(/^http:\/\//i, 'https://');
         
-        // Update main profile avatar
+        // Update main profile avatar (the profile being viewed)
         const avatarEl = document.querySelector('#profileAvatar img');
         const placeholder = document.querySelector('#profileAvatar > div');
         if (avatarEl) {
@@ -1237,15 +1418,10 @@
           }
         }
         
-        // Update header profile button
-        const headerImg = document.getElementById('headerProfileImg');
-        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
-        if (headerImg) {
-          headerImg.src = imageSrc;
-          headerImg.style.display = 'block';
-        }
-        if (headerPlaceholder) {
-          headerPlaceholder.style.display = 'none';
+        // Only update header profile picture if viewing own profile
+        const currentUserId = localStorage.getItem('user_id');
+        if (profileUserId === currentUserId) {
+          updateHeaderProfilePicture();
         }
       } else {
         // Hide image if no avatar
@@ -1258,14 +1434,10 @@
           placeholder.style.display = 'flex';
         }
         
-        // Update header profile button
-        const headerImg = document.getElementById('headerProfileImg');
-        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
-        if (headerImg) {
-          headerImg.style.display = 'none';
-        }
-        if (headerPlaceholder) {
-          headerPlaceholder.style.display = 'flex';
+        // Only update header if viewing own profile
+        const currentUserId = localStorage.getItem('user_id');
+        if (profileUserId === currentUserId) {
+          updateHeaderProfilePicture();
         }
       }
     }
@@ -1273,9 +1445,15 @@
     // Load profile
     async function loadProfile() {
       try {
-        if (!profileUserId) {
-          console.error('No profile user ID found');
-          // Try to get from localStorage
+        // Always get profileUserId from URL first, don't fallback to localStorage if viewing another user
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('id');
+        
+        // If URL has an id parameter, use it (even if empty string, we'll handle that)
+        if (urlUserId !== null) {
+          profileUserId = urlUserId;
+        } else if (!profileUserId) {
+          // Only fallback to localStorage if no URL param AND profileUserId not set
           const storedUserId = localStorage.getItem('user_id');
           if (storedUserId) {
             profileUserId = storedUserId;
@@ -1285,6 +1463,16 @@
             return;
           }
         }
+        
+        // Validate profileUserId
+        if (!profileUserId || profileUserId.trim() === '') {
+          console.error('Invalid profile user ID');
+          document.getElementById('profileName').textContent = 'User not found';
+          document.getElementById('profileHandle').textContent = '@unknown';
+          return;
+        }
+        
+        console.log('Loading profile for user ID:', profileUserId);
         
         // Try to fetch user data from API
         let userData = null;
@@ -1304,30 +1492,35 @@
           }
         }
         
-        // Load user data (from API or localStorage)
-        const userName = userData?.name || userData?.full_name || localStorage.getItem('user_name') || 'User';
-        const username = userData?.username || userData?.handle || localStorage.getItem('username') || 'user';
+        // Load user data from API ONLY - no localStorage fallbacks when online
+        if (!userData) {
+          console.error('Failed to load user data from API');
+          document.getElementById('profileName').textContent = 'User not found';
+          document.getElementById('profileHandle').textContent = '@unknown';
+          return;
+        }
+        
+        const isOwnProfile = profileUserId === localStorage.getItem('user_id');
+        const userName = userData?.name || userData?.full_name || 'User';
+        const username = userData?.username || userData?.handle || 'user';
         
         console.log('Setting profile name:', userName, 'username:', username);
-        // Get avatar from API response first, then fallback to localStorage
-        let avatar = userData?.profile_image || userData?.avatar_url || null;
+        // Get avatar from API response only
+        let avatar = userData?.profile_image_url || userData?.profile_image || userData?.avatar_url || null;
         
         // If avatar URL is relative, make it absolute
-        if (avatar && avatar.startsWith('/uploads/')) {
+        if (avatar && avatar.startsWith('/media/')) {
+          avatar = `${API_BASE_URL.replace('/api', '')}${avatar}`;
+        } else if (avatar && avatar.startsWith('/uploads/')) {
           avatar = `${API_BASE_URL}${avatar}`;
         }
         
-        // Fallback to localStorage if no avatar from API
-        if (!avatar) {
-          avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || null;
-        }
-        const bio = userData?.bio || userData?.description || localStorage.getItem('bio') || 'No bio yet.';
-        const location = userData?.location || localStorage.getItem('location') || null;
+        const bio = userData?.bio || userData?.description || 'No bio yet.';
+        const location = userData?.location || null;
         const phoneNumber = userData?.phone_number || '';
         const isVerified = userData?.is_verified || userData?.verified || false;
         
-        // Store phone number for edit form
-        if (phoneNumber) localStorage.setItem('phone_number', phoneNumber);
+        // Don't store in localStorage - data comes from API
         
         // Preserve admin status - don't overwrite if user is admin
         // Check if user ID starts with 'admin_' to maintain admin status
@@ -1338,10 +1531,7 @@
           console.log('Admin status preserved for admin user');
         }
         
-        // Update localStorage with profile data (but preserve admin status)
-        localStorage.setItem('name', userName);
-        localStorage.setItem('user_name', userName);
-        localStorage.setItem('username', username);
+        // Don't save to localStorage - data comes from API
         
         document.getElementById('profileName').textContent = userName;
         document.getElementById('profileHandle').textContent = `@${username}`;
@@ -1367,11 +1557,19 @@
         
         // Load tracks
         const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${profileUserId}&order=created_at.desc&limit=12`);
-        const tracks = tracksResponse.ok ? await tracksResponse.json() : [];
+        let tracks = [];
+        if (tracksResponse.ok) {
+          const tracksData = await tracksResponse.json();
+          tracks = Array.isArray(tracksData) ? tracksData : [];
+        }
         
         // Get total tracks count (not just the 12 we fetched for display)
         const allTracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${profileUserId}`);
-        const allTracks = allTracksResponse.ok ? await allTracksResponse.json() : [];
+        let allTracks = [];
+        if (allTracksResponse.ok) {
+          const allTracksData = await allTracksResponse.json();
+          allTracks = Array.isArray(allTracksData) ? allTracksData : [];
+        }
         const tracksCountEl = document.getElementById('tracksCount');
         if (tracksCountEl) {
           tracksCountEl.textContent = allTracks.length.toLocaleString();
@@ -1464,11 +1662,16 @@
           return;
         }
         
+        // Get admin email for admin bypass
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        
         const response = await fetch(`${API_BASE_URL}/api/tracks/${trackId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail
           }
         });
         
@@ -1719,6 +1922,9 @@
       // Initialize UI first
       initializeProfileUI();
       
+      // Update header authentication UI
+      updateHeaderAuth();
+      
       // Then load profile data
       loadProfile();
       
@@ -1751,7 +1957,9 @@
     window.addEventListener('load', () => {
       if (!initialized && !profileUserId) {
         // Retry loading if profileUserId wasn't set yet
-        profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
+        // Always prioritize URL parameter
+        const urlId = urlParams.get('id');
+        profileUserId = (urlId !== null) ? urlId : localStorage.getItem('user_id');
         if (profileUserId) {
           initOnce();
         }

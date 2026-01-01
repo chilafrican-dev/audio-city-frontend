@@ -1,0 +1,62 @@
+# Test Login Directly - Run in Browser Console
+
+## Step 1: Test the API directly (bypasses frontend)
+
+Open browser console on any page and run:
+
+fetch('https://api.audiocity-ug.com/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    identifier: 'chilafrican@gmail.com',
+    password: 'Semakulanico1'
+  })
+})
+.then(async r => {
+  const text = await r.text();
+  console.log('Status:', r.status);
+  console.log('Response:', text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+})
+.then(console.log)
+.catch(console.error);
+
+## Step 2: Check what password is actually stored
+
+Run this SQL in D1 Console:
+
+SELECT 
+  email,
+  password,
+  LENGTH(password) as pwd_len,
+  HEX(password) as pwd_hex,
+  SUBSTR(password, 1, 5) as pwd_start
+FROM users 
+WHERE email = 'chilafrican@gmail.com';
+
+This will show:
+- The exact password stored
+- Its length
+- Hex encoding (to check for hidden characters)
+- First 5 characters
+
+## Step 3: Verify password matches exactly
+
+The password should be exactly: Semakulanico1
+- Capital S
+- Lowercase: emakulanico
+- Number: 1
+- No spaces, no special characters
+
+## Step 4: Check Cloudflare Worker Logs
+
+1. Go to Cloudflare Dashboard
+2. Workers & Pages > Your Worker
+3. View Logs
+4. Look for "[Login] Attempting login for..." messages
+5. Check if it says "User found but password mismatch"
+

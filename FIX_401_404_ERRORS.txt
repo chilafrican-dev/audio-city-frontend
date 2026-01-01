@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════════
+  FIX 401 AND 404 ERRORS
+═══════════════════════════════════════════════════════════════
+
+ISSUES FOUND:
+1. 401 error on GET /api/tracks/:id (should be public)
+2. 404 errors on cover art images
+
+═══════════════════════════════════════════════════════════════
+  FIXES APPLIED
+═══════════════════════════════════════════════════════════════
+
+1. GET /api/tracks/:id:
+   - Added logging to debug routing
+   - Confirmed it's PUBLIC (no auth required)
+   - Added better error messages
+
+2. Cover Art URLs:
+   - Fixed URL generation for R2 public URLs
+   - Added fallback to /api/media/ proxy if R2 URL not configured
+   - Added logging for cover art upload
+
+═══════════════════════════════════════════════════════════════
+  DEBUGGING STEPS
+═══════════════════════════════════════════════════════════════
+
+1. CHECK WORKER LOGS:
+   - Cloudflare Dashboard → Workers → Logs
+   - Look for: "[Get Track]" messages
+   - Should see trackId being parsed correctly
+
+2. CHECK TRACK EXISTS:
+   Run in Cloudflare D1:
+   
+   SELECT id, title, cover_art_url, audio_url 
+   FROM tracks 
+   WHERE id = 'aefc3816-84a2-43ed-8556-191bccca9349';
+
+3. CHECK COVER ART URL:
+   - If cover_art_url starts with R2 URL, check if R2 is public
+   - If 404, the file might not have uploaded to R2
+   - Check R2 bucket for file: cover-art/aefc3816-84a2-43ed-8556-191bccca9349.jpg
+
+4. TEST TRACK ENDPOINT:
+   Run in browser console:
+   
+   fetch('https://api.audiocity-ug.com/api/tracks/aefc3816-84a2-43ed-8556-191bccca9349')
+     .then(r => {
+       console.log('Status:', r.status);
+       return r.json();
+     })
+     .then(d => console.log('Track:', d))
+     .catch(e => console.error('Error:', e));
+
+═══════════════════════════════════════════════════════════════
+  POSSIBLE CAUSES
+═══════════════════════════════════════════════════════════════
+
+401 ERROR:
+- Worker routing issue (wrong endpoint matched)
+- Track ID format issue
+- Database query failing
+
+404 ERROR (Cover Art):
+- R2 file not uploaded
+- R2 public URL not configured
+- Wrong URL format
+- File extension mismatch
+
+═══════════════════════════════════════════════════════════════
+  NEXT STEPS
+═══════════════════════════════════════════════════════════════
+
+1. DEPLOY WORKER:
+   - Deploy worker-d1.js with fixes
+
+2. CHECK R2 CONFIGURATION:
+   - Verify R2 bucket is public or /api/media/ proxy works
+   - Check R2_PUBLIC_URL environment variable
+
+3. VERIFY TRACK UPLOAD:
+   - Check if track was actually created in database
+   - Check if cover art was uploaded to R2
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

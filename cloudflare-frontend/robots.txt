@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /settings.html
+Disallow: /inbox.html
+
+# Sitemap
+Sitemap: https://www.audiocity-ug.com/sitemap.xml
+
+
+
+
+

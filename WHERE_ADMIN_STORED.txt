@@ -1,0 +1,159 @@
+═══════════════════════════════════════════════════════════════
+  WHERE ADMIN INFORMATION IS STORED
+═══════════════════════════════════════════════════════════════
+
+Admin information is stored in THREE places:
+
+═══════════════════════════════════════════════════════════════
+  1. DATABASE (Cloudflare D1) - PRIMARY STORAGE
+═══════════════════════════════════════════════════════════════
+
+TABLE: users
+
+FIELD: is_admin
+  - Type: INTEGER (0 or 1)
+  - 0 = Not admin
+  - 1 = Admin
+
+YOUR ADMIN ACCOUNT:
+  - Email: chilafrican@gmail.com
+  - is_admin: Should be 1
+  - Stored in: Cloudflare D1 Database
+
+HOW TO CHECK:
+  Run this SQL in Cloudflare Dashboard → D1 Database:
+  
+  SELECT id, email, username, name, is_admin 
+  FROM users 
+  WHERE email = 'chilafrican@gmail.com';
+
+HOW TO SET ADMIN:
+  UPDATE users 
+  SET is_admin = 1 
+  WHERE email = 'chilafrican@gmail.com';
+
+═══════════════════════════════════════════════════════════════
+  2. BROWSER LOCALSTORAGE - TEMPORARY SESSION
+═══════════════════════════════════════════════════════════════
+
+When you log in, these are stored in your browser:
+
+KEY: is_admin
+  - Value: 'true' or 'false'
+  - Set when: You log in as admin
+
+KEY: user_email
+  - Value: 'chilafrican@gmail.com'
+  - Used to: Verify admin access
+
+KEY: admin_mode
+  - Value: 'true' or 'false'
+  - Alternative: Admin flag
+
+KEY: user_id
+  - Value: Your user ID from database
+  - Used to: Identify you in API calls
+
+KEY: auth_token
+  - Value: Authentication token
+  - Used to: Authenticate API requests
+
+HOW TO CHECK:
+  Open browser console (F12) and run:
+  
+  console.log({
+    is_admin: localStorage.getItem('is_admin'),
+    user_email: localStorage.getItem('user_email'),
+    user_id: localStorage.getItem('user_id'),
+    auth_token: localStorage.getItem('auth_token')
+  });
+
+HOW TO SET MANUALLY:
+  localStorage.setItem('is_admin', 'true');
+  localStorage.setItem('user_email', 'chilafrican@gmail.com');
+  location.reload();
+
+═══════════════════════════════════════════════════════════════
+  3. HARDCODED IN LOGIN PAGE - FALLBACK
+═══════════════════════════════════════════════════════════════
+
+FILE: cloudflare-frontend/login.html
+
+LOCATION: Lines 311-312
+
+CODE:
+  const ADMIN_EMAIL = 'chilafrican@gmail.com';
+  const ADMIN_PASSWORD = 'Semakulanico1';
+
+WHAT IT DOES:
+  - Checks if login email matches 'chilafrican@gmail.com'
+  - If match, sets localStorage admin flags
+  - This is a FALLBACK if database check fails
+
+═══════════════════════════════════════════════════════════════
+  HOW ADMIN CHECK WORKS
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Check localStorage
+  - Looks for: is_admin === 'true'
+  - Or: user_email === 'chilafrican@gmail.com'
+
+STEP 2: If not found, check API
+  - Calls: GET /api/users/{userId}
+  - Checks: user.is_admin === 1
+  - Or: user.email === 'chilafrican@gmail.com'
+
+STEP 3: If still not found, check hardcoded email
+  - Checks: localStorage.getItem('user_email') === 'chilafrican@gmail.com'
+
+═══════════════════════════════════════════════════════════════
+  TO FIX YOUR ADMIN ACCESS
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: Set in Database (PERMANENT)
+  1. Go to: https://dash.cloudflare.com
+  2. Workers & Pages → D1 Database → audio-city-db
+  3. Run SQL:
+     UPDATE users 
+     SET is_admin = 1 
+     WHERE email = 'chilafrican@gmail.com';
+  4. Log out and log back in
+
+OPTION 2: Set in Browser (TEMPORARY)
+  1. Open browser console (F12)
+  2. Run:
+     localStorage.setItem('is_admin', 'true');
+     localStorage.setItem('user_email', 'chilafrican@gmail.com');
+  3. Refresh page
+
+OPTION 3: Log in Again
+  1. Go to: https://www.audiocity-ug.com/login.html
+  2. Email: chilafrican@gmail.com
+  3. Password: Semakulanico1
+  4. This will set all localStorage flags
+
+═══════════════════════════════════════════════════════════════
+  VERIFY ADMIN STATUS
+═══════════════════════════════════════════════════════════════
+
+CHECK DATABASE:
+  SELECT email, is_admin FROM users WHERE email = 'chilafrican@gmail.com';
+  
+  Expected: is_admin = 1
+
+CHECK BROWSER:
+  Open console (F12):
+  localStorage.getItem('is_admin')  // Should be 'true'
+  localStorage.getItem('user_email')  // Should be 'chilafrican@gmail.com'
+
+CHECK API:
+  fetch('https://api.audiocity-ug.com/api/users/{your-user-id}')
+    .then(r => r.json())
+    .then(u => console.log('is_admin:', u.is_admin));
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

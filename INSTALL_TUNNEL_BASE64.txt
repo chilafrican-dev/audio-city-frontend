@@ -1,26 +1,9 @@
-# ============================================
-# CLOUDFLARE TUNNEL INSTALLATION - BASE64
-# ============================================
-# 
-# Copy the base64 string below and run on VPS:
-# 
-# cat > /tmp/install.sh << 'EOF'
-# [paste base64 string here]
-# EOF
-# base64 -d /tmp/install.sh | bash
-#
-# OR simpler:
-# echo "[base64 string]" | base64 -d | bash
-#
-# ============================================
 
-IyEvYmluL2Jhc2gKY3VybCAtTCBodHRwczovL2dpdGh1Yi5jb20vY2xvdWRmbGFyZS9jbG91ZGZsYXJlZC9yZWxlYXNlcy9sYXRlc3QvZG93bmxvYWQvY2xvdWRmbGFyZWQtbGludXgtYW1kNjQgLW8gL3Vzci9sb2NhbC9iaW4vY2xvdWRmbGFyZWQKY2htb2QgK3ggL3Vzci9sb2NhbC9iaW4vY2xvdWRmbGFyZWQKcGtpbGwgLWYgImNsb3VkZmxhcmVkIHR1bm5lbCIgfHwgdHJ1ZQpjYXQgPiAvZXRjL3N5c3RlbWQvc3lzdGVtL21hc3RlcmluZy10dW5uZWwuc2VydmljZSA8PCAnU0VSVklDRScKW1VuaXRdCkRlc2NyaXB0aW9uPUNsb3VkZmxhcmUgVHVubmVsIGZvciBNYXN0ZXJpbmcgU2VydmVyCkFmdGVyPW5ldHdvcmsudGFyZ2V0CltTZXJ2aWNlXQpUeXBlPXNpbXBsZQpVc2VyPXJvb3QKRXhlY1N0YXJ0PS91c3IvbG9jYWwvYmluL2Nsb3VkZmxhcmVkIHR1bm5lbCAtLXVybCBodHRwOi8vbG9jYWxob3N0OjMwMDEKUmVzdGFydD1hbHdheXMKUmVzdGFydFNlYz0xMApTdGFuZGFyZE91dHB1dD1qb3VybmFsClN0YW5kYXJkRXJyb3I9am91cm5hbApbSW5zdGFsbF0KV2FudGVkQnk9bXVsdGktdXNlci50YXJnZXQKU0VSVklDRQpzeXN0ZW1jdGwgZGFlbW9uLXJlbG9hZApzeXN0ZW1jdGwgZW5hYmxlIG1hc3RlcmluZy10dW5uZWwuc2VydmljZQpzeXN0ZW1jdGwgc3RhcnQgbWFzdGVyaW5nLXR1bm5lbC5zZXJ2aWNlCnNsZWVwIDUKZWNobyAiPT09IFRVTk5FTCBVUkwgPT09Igpqb3VybmFsY3RsIC11IG1hc3RlcmluZy10dW5uZWwuc2VydmljZSAtbiA1MCB8IGdyZXAgLW9QICdodHRwczovL1thLXowLTktXStcLnRyeWNsb3VkZmxhcmVcLmNvbScgfCBoZWFkIC0xCmVjaG8gIj09PSBFTkQgPT09Igo=
 
-# ============================================
-# QUICK INSTALL (One Command):
-# ============================================
-# 
-# echo "IyEvYmluL2Jhc2gKY3VybCAtTCBodHRwczovL2dpdGh1Yi5jb20vY2xvdWRmbGFyZS9jbG91ZGZsYXJlZC9yZWxlYXNlcy9sYXRlc3QvZG93bmxvYWQvY2xvdWRmbGFyZWQtbGludXgtYW1kNjQgLW8gL3Vzci9sb2NhbC9iaW4vY2xvdWRmbGFyZWQKY2htb2QgK3ggL3Vzci9sb2NhbC9iaW4vY2xvdWRmbGFyZWQKcGtpbGwgLWYgImNsb3VkZmxhcmVkIHR1bm5lbCIgfHwgdHJ1ZQpjYXQgPiAvZXRjL3N5c3RlbWQvc3lzdGVtL21hc3RlcmluZy10dW5uZWwuc2VydmljZSA8PCAnU0VSVklDRScKW1VuaXRdCkRlc2NyaXB0aW9uPUNsb3VkZmxhcmUgVHVubmVsIGZvciBNYXN0ZXJpbmcgU2VydmVyCkFmdGVyPW5ldHdvcmsudGFyZ2V0CltTZXJ2aWNlXQpUeXBlPXNpbXBsZQpVc2VyPXJvb3QKRXhlY1N0YXJ0PS91c3IvbG9jYWwvYmluL2Nsb3VkZmxhcmVkIHR1bm5lbCAtLXVybCBodHRwOi8vbG9jYWxob3N0OjMwMDEKUmVzdGFydD1hbHdheXMKUmVzdGFydFNlYz0xMApTdGFuZGFyZE91dHB1dD1qb3VybmFsClN0YW5kYXJkRXJyb3I9am91cm5hbApbSW5zdGFsbF0KV2FudGVkQnk9bXVsdGktdXNlci50YXJnZXQKU0VSVklDRQpzeXN0ZW1jdGwgZGFlbW9uLXJlbG9hZApzeXN0ZW1jdGwgZW5hYmxlIG1hc3RlcmluZy10dW5uZWwuc2VydmljZQpzeXN0ZW1jdGwgc3RhcnQgbWFzdGVyaW5nLXR1bm5lbC5zZXJ2aWNlCnNsZWVwIDUKZWNobyAiPT09IFRVTk5FTCBVUkwgPT09Igpqb3VybmFsY3RsIC11IG1hc3RlcmluZy10dW5uZWwuc2VydmljZSAtbiA1MCB8IGdyZXAgLW9QICdodHRwczovL1thLXowLTktXStcLnRyeWNsb3VkZmxhcmVcLmNvbScgfCBoZWFkIC0xCmVjaG8gIj09PSBFTkQgPT09Igo=" | base64 -d | bash
-#
-# ============================================
+
+
+
+
+
+
 

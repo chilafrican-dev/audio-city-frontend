@@ -1,0 +1,35 @@
+# Login System Changes History
+
+## What Changed:
+
+1. **Originally (Working):**
+   - Login compared passwords exactly as stored (no trimming)
+   - Password: "Semakulanico1" worked fine
+
+2. **Recent Changes (Broke Login):**
+   - Added password trimming to login endpoint
+   - Added password trimming to signup endpoint
+   - This broke ALL existing accounts because:
+     * Old passwords stored: "Semakulanico1" (no trimming)
+     * New login code trimmed: "Semakulanico1" → "Semakulanico1" (same, but logic changed)
+     * Actually, the issue was we were trimming on login but passwords weren't trimmed when stored
+
+3. **Attempted Fix:**
+   - Added backward compatibility (check both trimmed and untrimmed)
+   - This was a workaround
+
+4. **Current State:**
+   - Removed ALL trimming (back to original)
+   - Passwords compared exactly as stored
+
+## The Problem:
+
+If your password "Semakulanico1" was working before, it should work now.
+But if we changed the login logic and the worker wasn't deployed, you might be hitting the OLD code.
+
+## Solution:
+
+1. Check if password in database matches exactly what you're typing
+2. Make sure the updated worker is deployed
+3. The current code (no trimming) should work with your original password
+

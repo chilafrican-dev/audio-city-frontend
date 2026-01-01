@@ -1,0 +1,72 @@
+═══════════════════════════════════════════════════════════════
+  FIX SQL SYNTAX ERROR
+═══════════════════════════════════════════════════════════════
+
+❌ ERROR: "near SET: syntax error"
+
+This happens when you only run part of the SQL statement.
+
+═══════════════════════════════════════════════════════════════
+  CORRECT SQL (Copy the FULL statement)
+═══════════════════════════════════════════════════════════════
+
+Run this COMPLETE statement in Cloudflare D1:
+
+UPDATE users 
+SET password = 'ssemakulanico1', 
+    updated_at = datetime('now')
+WHERE email = 'chilafrican@gmail.com';
+
+═══════════════════════════════════════════════════════════════
+  HOW TO RUN IN CLOUDFLARE D1
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: Cloudflare Dashboard
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → D1 Database
+3. Select: audio-city-db (or your database name)
+4. Click: "Execute SQL" or "Query"
+5. Paste the FULL UPDATE statement above
+6. Click "Run" or "Execute"
+
+OPTION 2: Wrangler CLI
+Run in terminal:
+
+wrangler d1 execute audio-city-db --command="UPDATE users SET password = 'ssemakulanico1', updated_at = datetime('now') WHERE email = 'chilafrican@gmail.com';"
+
+═══════════════════════════════════════════════════════════════
+  VERIFY IT WORKED
+═══════════════════════════════════════════════════════════════
+
+After running the UPDATE, verify with:
+
+SELECT email, password, updated_at 
+FROM users 
+WHERE email = 'chilafrican@gmail.com';
+
+Expected result:
+- email: chilafrican@gmail.com
+- password: ssemakulanico1
+- updated_at: current timestamp
+
+═══════════════════════════════════════════════════════════════
+  IF STILL GETTING ERROR
+═══════════════════════════════════════════════════════════════
+
+1. Make sure you're copying the ENTIRE statement
+2. Don't include line numbers
+3. Make sure there's a semicolon (;) at the end
+4. Check that the table name is correct (should be "users")
+5. Check that the email exists first:
+
+   SELECT * FROM users WHERE email = 'chilafrican@gmail.com';
+
+   If this returns nothing, the user doesn't exist yet.
+   The Worker will create it automatically on first login.
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

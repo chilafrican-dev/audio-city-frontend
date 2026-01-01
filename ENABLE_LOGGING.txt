@@ -1,0 +1,47 @@
+# Enable Logging for Cloudflare Worker
+
+## Add Observability Settings to wrangler.toml
+
+The configuration you shared should be added to your worker's wrangler.toml file.
+This will enable detailed logging to help debug the login issue.
+
+## Option 1: Add to existing wrangler.toml
+
+If you have a worker-specific wrangler.toml, add this section:
+
+```toml
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+```
+
+## Option 2: Enable via Cloudflare Dashboard
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages > Your Worker
+3. Settings > Observability
+4. Enable:
+   - Logs: ON
+   - Invocation Logs: ON
+   - Persist Logs: ON
+
+## After Enabling:
+
+1. Deploy the worker: `wrangler deploy`
+2. Try logging in
+3. Check Logs tab in Cloudflare Dashboard
+4. Look for: "[Login] Attempting login for..." messages
+
+This will show you exactly what's happening with the login!
+

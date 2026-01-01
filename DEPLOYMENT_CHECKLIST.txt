@@ -1,0 +1,60 @@
+═══════════════════════════════════════════════════════════════
+  DEPLOYMENT CHECKLIST - ADMIN PASSWORD UPDATE
+═══════════════════════════════════════════════════════════════
+
+✅ COMPLETED:
+- Password updated in database: ssemakulanico1
+- Code updated in worker-d1.js (3 places)
+- Code updated in login.html (1 place)
+
+═══════════════════════════════════════════════════════════════
+  NEXT: DEPLOY CHANGES
+═══════════════════════════════════════════════════════════════
+
+1. DEPLOY WORKER:
+   File: worker-d1.js
+   Location: Cloudflare Workers Dashboard
+   - Go to: https://dash.cloudflare.com
+   - Workers & Pages → Your Worker
+   - Upload/Deploy worker-d1.js
+   OR use: wrangler deploy
+
+2. DEPLOY FRONTEND:
+   File: cloudflare-frontend/login.html
+   Location: Cloudflare Pages
+   - Go to: Cloudflare Pages Dashboard
+   - Upload/Deploy login.html
+   OR push to git repository
+
+═══════════════════════════════════════════════════════════════
+  TEST AFTER DEPLOYMENT
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://www.audiocity-ug.com/login.html
+
+2. Login with:
+   Email: chilafrican@gmail.com
+   Password: ssemakulanico1
+
+3. Should log in successfully and redirect to admin dashboard
+
+4. Test admin upload:
+   - Go to: admin-upload.html
+   - Should have access (no "Access Denied")
+   - Upload a test track
+   - Should work without "Unauthorized" error
+
+═══════════════════════════════════════════════════════════════
+  CURRENT STATUS
+═══════════════════════════════════════════════════════════════
+
+✅ Database: Password updated
+✅ Worker Code: Updated (needs deployment)
+✅ Frontend Code: Updated (needs deployment)
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

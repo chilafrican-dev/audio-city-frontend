@@ -1,0 +1,24 @@
+# 🛑 DISABLE GITHUB AUTO-DEPLOY
+
+## Quick Fix: Disable in Cloudflare Dashboard
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → Find your project (connected to GitHub)
+3. Settings → Builds & deployments
+4. Toggle OFF "Deploy on push to production branch"
+5. Toggle OFF "Deploy on pull request"
+6. Save
+
+## Or Disconnect GitHub Completely
+
+1. Cloudflare Dashboard → Your Project → Settings
+2. Source section → Click "Disconnect" or "Remove connection"
+3. Now only manual uploads work
+
+## Manual Deployment Only
+
+From now on:
+- Deploy Worker: Copy/paste worker-d1.js code in Cloudflare Dashboard
+- Deploy Frontend: Upload cloudflare-frontend/ folder via Dashboard
+
+No more GitHub confusion! ✅

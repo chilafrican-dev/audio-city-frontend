@@ -1,0 +1,121 @@
+═══════════════════════════════════════════════════════════════
+  FIX R2 BUCKET CONFIGURATION - MEDIA NOT FOUND
+═══════════════════════════════════════════════════════════════
+
+ISSUE IDENTIFIED:
+-----------------
+Your Cloudflare R2 dashboard shows:
+- ✅ audio-city-tracks: 152 Objects, 569.49 MB (has files)
+- ❌ audio-city-media: 0 Objects, 0 B (EMPTY)
+
+Your Worker configuration (wrangler-d1.toml) shows:
+- MEDIA_BUCKET is bound to: "audio-city-tracks"
+
+PROBLEM:
+--------
+Cover art images are being uploaded to "audio-city-tracks" bucket with path:
+  cover-art/{trackId}.{ext}
+
+But the "audio-city-media" bucket exists and is empty, suggesting:
+1. Either files should be in audio-city-media (separate bucket for media)
+2. OR files are in audio-city-tracks but under cover-art/ prefix
+
+═══════════════════════════════════════════════════════════════
+  SOLUTION OPTIONS
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: USE audio-city-tracks (CURRENT - RECOMMENDED)
+--------------------------------------------------------
+Keep using audio-city-tracks for both tracks and cover art.
+
+Steps:
+1. Check if cover art files exist in audio-city-tracks:
+   - Go to Cloudflare Dashboard → R2 → audio-city-tracks
+   - Look for files with prefix "cover-art/"
+   - If they exist, the issue is resolved
+
+2. If files don't exist:
+   - Tracks were uploaded without cover art
+   - OR cover art uploads failed silently
+   - Check Worker logs for upload errors
+
+OPTION 2: SWITCH TO audio-city-media (SEPARATE BUCKET)
+-------------------------------------------------------
+Use audio-city-media for images, audio-city-tracks for audio.
+
+Steps:
+1. Update wrangler-d1.toml:
+   
+   [[r2_buckets]]
+   binding = "MEDIA_BUCKET"
+   bucket_name = "audio-city-media"  # Changed from audio-city-tracks
+
+2. Deploy the updated worker:
+   npx wrangler deploy
+
+3. Note: Existing cover art in audio-city-tracks won't be accessible
+   - Need to migrate files OR
+   - Re-upload tracks with cover art
+
+═══════════════════════════════════════════════════════════════
+  IMMEDIATE ACTION REQUIRED
+═══════════════════════════════════════════════════════════════
+
+1. CHECK audio-city-tracks BUCKET:
+   - Go to: Cloudflare Dashboard → R2 → audio-city-tracks
+   - Click on the bucket
+   - Search for: "cover-art"
+   - Check if any cover art files exist
+
+2. IF FILES EXIST:
+   - The /api/media/ route should work
+   - Check Worker logs for "[Media Proxy]" messages
+   - Verify the R2 key path matches exactly
+
+3. IF NO FILES EXIST:
+   - Cover art was never uploaded
+   - Tracks need to be re-uploaded with cover art
+   - OR set cover_art_url to NULL in database
+
+═══════════════════════════════════════════════════════════════
+  VERIFY CURRENT SETUP
+═══════════════════════════════════════════════════════════════
+
+1. Check Worker R2 Binding:
+   - Cloudflare Dashboard → Workers → audio-city-api-d1
+   - Go to Settings → Variables
+   - Verify: MEDIA_BUCKET → audio-city-tracks
+
+2. Check Bucket Contents:
+   - audio-city-tracks should have:
+     * tracks/{trackId}.mp3 (audio files)
+     * cover-art/{trackId}.png (cover art images)
+     * profiles/{userId}.jpg (profile pictures)
+
+3. Test Media Access:
+   Run in browser console:
+   
+   fetch('https://api.audiocity-ug.com/api/media/cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png')
+     .then(r => {
+       console.log('Status:', r.status);
+       return r.text();
+     })
+     .then(data => console.log('Response:', data));
+
+═══════════════════════════════════════════════════════════════
+  RECOMMENDED FIX
+═══════════════════════════════════════════════════════════════
+
+Since audio-city-tracks already has 152 objects, it's likely that:
+- Audio files are there (tracks/{trackId}.mp3)
+- Cover art might be missing or in wrong location
+
+RECOMMENDED:
+1. Keep using audio-city-tracks (don't change config)
+2. Check if cover-art/ files exist in audio-city-tracks
+3. If missing, tracks need cover art re-uploaded
+4. If they exist, check Worker logs for exact R2 key being requested
+
+═══════════════════════════════════════════════════════════════
+
+

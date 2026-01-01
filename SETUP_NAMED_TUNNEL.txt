@@ -1,98 +1,9 @@
-# ============================================
-# SETUP NAMED TUNNEL (Production Solution)
-# ============================================
 
-## Why Named Tunnel?
-- ✅ Persistent URL (doesn't change)
-- ✅ Reliable path forwarding
-- ✅ Production-ready
-- ✅ Better error handling
 
-## Current Issue:
-Quick tunnels (trycloudflare.com) are unreliable for production:
-- Path forwarding may not work correctly
-- URLs change on restart
-- No uptime guarantee
 
-## Solution: Named Tunnel
 
-### Step 1: Login to Cloudflare (on HostKey server)
-```bash
-ssh root@43.245.227.33
-cloudflared tunnel login
-# This will open a browser - login with your Cloudflare account
-```
 
-### Step 2: Create Named Tunnel
-```bash
-cloudflared tunnel create mastering-tunnel
-# This creates a persistent tunnel with a UUID
-```
 
-### Step 3: Create Config File
-```bash
-mkdir -p ~/.cloudflared
-cat > ~/.cloudflared/config.yml << 'EOF'
-tunnel: <TUNNEL_UUID>
-credentials-file: /root/.cloudflared/<TUNNEL_UUID>.json
 
-ingress:
-  - hostname: mastering-api.audiocity-ug.com
-    service: http://168.119.241.59:3001
-  - service: http_status:404
-EOF
-```
 
-### Step 4: Create DNS Record
-```bash
-cloudflared tunnel route dns mastering-tunnel mastering-api.audiocity-ug.com
-```
-
-### Step 5: Update Systemd Service
-```bash
-cat > /etc/systemd/system/mastering-tunnel.service << 'SERVICE_EOF'
-[Unit]
-Description=Cloudflare Named Tunnel for Mastering Server
-After=network.target
-
-[Service]
-Type=simple
-User=root
-ExecStart=/usr/local/bin/cloudflared tunnel --config ~/.cloudflared/config.yml run
-Restart=always
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-SERVICE_EOF
-
-systemctl daemon-reload
-systemctl restart mastering-tunnel.service
-systemctl enable mastering-tunnel.service
-```
-
-### Step 6: Update Worker Secret
-```bash
-echo "https://mastering-api.audiocity-ug.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
-```
-
-## Alternative: Test Direct Connection
-
-If tunnel continues to have issues, we can test if Cloudflare Worker can connect directly to HTTP (though this may be blocked):
-
-In worker-d1.js, temporarily try:
-```javascript
-const MASTERING_SERVER_URL = 'http://168.119.241.59:3001';
-```
-
-But this will likely fail because Workers require HTTPS.
-
-## Current Status:
-- ✅ Tunnel service installed and running
-- ⚠️ Quick tunnel unreliable (404 errors)
-- ⏳ Need to set up named tunnel for production
-
-# ============================================
 

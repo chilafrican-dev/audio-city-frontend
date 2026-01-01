@@ -1,0 +1,69 @@
+# Login Troubleshooting Guide
+
+## Quick Test - Run in Browser Console:
+
+Open browser console on login page and run:
+
+fetch('https://api.audiocity-ug.com/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    identifier: 'chilafrican@gmail.com',
+    password: 'Semakulanico1'
+  })
+})
+.then(async r => {
+  const text = await r.text();
+  console.log('Status:', r.status);
+  console.log('Response:', text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+})
+.then(console.log)
+.catch(console.error);
+
+## Check Cloudflare Worker Logs:
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages > Your Worker
+3. Click "Logs" tab
+4. Look for: "[Login] Attempting login for..."
+5. Check the debug messages:
+   - "User not found" = email/username wrong
+   - "Password mismatch" = password wrong
+   - Password length comparison
+
+## Verify Password in Database:
+
+Run in D1 Console:
+
+SELECT 
+  email,
+  password,
+  LENGTH(password) as pwd_len,
+  SUBSTR(password, 1, 5) as pwd_start
+FROM users 
+WHERE email = 'chilafrican@gmail.com';
+
+Expected:
+- password: Semakulanico1
+- pwd_len: 13
+- pwd_start: Semak
+
+## Common Issues:
+
+1. **Password has extra spaces** - Check database
+2. **Case sensitivity** - Password is case-sensitive
+3. **Worker not deployed** - Old code still running
+4. **Frontend trimming** - Check if frontend is modifying password
+
+## Next Steps:
+
+1. Run the test in browser console
+2. Check worker logs
+3. Verify password in database
+4. Deploy updated worker if needed
+

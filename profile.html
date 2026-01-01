@@ -1045,6 +1045,10 @@
               localStorage.setItem('profile_image_data', avatarUrl);
             }
             console.log('✅ Profile picture uploaded successfully:', avatarUrl);
+            // Immediately update the profile picture display
+            if (avatarUrl) {
+              updateProfilePicture(avatarUrl);
+            }
           } else {
             const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
             console.error('❌ Profile picture upload failed:', error);

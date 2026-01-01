@@ -129,13 +129,19 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
         const data = await response.json();
         console.log('✅ Mastering response:', data);
 
-        if (!data.success || !data.jobId) {
+        // Server returns 'progressId', but we check for 'jobId' for compatibility
+        const jobId = data.jobId || data.progressId;
+        
+        if (!data.success || !jobId) {
           throw new Error(data.error || data.message || 'Mastering request failed');
         }
 
+        // Reset polling counters
+        consecutive503Count = 0;
+        
         // Start polling
-        pollMasteringJob(data.jobId);
-        return data.jobId;
+        pollMasteringJob(jobId, 0);
+        return jobId;
 
       } catch (err) {
         console.error('❌ Mastering submission error:', err);
@@ -148,19 +154,73 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
       }
     }
 
+    // Track polling state
+    let consecutive503Count = 0;
+    const MAX_RETRIES = 60; // Max 60 retries (3 minutes at 3s intervals)
+    const MAX_503_RETRIES = 20; // Max 20 consecutive 503s (1 minute)
+
     /**
      * Poll mastering job status until completion
      */
-    async function pollMasteringJob(jobId) {
+    async function pollMasteringJob(jobId, retryCount = 0) {
       if (!jobId) {
         console.error('❌ No jobId provided for polling');
         return;
       }
 
+      // Check retry limits
+      if (retryCount >= MAX_RETRIES) {
+        console.error('❌ Max retries reached, stopping polling');
+        statusBar.className = 'status-bar error';
+        statusText.textContent = '❌ Request timeout - mastering service is taking too long. Please try again.';
+        masterBtn.disabled = false;
+        masterBtn.innerHTML = '<span>🎛️</span> Master';
+        consecutive503Count = 0;
+        return;
+      }
+
+      if (consecutive503Count >= MAX_503_RETRIES) {
+        console.error('❌ Too many consecutive 503 errors, stopping polling');
+        statusBar.className = 'status-bar error';
+        statusText.textContent = '❌ Mastering service is currently unavailable. Please try again later.';
+        masterBtn.disabled = false;
+        masterBtn.innerHTML = '<span>🎛️</span> Master';
+        consecutive503Count = 0;
+        return;
+      }
+
       try {
-        console.log(`🔄 Polling job status: ${jobId}`);
+        console.log(`🔄 Polling job status: ${jobId} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
         
         const res = await fetch(`${API}/master-status/${jobId}`);
+        
+        // Handle 503 errors gracefully - continue polling
+        if (res.status === 503) {
+          consecutive503Count++;
+          const errorData = await res.json().catch(() => ({}));
+          console.warn(`⚠️ Mastering service temporarily unavailable (503), will retry... (${consecutive503Count}/${MAX_503_RETRIES})`);
+          
+          // Calculate delay with exponential backoff (3s, 5s, 7s, etc., max 10s)
+          const delay = Math.min(3000 + (consecutive503Count * 2000), 10000);
+          
+          // If the response says to retry, continue polling
+          if (errorData.retry || errorData.status === 'processing') {
+            statusBar.className = 'status-bar warning';
+            statusText.textContent = `⚠️ Service temporarily unavailable. Retrying... (${consecutive503Count}/${MAX_503_RETRIES})`;
+            // Continue polling after delay
+            setTimeout(() => pollMasteringJob(jobId, retryCount + 1), delay);
+            return;
+          }
+          
+          // Otherwise, show error but allow retry
+          statusBar.className = 'status-bar warning';
+          statusText.textContent = `⚠️ Mastering service temporarily unavailable. Retrying... (${consecutive503Count}/${MAX_503_RETRIES})`;
+          setTimeout(() => pollMasteringJob(jobId, retryCount + 1), delay);
+          return;
+        }
+        
+        // Reset 503 counter on successful response
+        consecutive503Count = 0;
         
         if (!res.ok) {
           throw new Error(`Status check failed: ${res.status}`);
@@ -262,12 +322,24 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
 
         // Still processing
         statusText.textContent = status.message || '🔄 Processing...';
-        setTimeout(() => pollMasteringJob(jobId), 3000);
+        setTimeout(() => pollMasteringJob(jobId, retryCount + 1), 3000);
 
       } catch (err) {
         console.error('❌ Polling error:', err);
+        
+        // Handle network errors (fetch failures)
+        if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          consecutive503Count++;
+          const delay = Math.min(3000 + (consecutive503Count * 2000), 10000);
+          statusBar.className = 'status-bar warning';
+          statusText.textContent = `⚠️ Network error. Retrying... (${consecutive503Count}/${MAX_503_RETRIES})`;
+          setTimeout(() => pollMasteringJob(jobId, retryCount + 1), delay);
+          return;
+        }
+        
+        // For other errors, retry with normal delay
         statusText.textContent = '🔄 Checking status... (retrying)';
-        setTimeout(() => pollMasteringJob(jobId), 3000);
+        setTimeout(() => pollMasteringJob(jobId, retryCount + 1), 3000);
       }
     }
 

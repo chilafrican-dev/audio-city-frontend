@@ -1,0 +1,53 @@
+# Debug Login Issue for chilafrican@gmail.com
+
+## Step 1: Check if user exists and verify password
+
+### Option A: Use API (after deploying worker)
+Run in browser console:
+
+fetch('https://api.audiocity-ug.com/api/admin/check-user?email=chilafrican@gmail.com')
+  .then(r => r.json())
+  .then(console.log);
+
+### Option B: Use SQL in D1 Console
+Run this to see the user and password length:
+
+SELECT id, email, username, is_admin, 
+       LENGTH(password) as password_length,
+       SUBSTR(password, 1, 3) || '...' as password_preview
+FROM users 
+WHERE email = 'chilafrican@gmail.com';
+
+## Step 2: Update password (if needed)
+
+### SQL Method (Recommended - works immediately):
+UPDATE users 
+SET password = 'Semakulanico1', updated_at = datetime('now') 
+WHERE email = 'chilafrican@gmail.com';
+
+### Verify update:
+SELECT email, password, LENGTH(password) as pwd_len
+FROM users 
+WHERE email = 'chilafrican@gmail.com';
+
+Should show: password = 'Semakulanico1', pwd_len = 13
+
+## Step 3: Common Issues
+
+1. **Extra spaces**: Make sure password has no leading/trailing spaces
+2. **Case sensitivity**: Password is case-sensitive
+3. **Email case**: Email is converted to lowercase, but make sure it's exact
+4. **Special characters**: If password has quotes, escape them properly in SQL
+
+## Step 4: Test Login
+
+After updating password, try logging in with:
+- Email: chilafrican@gmail.com
+- Password: Semakulanico1
+
+## If still failing:
+
+Check the login query in worker-d1.js line 1495:
+- It does: WHERE (email = ? OR username = ?) AND password = ?
+- Make sure the password matches EXACTLY (case-sensitive)
+

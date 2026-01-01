@@ -1,0 +1,113 @@
+═══════════════════════════════════════════════════════════════
+  FIX MISSING COVER ART - Track ID: 6b5db164-a8d5-467f-8fdc-cb516873e28f
+═══════════════════════════════════════════════════════════════
+
+ISSUE CONFIRMED:
+----------------
+✅ Track ID: 6b5db164-a8d5-467f-8fdc-cb516873e28f
+❌ Cover art file does NOT exist in R2 bucket (checked all extensions)
+❌ This causes "Media not found" error when trying to load the image
+
+ROOT CAUSE:
+-----------
+The track was uploaded without cover art, or the cover art upload failed silently.
+
+═══════════════════════════════════════════════════════════════
+  IMMEDIATE FIX
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: SET COVER ART URL TO NULL (RECOMMENDED)
+--------------------------------------------------
+This will prevent the 404 error. The frontend should show a placeholder.
+
+Run this SQL query in Cloudflare D1 Database:
+
+UPDATE tracks 
+SET cover_art_url = NULL 
+WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+
+To run this:
+1. Go to Cloudflare Dashboard → Workers → D1
+2. Select your database: audio-city-db
+3. Go to "Console" tab
+4. Run the UPDATE query above
+
+OPTION 2: UPLOAD COVER ART MANUALLY
+-----------------------------------
+1. Create or obtain the cover art image
+2. Upload to R2:
+   - Go to R2 → audio-city-tracks → cover-art/
+   - Upload file: 6b5db164-a8d5-467f-8fdc-cb516873e28f.png (or .jpg/.webp)
+3. Update database:
+   
+   UPDATE tracks 
+   SET cover_art_url = 'https://api.audiocity-ug.com/api/media/cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png'
+   WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+
+═══════════════════════════════════════════════════════════════
+  FIND ALL TRACKS WITH MISSING COVER ART
+═══════════════════════════════════════════════════════════════
+
+To find all tracks that reference cover art that doesn't exist:
+
+1. Get list of all cover art URLs from database:
+   
+   SELECT id, title, cover_art_url 
+   FROM tracks 
+   WHERE cover_art_url IS NOT NULL 
+     AND cover_art_url LIKE '%cover-art%'
+   ORDER BY created_at DESC;
+
+2. Check each URL manually, OR use this query to set all non-existent ones to NULL:
+   (Run after verifying which ones are missing)
+   
+   UPDATE tracks 
+   SET cover_art_url = NULL 
+   WHERE cover_art_url LIKE '%6b5db164-a8d5-467f-8fdc-cb516873e28f%';
+
+═══════════════════════════════════════════════════════════════
+  PREVENT FUTURE ISSUES
+═══════════════════════════════════════════════════════════════
+
+1. CHECK UPLOAD LOGS:
+   - When uploading tracks, check Worker logs for cover art upload errors
+   - Look for: "[Track Upload] Cover art uploaded:" messages
+   - If missing, the upload failed silently
+
+2. FRONTEND HANDLING:
+   - Ensure frontend shows placeholder when cover_art_url is NULL
+   - Add onerror handler to img tags to hide broken images
+
+3. VALIDATION:
+   - Consider making cover art optional but validating if URL is provided
+   - Check if file exists before saving URL to database
+
+═══════════════════════════════════════════════════════════════
+  QUICK SQL COMMANDS
+═══════════════════════════════════════════════════════════════
+
+-- Check this specific track:
+SELECT id, title, cover_art_url, created_at 
+FROM tracks 
+WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+
+-- Fix this track (set cover_art_url to NULL):
+UPDATE tracks 
+SET cover_art_url = NULL 
+WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+
+-- Find all tracks with cover art URLs:
+SELECT id, title, cover_art_url 
+FROM tracks 
+WHERE cover_art_url IS NOT NULL;
+
+-- Find tracks with cover art URLs that might be broken:
+SELECT id, title, cover_art_url 
+FROM tracks 
+WHERE cover_art_url IS NOT NULL 
+  AND cover_art_url LIKE '%cover-art%'
+ORDER BY created_at DESC;
+
+═══════════════════════════════════════════════════════════════
+
+

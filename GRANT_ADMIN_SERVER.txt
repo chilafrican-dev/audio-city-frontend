@@ -1,0 +1,36 @@
+# Grant Admin Privileges - Server/Database Method
+
+## Method 1: Cloudflare D1 Database (Recommended)
+
+### Using Cloudflare Dashboard:
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → D1 Databases
+3. Select: audio-city-db
+4. Click "Console" or "SQL Editor"
+5. Run this SQL:
+
+UPDATE users 
+SET is_admin = 1, updated_at = datetime('now') 
+WHERE email = 'chilafrocan@gmail.com';
+
+### Using Wrangler CLI:
+wrangler d1 execute audio-city-db --command="UPDATE users SET is_admin = 1, updated_at = datetime('now') WHERE email = 'chilafrocan@gmail.com';"
+
+## Method 2: Using API Endpoint from Terminal
+
+curl -X POST https://api.audiocity-ug.com/api/admin/grant-admin \
+  -H "Content-Type: application/json" \
+  -d '{"email":"chilafrocan@gmail.com"}'
+
+## Method 3: Check Current Status First
+
+SELECT id, email, username, is_admin 
+FROM users 
+WHERE email = 'chilafrocan@gmail.com' 
+   OR email = 'chilafrican@gmail.com';
+
+## After Update:
+1. Log out from website
+2. Log back in
+3. Admin privileges should work
+

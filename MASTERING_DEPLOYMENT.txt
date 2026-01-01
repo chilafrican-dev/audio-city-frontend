@@ -1,0 +1,70 @@
+═══════════════════════════════════════════════════════════════
+  MASTERING FIXES - Where They Go
+═══════════════════════════════════════════════════════════════
+
+The mastering fixes are in TWO places:
+
+═══════════════════════════════════════════════════════════════
+  1. WORKER (worker-d1.js) - API Endpoints
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Cloudflare Worker (audio-city-api-d1)
+
+FILES TO DEPLOY:
+✅ worker-d1.js (contains mastering endpoints)
+
+ENDPOINTS IN WORKER:
+- POST /api/quick-master (submit mastering job)
+- GET /api/master-status/:jobId (check job status)
+- GET /api/mastering-result/:id (get result)
+
+FIXES INCLUDED:
+✅ Better 503 error handling
+✅ Timeout protection (10 seconds)
+✅ Retry-friendly responses
+✅ Improved error messages
+
+HOW TO DEPLOY:
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → audio-city-api-d1
+3. Edit code → Paste entire worker-d1.js
+4. Save and deploy
+
+═══════════════════════════════════════════════════════════════
+  2. PAGES (mastering.js) - Frontend Logic
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Cloudflare Pages (cloudflare-frontend folder)
+
+FILES TO DEPLOY:
+✅ cloudflare-frontend/mastering.js (contains frontend fixes)
+
+FIXES INCLUDED:
+✅ 503 error handling (continues polling)
+✅ Automatic retry on 503 errors
+✅ Better error messages
+✅ Doesn't stop polling on temporary failures
+
+HOW TO DEPLOY:
+1. Go to: https://dash.cloudflare.com
+2. Pages → Your project
+3. Upload/redeploy cloudflare-frontend folder
+4. (mastering.js is inside this folder)
+
+═══════════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════════
+
+✅ YES - Mastering fixes go in worker-d1.js (API endpoints)
+✅ YES - Mastering frontend fixes go in mastering.js (in Pages)
+
+BOTH need to be deployed:
+1. Deploy worker-d1.js → Cloudflare Worker
+2. Deploy cloudflare-frontend/ → Cloudflare Pages
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

@@ -1,0 +1,72 @@
+# Admin Upload - Auto-Detect Existing Artists ✅
+
+## Problem:
+- Admin posting multiple tracks for same artist was creating duplicate accounts
+- Each upload created a new artist account even if artist already existed
+
+## Solution:
+
+Improved artist detection with **5-level priority matching**:
+
+1. **Priority 1: Email Match** (Most Reliable)
+   - Checks if artist email already exists
+   - Exact match (case-insensitive)
+
+2. **Priority 2: Username Match**
+   - Checks if username already exists
+   - Exact match (case-insensitive)
+
+3. **Priority 3: Name Match**
+   - Checks if artist name already exists
+   - Exact match (case-insensitive, trimmed)
+
+4. **Priority 4: Name-as-Username Match**
+   - If no username provided, tries name as username
+   - Converts name to username format (lowercase, no spaces)
+
+5. **Priority 5: Partial Name Match**
+   - If exact match fails, tries partial match
+   - Matches first significant word in name
+   - Verifies it's a reasonable match
+
+## Features:
+
+✅ **Auto-Detection:** Finds existing artists before creating new ones
+✅ **Smart Matching:** Multiple matching strategies to catch duplicates
+✅ **Auto-Update:** Updates existing artist info if new data provided
+✅ **Logging:** Clear console logs showing when artist is found vs created
+✅ **No Duplicates:** Prevents creating multiple accounts for same artist
+
+## Behavior:
+
+**If Artist Exists:**
+- Reuses existing account
+- Updates profile info if new data provided
+- Posts track to existing artist account
+- Logs: "✅ Reusing existing artist account"
+
+**If Artist Doesn't Exist:**
+- Creates new artist account
+- Sets up profile with provided info
+- Posts track to new artist account
+- Logs: "✅ Created new artist account"
+
+## Example:
+
+**First Upload:**
+- Artist: "John Doe"
+- Creates: New account (ID: abc123)
+
+**Second Upload (same artist):**
+- Artist: "John Doe" 
+- Detects: Existing account (ID: abc123)
+- Reuses: Same account
+- Result: Track posted to existing account ✅
+
+## Next Steps:
+
+1. Deploy updated worker-d1.js
+2. Test by uploading multiple tracks for same artist
+3. Check console logs to see detection in action
+4. Verify no duplicate accounts created
+

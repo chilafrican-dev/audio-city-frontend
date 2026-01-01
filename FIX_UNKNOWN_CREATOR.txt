@@ -1,0 +1,54 @@
+# Fixed "Unknown Creator" on Feed ✅
+
+## Problem:
+- Feed was showing "Unknown Creator" for tracks
+- Backend wasn't returning `artist_name` field
+- Frontend was using fallback "Unknown Creator"
+
+## Solution:
+
+1. **Backend (worker-d1.js):**
+   - Added `u.name as artist_name` to track queries
+   - Now returns both `artist_username` and `artist_name`
+   - Updated both:
+     * GET /api/tracks (list of tracks)
+     * GET /api/tracks/:id (single track)
+
+2. **Frontend (feed.html):**
+   - Changed fallback from "Unknown Creator" to "Creator"
+   - Uses `artist_name` first, then `artist_username` as fallback
+   - Better fallback chain: `artist_name || artist_username || 'Creator'`
+
+## Changes Made:
+
+**Backend Query:**
+```sql
+-- Before:
+SELECT t.*, u.username as artist_username, ...
+
+-- After:
+SELECT t.*, u.username as artist_username, u.name as artist_name, ...
+```
+
+**Frontend Display:**
+```javascript
+// Before:
+userName: track.artist_name || 'Unknown Creator'
+
+// After:
+userName: track.artist_name || track.artist_username || 'Creator'
+```
+
+## Result:
+
+✅ Tracks now show actual artist names
+✅ Falls back to username if name not available
+✅ Shows "Creator" instead of "Unknown Creator" (less negative)
+✅ Works for both feed list and single track pages
+
+## Next Steps:
+
+1. Deploy updated worker-d1.js
+2. Refresh feed page
+3. Should see actual artist names instead of "Unknown Creator"
+

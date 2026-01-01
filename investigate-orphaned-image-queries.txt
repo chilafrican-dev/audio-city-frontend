@@ -1,0 +1,72 @@
+═══════════════════════════════════════════════════════════════
+  INVESTIGATION QUERIES - Orphaned Cover Art Image
+═══════════════════════════════════════════════════════════════
+
+Track ID: 6b5db164-a8d5-467f-8fdc-cb516873e28f
+Status: NOT FOUND in tracks table
+Issue: Frontend is trying to load this image
+
+Run these queries in Cloudflare D1 Console:
+
+═══════════════════════════════════════════════════════════════
+  QUERY 1: Check for similar track IDs
+═══════════════════════════════════════════════════════════════
+
+SELECT id, title, cover_art_url, created_at 
+FROM tracks 
+WHERE id LIKE '%6b5db164%' 
+   OR id LIKE '%a8d5-467f%'
+   OR id LIKE '%cb516873e28f%'
+ORDER BY created_at DESC;
+
+═══════════════════════════════════════════════════════════════
+  QUERY 2: Search for UUID in cover art URLs
+═══════════════════════════════════════════════════════════════
+
+SELECT id, title, cover_art_url, created_at 
+FROM tracks 
+WHERE cover_art_url LIKE '%6b5db164-a8d5-467f-8fdc-cb516873e28f%'
+ORDER BY created_at DESC;
+
+═══════════════════════════════════════════════════════════════
+  QUERY 3: Check recent tracks
+═══════════════════════════════════════════════════════════════
+
+SELECT id, title, cover_art_url, created_at 
+FROM tracks 
+ORDER BY created_at DESC 
+LIMIT 20;
+
+═══════════════════════════════════════════════════════════════
+  QUERY 4: Count total tracks
+═══════════════════════════════════════════════════════════════
+
+SELECT COUNT(*) as total_tracks FROM tracks;
+
+═══════════════════════════════════════════════════════════════
+  NEXT STEPS
+═══════════════════════════════════════════════════════════════
+
+Since the track doesn't exist, the image is likely referenced from:
+
+1. BROWSER CACHE:
+   - Clear browser cache
+   - Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
+
+2. LOCALSTORAGE/SESSIONSTORAGE:
+   - Open browser console (F12)
+   - Run: Object.keys(localStorage).forEach(k => { if(localStorage.getItem(k).includes('6b5db164')) console.log(k, localStorage.getItem(k)); });
+
+3. DOM/HTML:
+   - Check current page source
+   - Search for: "6b5db164-a8d5-467f-8fdc-cb516873e28f"
+   - Look in img src attributes
+
+4. ORPHANED IMAGE:
+   - The image file exists in R2 but track was deleted
+   - This is harmless - just a 404 error
+   - Can be ignored or delete the image from R2
+
+═══════════════════════════════════════════════════════════════
+
+

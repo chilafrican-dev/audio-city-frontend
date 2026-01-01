@@ -1,0 +1,2549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Track — Audio City</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Cinzel:wght@400;600&family=Poppins:wght@400;500;600&family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      /* Light Theme Colors */
+      --bg-primary: #F8F9FB;
+      --bg-card: #FFFFFF;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --accent-purple: #5B2EFF;
+      --accent-blue: #1F2A44;
+      --accent-gold: #F5C77A;
+      --border: #E5E7EB;
+      --border-hover: #D1D5DB;
+      --success: #10B981;
+      --error: #EF4444;
+      --warning: #F59E0B;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.06);
+      --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.08);
+      --radius: 16px;
+      --radius-lg: 20px;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      color: var(--text-secondary);
+      font-size: 16px;
+    }
+    
+    /* Progress Indicator */
+    .progress-container {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 16px;
+    }
+    
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+    
+    .progress-bar {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+      transition: width 0.4s ease;
+      z-index: 1;
+    }
+    
+    .step-indicator {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    
+    .step-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all 0.3s ease;
+      margin-bottom: 8px;
+    }
+    
+    .step-indicator.active .step-circle {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: white;
+      box-shadow: 0 4px 12px rgba(91, 46, 255, 0.3);
+    }
+    
+    .step-indicator.completed .step-circle {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    
+    .step-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    
+    .step-indicator.active .step-label {
+      color: var(--accent-purple);
+      font-weight: 600;
+    }
+    
+    /* Main Card */
+    .upload-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 24px;
+    }
+    
+    .step-content {
+      display: none;
+    }
+    
+    .step-content.active {
+      display: block;
+    }
+    
+    .form-group {
+      margin-bottom: 24px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    .form-group label .required {
+      color: var(--error);
+      margin-left: 4px;
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+      background: var(--bg-card);
+      transition: all 0.2s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(91, 46, 255, 0.1);
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    
+    /* Toggle Switch */
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 24px;
+      background: var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    
+    .toggle.active {
+      background: var(--accent-purple);
+    }
+    
+    .toggle-handle {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .toggle.active .toggle-handle {
+      transform: translateX(24px);
+    }
+    
+    .toggle-label {
+      font-size: 14px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    /* Audio Upload Zone */
+    .audio-upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--bg-primary);
+    }
+    
+    .audio-upload-zone:hover {
+      border-color: var(--accent-purple);
+      background: rgba(91, 46, 255, 0.02);
+    }
+    
+    .audio-upload-zone.dragover {
+      border-color: var(--accent-purple);
+      background: rgba(91, 46, 255, 0.05);
+      transform: scale(1.02);
+    }
+    
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .upload-text {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    .upload-hint {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    
+    .audio-info {
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border-radius: 12px;
+      text-align: left;
+    }
+    
+    .audio-info-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .audio-info-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .audio-info-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .audio-info-value {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    /* Collapsible Section */
+    .collapsible-section {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 12px 0;
+    }
+    
+    .collapsible-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+    
+    .collapsible-icon {
+      font-size: 20px;
+      color: var(--text-secondary);
+      transition: transform 0.3s ease;
+    }
+    
+    .collapsible-section.open .collapsible-icon {
+      transform: rotate(180deg);
+    }
+    
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    
+    .collapsible-section.open .collapsible-content {
+      max-height: 2000px;
+      padding-top: 24px;
+    }
+    
+    .helper-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      font-style: italic;
+    }
+    
+    /* Cover Art Designer */
+    .cover-art-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 24px;
+    }
+    
+    @media (max-width: 768px) {
+      .cover-art-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Photo Library Modal */
+    .photo-library-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .photo-library-modal.active {
+      display: flex;
+    }
+    
+    .photo-library-content {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+    }
+    
+    .photo-library-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .photo-library-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .photo-library-close {
+      background: transparent;
+      border: none;
+      font-size: 28px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    .photo-library-close:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    .photo-library-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    
+    .photo-library-item {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .photo-library-item:hover {
+      border-color: var(--accent-purple);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(91, 46, 255, 0.3);
+    }
+    
+    .photo-library-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .photo-library-item.selected {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(91, 46, 255, 0.2);
+    }
+    
+    .photo-library-item.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--accent-purple);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    /* AI Cover Art Modal */
+    .ai-cover-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .ai-cover-modal.active {
+      display: flex;
+    }
+    
+    .ai-cover-content {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+    }
+    
+    .ai-cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .ai-cover-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .ai-cover-header .pro-badge {
+      background: linear-gradient(135deg, #F5C77A, #E8B454);
+      color: #1F2A44;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .ai-cover-close {
+      background: transparent;
+      border: none;
+      font-size: 28px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    .ai-cover-close:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    .ai-prompt-section {
+      margin-bottom: 24px;
+    }
+    
+    .ai-prompt-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .ai-prompt-section textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+    
+    .ai-prompt-section textarea:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+    }
+    
+    .ai-prompt-hints {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .ai-prompt-hints ul {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+    
+    .ai-prompt-hints li {
+      margin-bottom: 4px;
+    }
+    
+    .ai-generate-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent-purple), #7C4DFF);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .ai-generate-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(91, 46, 255, 0.3);
+    }
+    
+    .ai-generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .ai-preview-section {
+      margin-top: 24px;
+      display: none;
+    }
+    
+    .ai-preview-section.active {
+      display: block;
+    }
+    
+    .ai-preview-image {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: var(--bg-primary);
+      position: relative;
+    }
+    
+    .ai-preview-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .ai-preview-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+      gap: 16px;
+    }
+    
+    .ai-preview-loading .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent-purple);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .ai-preview-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .ai-preview-actions button {
+      flex: 1;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .ai-regenerate-btn {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 2px solid var(--border);
+    }
+    
+    .ai-regenerate-btn:hover {
+      background: var(--bg-card);
+      border-color: var(--accent-purple);
+    }
+    
+    .ai-use-btn {
+      background: linear-gradient(135deg, var(--accent-purple), #7C4DFF);
+      color: white;
+    }
+    
+    .ai-use-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(91, 46, 255, 0.3);
+    }
+    
+    .ai-pro-upgrade {
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(91, 46, 255, 0.1), rgba(245, 199, 122, 0.1));
+      border: 2px solid var(--accent-purple);
+      border-radius: 16px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    
+    .ai-pro-upgrade h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    
+    .ai-pro-upgrade p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    
+    .ai-pro-upgrade-btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #F5C77A, #E8B454);
+      color: #1F2A44;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .ai-pro-upgrade-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 199, 122, 0.4);
+    }
+    
+    .cover-preview {
+      aspect-ratio: 1;
+      border-radius: var(--radius);
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .cover-preview img,
+    .cover-preview canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .cover-text-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 24px;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      color: white;
+    }
+    
+    .cover-options {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .cover-option-btn {
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-card);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+    
+    .cover-option-btn:hover {
+      border-color: var(--accent-purple);
+      background: rgba(91, 46, 255, 0.02);
+    }
+    
+    .cover-option-btn.active {
+      border-color: var(--accent-purple);
+      background: rgba(91, 46, 255, 0.05);
+    }
+    
+    .option-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    
+    .option-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+      color: white;
+      box-shadow: 0 4px 12px rgba(91, 46, 255, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(91, 46, 255, 0.4);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 2px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--border-hover);
+      background: white;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    
+    /* Error/Success Messages */
+    .alert {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #DC2626;
+    }
+    
+    .alert-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #059669;
+    }
+    
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #D97706;
+    }
+    
+    /* Admin Only Sections */
+    .admin-only {
+      display: none;
+    }
+    
+    .is-admin .admin-only {
+      display: block;
+    }
+    
+    /* Loading State */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 16px;
+      }
+      
+      .upload-card {
+        padding: 24px;
+      }
+      
+      .header h1 {
+        font-size: 28px;
+      }
+      
+      .progress-container {
+        padding: 16px;
+      }
+      
+      .step-label {
+        font-size: 10px;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .btn-group {
+        flex-direction: column-reverse;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Upload Track</h1>
+      <p>Share your music with the world</p>
+    </div>
+    
+    <!-- Progress Indicator -->
+    <div class="progress-container">
+      <div class="progress-steps">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="step-indicator active" data-step="1">
+          <div class="step-circle">1</div>
+          <div class="step-label">Track Info</div>
+        </div>
+        <div class="step-indicator" data-step="2">
+          <div class="step-circle">2</div>
+          <div class="step-label">Lyrics</div>
+        </div>
+        <div class="step-indicator" data-step="3">
+          <div class="step-circle">3</div>
+          <div class="step-label">Cover Art</div>
+        </div>
+        <div class="step-indicator" data-step="4">
+          <div class="step-circle">4</div>
+          <div class="step-label">Publish</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Upload Card -->
+    <div class="upload-card">
+      <!-- Step 1: Track Info -->
+      <div class="step-content active" id="step1">
+        <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 24px;">Track Information</h2>
+        
+        <!-- Audio Upload -->
+        <div class="form-group">
+          <label>Audio File <span class="required">*</span></label>
+          <div class="audio-upload-zone" id="audioUploadZone">
+            <div class="upload-icon">🎵</div>
+            <div class="upload-text">Drop your track here or click to browse</div>
+            <div class="upload-hint">MP3 only • Minimum 192kbps • Max 100MB</div>
+            <input type="file" id="audioFile" accept=".mp3" style="display: none;">
+          </div>
+          <div class="audio-info" id="audioInfo" style="display: none;"></div>
+        </div>
+        
+        <!-- Basic Info -->
+        <div class="form-group">
+          <label for="trackTitle">Track Title <span class="required">*</span></label>
+          <input type="text" id="trackTitle" required placeholder="Enter track title">
+        </div>
+        
+        <div class="form-group">
+          <label for="artistName">Artist Name <span class="required">*</span></label>
+          <input type="text" id="artistName" required placeholder="Enter artist name">
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="genre">Genre <span class="required">*</span></label>
+            <select id="genre" required>
+              <option value="">Select genre</option>
+              <option value="Afrobeat">Afrobeat</option>
+              <option value="Hip-Hop">Hip-Hop</option>
+              <option value="Gospel">Gospel</option>
+              <option value="Reggae">Reggae</option>
+              <option value="Dancehall">Dancehall</option>
+              <option value="R&B">R&B</option>
+              <option value="Pop">Pop</option>
+              <option value="Electronic">Electronic</option>
+              <option value="Jazz">Jazz</option>
+              <option value="Rock">Rock</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="language">Language <span class="required">*</span></label>
+            <select id="language" required>
+              <option value="">Select language</option>
+              <option value="English">English</option>
+              <option value="Luganda">Luganda</option>
+              <option value="Acholi">Acholi</option>
+              <option value="Ateso">Ateso</option>
+              <option value="Runyoro">Runyoro</option>
+              <option value="Swahili">Swahili</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="releaseYear">Release Year</label>
+          <input type="number" id="releaseYear" min="1900" max="2100" placeholder="Auto: current year">
+        </div>
+        
+        <div class="form-group">
+          <div class="toggle-switch">
+            <div class="toggle" id="explicitToggle">
+              <div class="toggle-handle"></div>
+            </div>
+            <span class="toggle-label">Explicit Content</span>
+          </div>
+        </div>
+        
+        <!-- Credits & Label (Collapsible) -->
+        <div class="collapsible-section" id="creditsSection">
+          <div class="collapsible-header" onclick="toggleCollapsible('creditsSection')">
+            <span class="collapsible-title">Credits & Label (Optional)</span>
+            <span class="collapsible-icon">▼</span>
+          </div>
+          <div class="collapsible-content">
+            <div class="form-group">
+              <label for="labelName">Label Name</label>
+              <input type="text" id="labelName" placeholder="Independent">
+              <div class="helper-text">Leave empty for "Independent"</div>
+            </div>
+            
+            <div class="form-group">
+              <label for="producer">Producer</label>
+              <input type="text" id="producer" placeholder="Enter producer name">
+            </div>
+            
+            <div class="form-group">
+              <label for="songwriter">Songwriter / Composer</label>
+              <input type="text" id="songwriter" placeholder="Enter names (comma-separated)">
+              <div class="helper-text">Optional credits help your music look professional and ready for industry use.</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Admin Only Fields -->
+        <div class="admin-only">
+          <div class="form-group" style="margin-top: 32px; padding-top: 32px; border-top: 2px solid var(--border);">
+            <label for="uploadForArtist">Upload on behalf of artist</label>
+            <input type="text" id="uploadForArtist" placeholder="Search and select artist">
+            <div class="helper-text">Create artist profile if not found</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="isrc">ISRC (Optional)</label>
+            <input type="text" id="isrc" placeholder="Enter ISRC code">
+          </div>
+          
+          <div class="form-group">
+            <label for="publisher">Publisher</label>
+            <input type="text" id="publisher" placeholder="Enter publisher name">
+          </div>
+          
+          <div class="form-group">
+            <label for="copyrightYear">Copyright Year</label>
+            <input type="number" id="copyrightYear" min="1900" max="2100" placeholder="Enter copyright year">
+          </div>
+          
+          <div class="form-group">
+            <label for="recordingLocation">Recording Location</label>
+            <input type="text" id="recordingLocation" placeholder="Enter recording location">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 2: Lyrics -->
+      <div class="step-content" id="step2">
+        <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 24px;">Lyrics (Optional)</h2>
+        
+        <div class="form-group">
+          <div class="toggle-switch">
+            <div class="toggle" id="hasLyricsToggle">
+              <div class="toggle-handle"></div>
+            </div>
+            <span class="toggle-label">This song has lyrics</span>
+          </div>
+        </div>
+        
+        <div class="form-group" id="lyricsEditorGroup" style="display: none;">
+          <label for="lyrics">Lyrics</label>
+          <textarea id="lyrics" placeholder="Enter lyrics here...&#10;&#10;You can use [Verse], [Chorus], [Bridge] tags to structure your lyrics."></textarea>
+          <div class="helper-text">Use [Verse], [Chorus], [Bridge] tags for structure</div>
+        </div>
+        
+        <div class="admin-only">
+          <div class="form-group" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+            <div class="toggle-switch">
+              <div class="toggle" id="lockLyricsToggle">
+                <div class="toggle-handle"></div>
+              </div>
+              <span class="toggle-label">Lock lyrics from artist edits</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <div class="toggle-switch">
+              <div class="toggle" id="verifiedLyricsToggle">
+                <div class="toggle-handle"></div>
+              </div>
+              <span class="toggle-label">Mark lyrics as verified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 3: Cover Art Designer -->
+      <div class="step-content" id="step3">
+        <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 24px;">Cover Art Designer</h2>
+        
+        <div class="cover-art-container">
+          <div class="cover-options">
+            <div class="cover-option-btn active" data-option="artist-photo">
+              <div class="option-title">Use My Artist Photo</div>
+              <div class="option-desc">Load your profile photo with smart crop</div>
+            </div>
+            
+            <div class="cover-option-btn" data-option="upload">
+              <div class="option-title">Upload Image</div>
+              <div class="option-desc">Upload your own image (1500x1500 min)</div>
+            </div>
+            
+            <div class="cover-option-btn" data-option="library">
+              <div class="option-title">Photo Library</div>
+              <div class="option-desc">Choose from professional stock photos</div>
+            </div>
+            
+            <div class="cover-option-btn" data-option="ai">
+              <div class="option-title">AI Cover Art (PRO)</div>
+              <div class="option-desc">Generate with AI prompts</div>
+            </div>
+            
+            <!-- Text Controls -->
+            <div class="form-group" style="margin-top: 24px;">
+              <label>Text Overlay</label>
+              <div class="form-group">
+                <label for="coverTrackTitle">Track Title</label>
+                <input type="text" id="coverTrackTitle" placeholder="Track title">
+              </div>
+              <div class="form-group">
+                <label for="coverArtistName">Artist Name</label>
+                <input type="text" id="coverArtistName" placeholder="Artist name">
+              </div>
+              <div class="form-group">
+                <label for="coverFont">Font</label>
+                <select id="coverFont">
+                  <option value="Bebas Neue">Bebas Neue</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Playfair Display">Playfair Display</option>
+                  <option value="Cinzel">Cinzel</option>
+                  <option value="Poppins">Poppins</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="cover-preview" id="coverPreview">
+            <canvas id="coverCanvas"></canvas>
+            <div class="cover-text-overlay" id="coverTextOverlay" style="display: none;">
+              <div style="font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: bold;" id="previewTrackTitle"></div>
+              <div style="font-family: 'Inter', sans-serif; font-size: 16px; margin-top: 8px; opacity: 0.9;" id="previewArtistName"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Photo Library Modal -->
+      <div class="photo-library-modal" id="photoLibraryModal">
+        <div class="photo-library-content">
+          <div class="photo-library-header">
+            <h3>Photo Library</h3>
+            <button class="photo-library-close" onclick="closePhotoLibrary()">×</button>
+          </div>
+          <p style="color: var(--text-secondary); margin-bottom: 24px;">Choose a professional stock photo for your cover art</p>
+          <div class="photo-library-grid" id="photoLibraryGrid"></div>
+        </div>
+      </div>
+      
+      <!-- AI Cover Art Modal -->
+      <div class="ai-cover-modal" id="aiCoverModal">
+        <div class="ai-cover-content">
+          <div class="ai-cover-header">
+            <h3>
+              AI Cover Art
+              <span class="pro-badge">PRO</span>
+            </h3>
+            <button class="ai-cover-close" onclick="closeAICoverModal()">×</button>
+          </div>
+          
+          <div id="aiCoverMainContent">
+            <div class="ai-prompt-section">
+              <label for="aiPrompt">Describe your cover art</label>
+              <textarea 
+                id="aiPrompt" 
+                placeholder="e.g., African musician in studio, vibrant colors, professional photography, modern studio lighting..."
+                maxlength="500"
+              ></textarea>
+              <div class="ai-prompt-hints">
+                <strong>Tips for best results:</strong>
+                <ul>
+                  <li>Be specific about style, mood, and colors</li>
+                  <li>Mention "music" or "studio" for music-related imagery</li>
+                  <li>Include cultural elements for African-inspired art</li>
+                  <li>Keep descriptions concise but detailed</li>
+                </ul>
+              </div>
+            </div>
+            
+            <button class="ai-generate-btn" id="aiGenerateBtn" onclick="generateAICover()">
+              <span>✨</span>
+              <span>Generate Cover Art</span>
+            </button>
+            
+            <div class="ai-preview-section" id="aiPreviewSection">
+              <div class="ai-preview-image" id="aiPreviewImage">
+                <div class="ai-preview-loading">
+                  <div class="spinner"></div>
+                  <div>Generating your cover art...</div>
+                </div>
+              </div>
+              <div class="ai-preview-actions">
+                <button class="ai-regenerate-btn" onclick="regenerateAICover()">🔄 Regenerate</button>
+                <button class="ai-use-btn" onclick="useAICover()">✓ Use This Cover</button>
+              </div>
+            </div>
+          </div>
+          
+          <div id="aiProUpgrade" class="ai-pro-upgrade" style="display: none;">
+            <h4>Upgrade to PRO</h4>
+            <p>AI Cover Art is a PRO feature. Upgrade now to generate unlimited AI cover art for your tracks.</p>
+            <button class="ai-pro-upgrade-btn" onclick="window.location.href='subscription.html'">Upgrade to PRO</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 4: Publish -->
+      <div class="step-content" id="step4">
+        <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 24px;">Publish Settings</h2>
+        
+        <div class="form-group">
+          <div class="toggle-switch">
+            <div class="toggle active" id="publicToggle">
+              <div class="toggle-handle"></div>
+            </div>
+            <span class="toggle-label">Make track public</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <div class="toggle-switch">
+            <div class="toggle active" id="allowTipsToggle">
+              <div class="toggle-handle"></div>
+            </div>
+            <span class="toggle-label">Allow tips</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <div class="toggle-switch">
+            <div class="toggle active" id="allowCommentsToggle">
+              <div class="toggle-handle"></div>
+            </div>
+            <span class="toggle-label">Allow comments</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <div class="toggle-switch">
+            <div class="toggle active" id="notifyFollowersToggle">
+              <div class="toggle-handle"></div>
+            </div>
+            <span class="toggle-label">Notify followers</span>
+          </div>
+        </div>
+        
+        <!-- Admin Only Settings -->
+        <div class="admin-only">
+          <div class="form-group" style="margin-top: 32px; padding-top: 32px; border-top: 2px solid var(--border);">
+            <label for="publishDate">Schedule Publish Date</label>
+            <input type="datetime-local" id="publishDate">
+          </div>
+          
+          <div class="form-group">
+            <div class="toggle-switch">
+              <div class="toggle" id="featureHomepageToggle">
+                <div class="toggle-handle"></div>
+              </div>
+              <span class="toggle-label">Feature on homepage</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <div class="toggle-switch">
+              <div class="toggle" id="trendingToggle">
+                <div class="toggle-handle"></div>
+              </div>
+              <span class="toggle-label">Mark as trending</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Quality Check Summary -->
+        <div id="qualityCheck" style="margin-top: 32px; padding: 24px; background: var(--bg-primary); border-radius: 12px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Quality Check</h3>
+          <div id="qualityItems"></div>
+        </div>
+      </div>
+      
+      <!-- Navigation Buttons -->
+      <div class="btn-group">
+        <button type="button" class="btn btn-secondary" id="btnBack" style="display: none;" onclick="previousStep()">← Back</button>
+        <div style="flex: 1;"></div>
+        <button type="button" class="btn btn-secondary" id="btnSaveDraft" onclick="saveDraft()">Save Draft</button>
+        <button type="button" class="btn btn-primary" id="btnNext" onclick="nextStep()">Next →</button>
+        <button type="button" class="btn btn-primary" id="btnPublish" style="display: none;" onclick="publishTrack()">Publish Track</button>
+      </div>
+    </div>
+    
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+  </div>
+  
+  <script>
+    // Global State
+    let currentStep = 1;
+    let uploadData = {
+      audioFile: null,
+      audioInfo: null,
+      coverArt: null,
+      coverImageSrc: null, // Store the image source for redrawing
+      qualityChecks: []
+    };
+    
+    // API Configuration
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://api.audiocity-ug.com';
+    
+    // Check if user is admin
+    const isAdmin = localStorage.getItem('is_admin') === 'true' || localStorage.getItem('admin_mode') === 'true';
+    if (isAdmin) {
+      document.body.classList.add('is-admin');
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      initAudioUpload();
+      initToggles();
+      initCoverArt();
+      initPhotoLibraryHandlers();
+      initAICoverHandlers();
+      autoFillArtistName();
+      setCurrentYear();
+      updateProgressBar();
+      
+      // Try to load draft
+      const draftLoaded = loadDraft();
+      if (!draftLoaded) {
+        // Initialize cover preview
+        updateCoverPreview();
+      }
+      
+      // Load admin artist list if admin
+      if (isAdmin) {
+        loadAdminArtistList();
+      }
+    });
+    
+    // Load admin artist list
+    async function loadAdminArtistList() {
+      const input = document.getElementById('uploadForArtist');
+      if (!input) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users`);
+        if (response.ok) {
+          const users = await response.json();
+          // Store users for autocomplete (simplified - could use a proper autocomplete library)
+          input.setAttribute('data-artists', JSON.stringify(users.map(u => ({ id: u.id, name: u.name || u.username }))));
+        }
+      } catch (error) {
+        console.error('Error loading artists:', error);
+      }
+    }
+    
+    // Auto-fill artist name from profile
+    function autoFillArtistName() {
+      const artistName = localStorage.getItem('user_name') || localStorage.getItem('username') || localStorage.getItem('name');
+      if (artistName) {
+        document.getElementById('artistName').value = artistName;
+      }
+    }
+    
+    // Set current year
+    function setCurrentYear() {
+      const yearInput = document.getElementById('releaseYear');
+      if (!yearInput.value) {
+        yearInput.value = new Date().getFullYear();
+      }
+    }
+    
+    // Progress Bar
+    function updateProgressBar() {
+      const progress = ((currentStep - 1) / 3) * 100;
+      document.getElementById('progressBar').style.width = progress + '%';
+      
+      document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+        const stepNum = index + 1;
+        indicator.classList.remove('active', 'completed');
+        if (stepNum === currentStep) {
+          indicator.classList.add('active');
+        } else if (stepNum < currentStep) {
+          indicator.classList.add('completed');
+          indicator.querySelector('.step-circle').innerHTML = '✓';
+        }
+      });
+    }
+    
+    // Step Navigation
+    function nextStep() {
+      if (validateCurrentStep()) {
+        if (currentStep < 4) {
+          currentStep++;
+          showStep(currentStep);
+        }
+      }
+    }
+    
+    function previousStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    }
+    
+    function showStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.step-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Show current step
+      document.getElementById('step' + step).classList.add('active');
+      
+      // Update buttons
+      document.getElementById('btnBack').style.display = step > 1 ? 'inline-flex' : 'none';
+      document.getElementById('btnNext').style.display = step < 4 ? 'inline-flex' : 'none';
+      document.getElementById('btnPublish').style.display = step === 4 ? 'inline-flex' : 'none';
+      
+      // Update progress
+      updateProgressBar();
+      
+      // Run step-specific initialization
+      if (step === 3) {
+        updateCoverPreview();
+      } else if (step === 4) {
+        runQualityChecks();
+      }
+    }
+    
+    // Validation
+    function validateCurrentStep() {
+      if (currentStep === 1) {
+        if (!uploadData.audioFile) {
+          showAlert('Please upload an audio file', 'error');
+          return false;
+        }
+        if (!document.getElementById('trackTitle').value.trim()) {
+          showAlert('Please enter a track title', 'error');
+          return false;
+        }
+        if (!document.getElementById('artistName').value.trim()) {
+          showAlert('Please enter an artist name', 'error');
+          return false;
+        }
+        if (!document.getElementById('genre').value) {
+          showAlert('Please select a genre', 'error');
+          return false;
+        }
+        if (!document.getElementById('language').value) {
+          showAlert('Please select a language', 'error');
+          return false;
+        }
+      }
+      return true;
+    }
+    
+    // Audio Upload
+    function initAudioUpload() {
+      const uploadZone = document.getElementById('audioUploadZone');
+      const fileInput = document.getElementById('audioFile');
+      
+      uploadZone.addEventListener('click', () => fileInput.click());
+      
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+      });
+      
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+      });
+      
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) handleAudioFile(file);
+      });
+      
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleAudioFile(file);
+      });
+    }
+    
+    async function handleAudioFile(file) {
+      // Validate file type
+      if (!file.name.toLowerCase().endsWith('.mp3')) {
+        showAlert('Only MP3 files are allowed', 'error');
+        return;
+      }
+      
+      // Validate file size (100MB max)
+      if (file.size > 100 * 1024 * 1024) {
+        showAlert('File size must be less than 100MB', 'error');
+        return;
+      }
+      
+      uploadData.audioFile = file;
+      
+      // Get audio metadata
+      try {
+        const audio = new Audio();
+        audio.src = URL.createObjectURL(file);
+        
+        await new Promise((resolve, reject) => {
+          audio.onloadedmetadata = resolve;
+          audio.onerror = reject;
+        });
+        
+        const duration = audio.duration;
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        
+        uploadData.audioInfo = {
+          duration: duration,
+          fileSize: file.size,
+          fileName: file.name
+        };
+        
+        // Display audio info
+        const infoDiv = document.getElementById('audioInfo');
+        infoDiv.innerHTML = `
+          <div class="audio-info-item">
+            <span class="audio-info-label">File:</span>
+            <span class="audio-info-value">${file.name}</span>
+          </div>
+          <div class="audio-info-item">
+            <span class="audio-info-label">Size:</span>
+            <span class="audio-info-value">${fileSizeMB} MB</span>
+          </div>
+          <div class="audio-info-item">
+            <span class="audio-info-label">Duration:</span>
+            <span class="audio-info-value">${formatDuration(duration)}</span>
+          </div>
+        `;
+        infoDiv.style.display = 'block';
+        
+        // Note: Bitrate validation would require more complex audio analysis
+        // For now, we'll validate it on the backend
+        
+      } catch (error) {
+        console.error('Error loading audio:', error);
+        showAlert('Error reading audio file. Please try again.', 'error');
+      }
+    }
+    
+    function formatDuration(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    // Toggles
+    function initToggles() {
+      document.querySelectorAll('.toggle').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+          this.classList.toggle('active');
+        });
+      });
+      
+      // Lyrics toggle
+      document.getElementById('hasLyricsToggle').addEventListener('click', function() {
+        const editorGroup = document.getElementById('lyricsEditorGroup');
+        editorGroup.style.display = this.classList.contains('active') ? 'block' : 'none';
+      });
+    }
+    
+    // Collapsible
+    function toggleCollapsible(id) {
+      const section = document.getElementById(id);
+      section.classList.toggle('open');
+    }
+    
+    // Cover Art Designer
+    function initCoverArt() {
+      document.querySelectorAll('.cover-option-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.cover-option-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          // Handle cover option selection
+          handleCoverOption(this.dataset.option);
+        });
+      });
+      
+      // Auto-update preview when text changes (only update text, preserve image)
+      ['coverTrackTitle', 'coverArtistName', 'coverFont'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', updateCoverPreviewText);
+        }
+      });
+    }
+    
+    function handleCoverOption(option) {
+      const canvas = document.getElementById('coverCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      if (option === 'artist-photo') {
+        // Load artist profile photo
+        const profileImage = localStorage.getItem('profile_image_url') || localStorage.getItem('profile_image_data');
+        if (profileImage) {
+          loadImageToCanvas(profileImage);
+        } else {
+          showAlert('No profile photo found. Please upload an image instead.', 'warning');
+        }
+      } else if (option === 'upload') {
+        // Trigger file upload
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              loadImageToCanvas(event.target.result);
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        input.click();
+      } else if (option === 'library') {
+        // Show photo library modal
+        showPhotoLibrary();
+      } else if (option === 'ai') {
+        // AI generation - placeholder for now
+        showAlert('AI Cover Art is a PRO feature', 'info');
+      }
+    }
+    
+    function loadImageToCanvas(imageSrc) {
+      const canvas = document.getElementById('coverCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const size = 1200; // Use high resolution
+      canvas.width = size;
+      canvas.height = size;
+      
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      // Show loading state
+      ctx.fillStyle = '#1F2A44';
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '48px Inter';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Loading...', size / 2, size / 2);
+      
+      img.onload = () => {
+        // Store image source for redrawing
+        uploadData.coverImageSrc = imageSrc;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, size, size);
+        
+        // Calculate dimensions for center crop (smart crop)
+        const imgAspect = img.width / img.height;
+        let drawWidth = size;
+        let drawHeight = size;
+        let drawX = 0;
+        let drawY = 0;
+        
+        if (imgAspect > 1) {
+          // Image is wider than tall - crop sides
+          drawHeight = size;
+          drawWidth = size * imgAspect;
+          drawX = (size - drawWidth) / 2;
+        } else {
+          // Image is taller than wide - crop top/bottom
+          drawWidth = size;
+          drawHeight = size / imgAspect;
+          drawY = (size - drawHeight) / 2;
+        }
+        
+        // Draw image with smart crop (center crop)
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        
+        // Apply dark gradient overlay for text readability
+        const gradient = ctx.createLinearGradient(0, size * 0.6, 0, size);
+        gradient.addColorStop(0, 'transparent');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, size * 0.6, size, size * 0.4);
+        
+        // Add text overlay directly (no recursive call)
+        drawTextOverlay(ctx, size);
+        
+        // Mark cover art as ready
+        uploadData.coverArt = 'ready';
+      };
+      img.onerror = () => {
+        // Show error state
+        ctx.fillStyle = '#1F2A44';
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = '32px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Error loading image', size / 2, size / 2);
+        showAlert('Error loading image. Please try another photo.', 'error');
+      };
+      img.src = imageSrc;
+    }
+    
+    // Draw text overlay helper (used by both loadImageToCanvas and updateCoverPreviewText)
+    function drawTextOverlay(ctx, size) {
+      // Get text values
+      const trackTitle = document.getElementById('coverTrackTitle').value || document.getElementById('trackTitle').value;
+      const artistName = document.getElementById('coverArtistName').value || document.getElementById('artistName').value;
+      const font = document.getElementById('coverFont').value || 'Bebas Neue';
+      
+      // Add text overlay at bottom
+      if (trackTitle || artistName) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 2;
+        
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = '#FFFFFF';
+        
+        if (trackTitle) {
+          ctx.font = `bold ${size * 0.08}px "${font}", sans-serif`;
+          ctx.fillText(trackTitle, size / 2, size - (size * 0.15));
+        }
+        
+        if (artistName) {
+          ctx.font = `${size * 0.04}px "Inter", sans-serif`;
+          ctx.fillText(artistName, size / 2, size - (size * 0.05));
+        }
+        
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+    }
+    
+    // Update text overlay (redraws image if we have one, otherwise just text)
+    function updateCoverPreviewText() {
+      // If we have an image source, redraw everything (image + text)
+      if (uploadData.coverImageSrc) {
+        loadImageToCanvas(uploadData.coverImageSrc);
+        return;
+      }
+      
+      // Otherwise just update text on existing gradient background
+      const canvas = document.getElementById('coverCanvas');
+      if (!canvas || canvas.width === 0) return;
+      
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const size = canvas.width;
+      
+      // Clear text area (bottom portion) and redraw gradient + text
+      ctx.clearRect(0, size * 0.6, size, size * 0.4);
+      
+      // Re-draw gradient in bottom area (for text readability)
+      const gradient = ctx.createLinearGradient(0, size * 0.6, 0, size);
+      gradient.addColorStop(0, 'transparent');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, size * 0.6, size, size * 0.4);
+      
+      // Add text overlay
+      drawTextOverlay(ctx, size);
+      
+      uploadData.coverArt = 'ready';
+    }
+    
+    // Full preview update (for initial setup)
+    function updateCoverPreview() {
+      const canvas = document.getElementById('coverCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const size = canvas.width || 1200;
+      
+      // If we have an image source, redraw it (which will also add text)
+      if (uploadData.coverImageSrc) {
+        loadImageToCanvas(uploadData.coverImageSrc);
+        return;
+      }
+      
+      // If canvas is empty, create default gradient background
+      if (canvas.width === 0) {
+        canvas.width = size;
+        canvas.height = size;
+      }
+      
+      // Draw gradient background
+      ctx.clearRect(0, 0, size, size);
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#5B2EFF');
+      gradient.addColorStop(1, '#1F2A44');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+      
+      // Add text overlay
+      updateCoverPreviewText();
+    }
+    
+    // Quality Checks
+    function runQualityChecks() {
+      const checks = [];
+      
+      // Audio checks
+      if (uploadData.audioFile) {
+        checks.push({ status: 'pass', message: '✓ Audio file uploaded' });
+        if (uploadData.audioInfo) {
+          checks.push({ status: 'pass', message: `✓ Duration: ${formatDuration(uploadData.audioInfo.duration)}` });
+        }
+      } else {
+        checks.push({ status: 'fail', message: '✗ Audio file required' });
+      }
+      
+      // Cover art check
+      const canvas = document.getElementById('coverCanvas');
+      if (canvas && canvas.width > 0) {
+        checks.push({ status: 'pass', message: '✓ Cover art ready' });
+      } else {
+        checks.push({ status: 'warning', message: '⚠ Cover art recommended' });
+      }
+      
+      // Required fields check
+      if (!document.getElementById('trackTitle').value.trim()) {
+        checks.push({ status: 'fail', message: '✗ Track title required' });
+      } else {
+        checks.push({ status: 'pass', message: '✓ Track title set' });
+      }
+      
+      if (!document.getElementById('artistName').value.trim()) {
+        checks.push({ status: 'fail', message: '✗ Artist name required' });
+      } else {
+        checks.push({ status: 'pass', message: '✓ Artist name set' });
+      }
+      
+      if (!document.getElementById('genre').value) {
+        checks.push({ status: 'fail', message: '✗ Genre required' });
+      } else {
+        checks.push({ status: 'pass', message: '✓ Genre selected' });
+      }
+      
+      // Display checks
+      const container = document.getElementById('qualityItems');
+      container.innerHTML = checks.map(check => {
+        const icon = check.status === 'pass' ? '✓' : check.status === 'fail' ? '✗' : '⚠';
+        const color = check.status === 'pass' ? 'var(--success)' : check.status === 'fail' ? 'var(--error)' : 'var(--warning)';
+        return `<div style="padding: 8px 0; color: ${color}; font-size: 14px;">${check.message}</div>`;
+      }).join('');
+      
+      uploadData.qualityChecks = checks;
+    }
+    
+    // Save Draft
+    function saveDraft() {
+      const draft = {
+        step: currentStep,
+        timestamp: Date.now(),
+        formData: {
+          trackTitle: document.getElementById('trackTitle').value,
+          artistName: document.getElementById('artistName').value,
+          genre: document.getElementById('genre').value,
+          language: document.getElementById('language').value,
+          releaseYear: document.getElementById('releaseYear').value,
+          explicit: document.getElementById('explicitToggle').classList.contains('active'),
+          labelName: document.getElementById('labelName').value,
+          producer: document.getElementById('producer').value,
+          songwriter: document.getElementById('songwriter').value,
+          hasLyrics: document.getElementById('hasLyricsToggle').classList.contains('active'),
+          lyrics: document.getElementById('lyrics').value,
+          uploadForArtist: document.getElementById('uploadForArtist')?.value || '',
+          isrc: document.getElementById('isrc')?.value || '',
+          publisher: document.getElementById('publisher')?.value || '',
+          copyrightYear: document.getElementById('copyrightYear')?.value || '',
+          recordingLocation: document.getElementById('recordingLocation')?.value || '',
+          public: document.getElementById('publicToggle').classList.contains('active'),
+          allowTips: document.getElementById('allowTipsToggle').classList.contains('active'),
+          allowComments: document.getElementById('allowCommentsToggle').classList.contains('active'),
+          notifyFollowers: document.getElementById('notifyFollowersToggle').classList.contains('active')
+        },
+        audioFileName: uploadData.audioFile?.name || null,
+        hasCoverArt: !!uploadData.coverArt
+      };
+      localStorage.setItem('uploadDraft', JSON.stringify(draft));
+      showAlert('Draft saved successfully', 'success');
+    }
+    
+    // Load Draft
+    function loadDraft() {
+      const draftJson = localStorage.getItem('uploadDraft');
+      if (!draftJson) return false;
+      
+      try {
+        const draft = JSON.parse(draftJson);
+        if (!draft.formData) return false;
+        
+        // Restore form fields
+        if (draft.formData.trackTitle) document.getElementById('trackTitle').value = draft.formData.trackTitle;
+        if (draft.formData.artistName) document.getElementById('artistName').value = draft.formData.artistName;
+        if (draft.formData.genre) document.getElementById('genre').value = draft.formData.genre;
+        if (draft.formData.language) document.getElementById('language').value = draft.formData.language;
+        if (draft.formData.releaseYear) document.getElementById('releaseYear').value = draft.formData.releaseYear;
+        if (draft.formData.labelName) document.getElementById('labelName').value = draft.formData.labelName;
+        if (draft.formData.producer) document.getElementById('producer').value = draft.formData.producer;
+        if (draft.formData.songwriter) document.getElementById('songwriter').value = draft.formData.songwriter;
+        if (draft.formData.lyrics) document.getElementById('lyrics').value = draft.formData.lyrics;
+        if (draft.formData.uploadForArtist && document.getElementById('uploadForArtist')) {
+          document.getElementById('uploadForArtist').value = draft.formData.uploadForArtist;
+        }
+        
+        // Restore toggles
+        if (draft.formData.explicit) document.getElementById('explicitToggle').classList.add('active');
+        if (draft.formData.hasLyrics) {
+          document.getElementById('hasLyricsToggle').classList.add('active');
+          document.getElementById('lyricsEditorGroup').style.display = 'block';
+        }
+        
+        // Restore step
+        if (draft.step) {
+          currentStep = draft.step;
+          showStep(currentStep);
+        }
+        
+        showAlert('Draft loaded', 'success');
+        return true;
+      } catch (error) {
+        console.error('Error loading draft:', error);
+        return false;
+      }
+    }
+    
+    // Export Cover Art as Data URL
+    async function exportCoverArt() {
+      const canvas = document.getElementById('coverCanvas');
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        console.warn('Canvas is empty, skipping cover art export');
+        uploadData.coverArt = null;
+        return null;
+      }
+      
+      return new Promise((resolve, reject) => {
+        try {
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              console.warn('Failed to create blob from canvas');
+              uploadData.coverArt = null;
+              resolve(null);
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+              uploadData.coverArt = reader.result;
+              resolve(reader.result);
+            };
+            reader.onerror = (error) => {
+              console.error('Error reading blob:', error);
+              uploadData.coverArt = null;
+              reject(error);
+            };
+            reader.readAsDataURL(blob);
+          }, 'image/webp', 0.85); // WebP at 85% quality
+        } catch (error) {
+          console.error('Error exporting cover art:', error);
+          uploadData.coverArt = null;
+          reject(error);
+        }
+      });
+    }
+    
+    // Publish Track
+    async function publishTrack() {
+      if (!validateCurrentStep()) {
+        return;
+      }
+      
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        showAlert('Please log in to upload tracks', 'error');
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      // Show loading state
+      const publishBtn = document.getElementById('btnPublish');
+      const originalText = publishBtn.textContent;
+      publishBtn.disabled = true;
+      publishBtn.textContent = 'Publishing...';
+      
+      try {
+        // Export cover art if on step 3 or 4
+        if (currentStep >= 3) {
+          await exportCoverArt();
+        }
+        
+        const formData = new FormData();
+        formData.append('audioFile', uploadData.audioFile);
+        formData.append('title', document.getElementById('trackTitle').value.trim());
+        formData.append('artist_name', document.getElementById('artistName').value.trim());
+        formData.append('genre', document.getElementById('genre').value);
+        formData.append('language', document.getElementById('language').value);
+        
+        // Optional fields
+        const releaseYear = document.getElementById('releaseYear').value;
+        if (releaseYear) formData.append('release_year', releaseYear);
+        
+        const explicit = document.getElementById('explicitToggle').classList.contains('active');
+        formData.append('explicit', explicit ? '1' : '0');
+        
+        // Credits
+        const labelName = document.getElementById('labelName').value.trim();
+        if (labelName) formData.append('label', labelName);
+        
+        const producer = document.getElementById('producer').value.trim();
+        if (producer) formData.append('producer', producer);
+        
+        const songwriter = document.getElementById('songwriter').value.trim();
+        if (songwriter) formData.append('songwriter', songwriter);
+        
+        // Lyrics
+        const hasLyrics = document.getElementById('hasLyricsToggle').classList.contains('active');
+        if (hasLyrics) {
+          const lyrics = document.getElementById('lyrics').value.trim();
+          if (lyrics) formData.append('lyrics', lyrics);
+        }
+        
+        // Cover Art - Temporarily disabled to isolate upload issues
+        // TODO: Re-enable once basic upload is working
+        if (uploadData.coverArt && typeof uploadData.coverArt === 'string' && uploadData.coverArt.startsWith('data:image/')) {
+          // Convert data URL to Blob, then to File
+          try {
+            // Parse data URL
+            const base64Data = uploadData.coverArt.split(',')[1];
+            if (!base64Data) {
+              console.warn('Invalid data URL format, skipping cover art');
+            } else {
+              const mimeType = uploadData.coverArt.match(/data:image\/([^;]+)/)?.[1] || 'webp';
+              const byteCharacters = atob(base64Data);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              const blob = new Blob([byteArray], { type: `image/${mimeType}` });
+              const file = new File([blob], `cover-art.${mimeType}`, { type: `image/${mimeType}` });
+              formData.append('coverArt', file);
+              console.log('Cover art converted and appended:', file.name, file.type, file.size, 'bytes');
+            }
+          } catch (error) {
+            console.error('Error converting cover art:', error);
+            // Skip cover art if conversion fails - backend will handle missing cover art
+          }
+        } else if (uploadData.coverArt && typeof uploadData.coverArt === 'string' && !uploadData.coverArt.startsWith('data:') && uploadData.coverArt !== 'ready') {
+          // Only send as URL if it's not a data URL (i.e., it's a real URL)
+          formData.append('cover_art_url', uploadData.coverArt);
+        } else {
+          console.log('No cover art to upload (coverArt value:', uploadData.coverArt, ')');
+        }
+        
+        // Admin fields
+        if (isAdmin) {
+          const uploadForArtist = document.getElementById('uploadForArtist')?.value.trim();
+          if (uploadForArtist) formData.append('upload_for_artist', uploadForArtist);
+          
+          const isrc = document.getElementById('isrc')?.value.trim();
+          if (isrc) formData.append('isrc', isrc);
+          
+          const publisher = document.getElementById('publisher')?.value.trim();
+          if (publisher) formData.append('publisher_meta', publisher);
+          
+          const copyrightYear = document.getElementById('copyrightYear')?.value;
+          if (copyrightYear) formData.append('copyright_year', copyrightYear);
+          
+          const recordingLocation = document.getElementById('recordingLocation')?.value.trim();
+          if (recordingLocation) formData.append('recording_location', recordingLocation);
+        }
+        
+        // Publish settings
+        const isPublic = document.getElementById('publicToggle').classList.contains('active');
+        formData.append('is_public', isPublic ? '1' : '0');
+        
+        const allowTips = document.getElementById('allowTipsToggle').classList.contains('active');
+        formData.append('allow_tips', allowTips ? '1' : '0');
+        
+        const allowComments = document.getElementById('allowCommentsToggle').classList.contains('active');
+        formData.append('allow_comments', allowComments ? '1' : '0');
+        
+        const notifyFollowers = document.getElementById('notifyFollowersToggle').classList.contains('active');
+        formData.append('notify_followers', notifyFollowers ? '1' : '0');
+        
+        // Admin publish settings
+        if (isAdmin) {
+          const publishDate = document.getElementById('publishDate')?.value;
+          if (publishDate) formData.append('publish_date', publishDate);
+          
+          const featureHomepage = document.getElementById('featureHomepageToggle')?.classList.contains('active');
+          if (featureHomepage) formData.append('feature_homepage', '1');
+          
+          const trending = document.getElementById('trendingToggle')?.classList.contains('active');
+          if (trending) formData.append('trending', '1');
+        }
+        
+        // Get user ID
+        const userId = localStorage.getItem('user_id');
+        if (userId) formData.append('artist_id', userId);
+        
+        // Debug: Log what we're sending
+        console.log('Upload data:', {
+          hasAudioFile: !!uploadData.audioFile,
+          audioFileName: uploadData.audioFile?.name,
+          audioFileSize: uploadData.audioFile?.size,
+          audioFileType: uploadData.audioFile?.type,
+          coverArt: uploadData.coverArt ? (uploadData.coverArt.substring(0, 50) + '...') : null,
+          title: document.getElementById('trackTitle').value.trim(),
+          genre: document.getElementById('genre').value,
+          userId: userId
+        });
+        
+        const headers = {
+          'Authorization': `Bearer ${authToken}`
+        };
+        
+        // Add admin headers if admin
+        if (isAdmin) {
+          const adminEmail = localStorage.getItem('user_email') || localStorage.getItem('email');
+          if (adminEmail) {
+            headers['X-Admin-Email'] = adminEmail;
+            headers['X-User-Email'] = adminEmail;
+          }
+        }
+        
+        // Don't set Content-Type for FormData - browser sets it automatically with boundary
+        const response = await fetch(`${API_BASE_URL}/api/tracks`, {
+          method: 'POST',
+          headers: headers,
+          body: formData
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          // Clear draft on successful upload
+          localStorage.removeItem('uploadDraft');
+          
+          showAlert('Track uploaded successfully!', 'success');
+          setTimeout(() => {
+            window.location.href = 'feed.html';
+          }, 2000);
+        } else {
+          let errorMessage = 'Upload failed';
+          try {
+            const error = await response.json();
+            errorMessage = error.error || error.message || 'Upload failed';
+            console.error('Upload error response:', error);
+            console.error('Error details:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: error
+            });
+          } catch (e) {
+            const text = await response.text();
+            console.error('Upload error (non-JSON):', text);
+            errorMessage = `Server error (${response.status}): ${response.statusText}`;
+          }
+          showAlert(errorMessage, 'error');
+          publishBtn.disabled = false;
+          publishBtn.textContent = originalText;
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        console.error('Error stack:', error.stack);
+        showAlert(`Error uploading track: ${error.message || 'Unknown error'}. Please check console for details.`, 'error');
+        publishBtn.disabled = false;
+        publishBtn.textContent = originalText;
+      }
+    }
+    
+    // Photo Library
+    const stockPhotos = [
+      // Studio/Professional
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=600&fit=crop',
+      
+      // City/Urban
+      'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=600&fit=crop',
+      
+      // Music/Instruments
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1516924962500-2b4b3b99ea02?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&h=600&fit=crop',
+      
+      // Abstract/Emotional
+      'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=600&h=600&fit=crop',
+      
+      // African Culture
+      'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=600&fit=crop',
+      
+      // Gospel/Spiritual
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1464207687429-7505649dae38?w=600&h=600&fit=crop',
+      
+      // Party/Energy
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&h=600&fit=crop'
+    ];
+    
+    function showPhotoLibrary() {
+      const modal = document.getElementById('photoLibraryModal');
+      const grid = document.getElementById('photoLibraryGrid');
+      
+      if (!modal || !grid) return;
+      
+      // Populate grid with stock photos
+      grid.innerHTML = '';
+      stockPhotos.forEach((photoUrl, index) => {
+        const item = document.createElement('div');
+        item.className = 'photo-library-item';
+        item.dataset.photoUrl = photoUrl;
+        item.innerHTML = `<img src="${photoUrl}" alt="Stock photo ${index + 1}" loading="lazy" onerror="this.parentElement.style.display='none';">`;
+        item.addEventListener('click', () => selectStockPhoto(photoUrl, item));
+        grid.appendChild(item);
+      });
+      
+      modal.classList.add('active');
+    }
+    
+    function closePhotoLibrary() {
+      const modal = document.getElementById('photoLibraryModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+    
+    function selectStockPhoto(photoUrl, element) {
+      // Remove previous selection
+      document.querySelectorAll('.photo-library-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Mark as selected
+      element.classList.add('selected');
+      
+      // Load image to canvas after a brief delay for visual feedback
+      setTimeout(() => {
+        loadImageToCanvas(photoUrl);
+        closePhotoLibrary();
+      }, 300);
+    }
+    
+    // Close photo library modal handlers
+    function initPhotoLibraryHandlers() {
+      const modal = document.getElementById('photoLibraryModal');
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            closePhotoLibrary();
+          }
+        });
+      }
+      
+      // Close on Escape key (handled globally in initAICoverHandlers)
+    }
+    
+    // AI Cover Art
+    function showAICoverModal() {
+      const modal = document.getElementById('aiCoverModal');
+      const mainContent = document.getElementById('aiCoverMainContent');
+      const proUpgrade = document.getElementById('aiProUpgrade');
+      
+      if (!modal) return;
+      
+      // Check if user has PRO access (admins always have access)
+      const hasProAccess = isAdmin || checkProAccess();
+      
+      if (!hasProAccess) {
+        mainContent.style.display = 'none';
+        proUpgrade.style.display = 'block';
+      } else {
+        mainContent.style.display = 'block';
+        proUpgrade.style.display = 'none';
+        // Reset form
+        document.getElementById('aiPrompt').value = '';
+        document.getElementById('aiPreviewSection').classList.remove('active');
+        document.getElementById('aiGenerateBtn').disabled = false;
+      }
+      
+      modal.classList.add('active');
+    }
+    
+    function closeAICoverModal() {
+      const modal = document.getElementById('aiCoverModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+    
+    function checkProAccess() {
+      // Check localStorage for PRO subscription
+      // This can be expanded to check user profile/subscription status from API
+      return localStorage.getItem('user_subscription') === 'pro' || 
+             localStorage.getItem('is_pro') === 'true';
+    }
+    
+    async function generateAICover() {
+      const promptInput = document.getElementById('aiPrompt');
+      const generateBtn = document.getElementById('aiGenerateBtn');
+      const previewSection = document.getElementById('aiPreviewSection');
+      const previewImage = document.getElementById('aiPreviewImage');
+      
+      const prompt = promptInput.value.trim();
+      
+      if (!prompt) {
+        showAlert('Please enter a description for your cover art', 'warning');
+        return;
+      }
+      
+      if (prompt.length < 10) {
+        showAlert('Please provide a more detailed description (at least 10 characters)', 'warning');
+        return;
+      }
+      
+      // Show loading state
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = '<span class="spinner" style="width: 20px; height: 20px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: spin 1s linear infinite;"></span> Generating...';
+      
+      previewSection.classList.add('active');
+      previewImage.innerHTML = `
+        <div class="ai-preview-loading">
+          <div class="spinner"></div>
+          <div>Generating your cover art... This may take 10-30 seconds</div>
+        </div>
+      `;
+      
+      try {
+        // Call AI generation API
+        const authToken = localStorage.getItem('auth_token');
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? 'http://localhost:3002'
+          : 'https://api.audiocity-ug.com';
+        
+        const response = await fetch(`${API_BASE_URL}/api/ai/generate-cover`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            size: '1024x1024', // Square format for cover art
+            style: 'photorealistic'
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.image_url || data.image) {
+            const imageUrl = data.image_url || data.image;
+            
+            // Display generated image
+            previewImage.innerHTML = `<img src="${imageUrl}" alt="AI Generated Cover Art" onerror="this.parentElement.innerHTML='<div class=\\'ai-preview-loading\\'><div>Error loading image. Please try again.</div></div>';">`;
+            
+            // Store image URL for use
+            previewImage.dataset.imageUrl = imageUrl;
+            
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<span>✨</span><span>Generate Cover Art</span>';
+          } else {
+            throw new Error('No image URL in response');
+          }
+        } else {
+          const error = await response.json().catch(() => ({ error: 'Generation failed' }));
+          throw new Error(error.error || 'Failed to generate cover art');
+        }
+      } catch (error) {
+        console.error('AI generation error:', error);
+        
+        // For now, show a placeholder/demo image
+        // In production, this would call the actual AI API
+        showAlert('AI generation is not yet fully configured. Using demo image.', 'info');
+        
+        // Demo: Use a placeholder image from Unsplash based on prompt
+        const demoImageUrl = `https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1024&h=1024&fit=crop&q=85`;
+        previewImage.innerHTML = `<img src="${demoImageUrl}" alt="Demo Cover Art">`;
+        previewImage.dataset.imageUrl = demoImageUrl;
+        
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<span>✨</span><span>Generate Cover Art</span>';
+      }
+    }
+    
+    function regenerateAICover() {
+      // Regenerate with same prompt
+      generateAICover();
+    }
+    
+    function useAICover() {
+      const previewImage = document.getElementById('aiPreviewImage');
+      const imageUrl = previewImage.dataset.imageUrl;
+      
+      if (imageUrl) {
+        // Load image to canvas
+        loadImageToCanvas(imageUrl);
+        closeAICoverModal();
+        showAlert('AI cover art applied!', 'success');
+      } else {
+        showAlert('No cover art to use. Please generate one first.', 'warning');
+      }
+    }
+    
+    // Close AI modal on outside click and Escape key
+    function initAICoverHandlers() {
+      const modal = document.getElementById('aiCoverModal');
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            closeAICoverModal();
+          }
+        });
+      }
+    }
+    
+    // Alert System
+    function showAlert(message, type = 'error') {
+      const container = document.getElementById('alertContainer');
+      if (!container) return;
+      
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      container.appendChild(alert);
+      
+      // Scroll to alert
+      alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      
+      setTimeout(() => {
+        alert.remove();
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+═══════════════════════════════════════════════════════════════
+  CHECK MASTERING SERVER STATUS
+═══════════════════════════════════════════════════════════════
+
+The 503 errors mean the mastering server is likely DOWN.
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: Test Mastering Server Directly
+═══════════════════════════════════════════════════════════════
+
+Open browser and go to:
+  https://mastering.audiocity-ug.com/api/health
+
+OR test in browser console:
+  fetch('https://mastering.audiocity-ug.com/api/health')
+    .then(r => r.text())
+    .then(console.log)
+    .catch(console.error)
+
+EXPECTED IF SERVER IS UP:
+  ✅ Returns JSON: {"status":"ok"} or similar
+  ✅ Returns "Cannot GET /" (this is OK - means server is running)
+
+EXPECTED IF SERVER IS DOWN:
+  ❌ ERR_CONNECTION_REFUSED
+  ❌ Timeout
+  ❌ 503 Service Unavailable
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: Check Frontend Retry Messages
+═══════════════════════════════════════════════════════════════
+
+When you see 503 errors, check the browser console:
+
+SHOULD SEE (if frontend is updated):
+  ⚠️ Mastering service temporarily unavailable (503), will retry... (1/20)
+  ⚠️ Service temporarily unavailable. Retrying... (2/20)
+  (with retry counts increasing)
+
+IF YOU DON'T SEE RETRY COUNTS:
+  ❌ Frontend mastering.js hasn't been deployed
+  ❌ Deploy cloudflare-frontend/ folder to Cloudflare Pages
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: Check Worker Logs
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → audio-city-api-d1
+3. Click: Logs tab
+4. Look for:
+   - "[Master Status] Fetching status for job..."
+   - "[Master Status] Server returned 503"
+   - "[Master Status] Proxy error"
+
+This will show WHY it's failing.
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: If Mastering Server is Down
+═══════════════════════════════════════════════════════════════
+
+You need to start your mastering server on your VPS:
+
+1. SSH into your VPS
+2. Check if server is running:
+   pm2 status
+   # Should show "mastering" process
+
+3. If not running, start it:
+   cd /opt/backend
+   pm2 start server.js --name mastering -- --port 3001
+   pm2 save
+
+4. Check logs:
+   pm2 logs mastering
+   # Should show server starting on port 3001
+
+5. Verify it's accessible:
+   curl http://localhost:3001/api/health
+   # Should return JSON
+
+6. Check domain DNS:
+   # Make sure mastering.audiocity-ug.com points to your VPS
+
+═══════════════════════════════════════════════════════════════
+  WHAT'S HAPPENING
+═══════════════════════════════════════════════════════════════
+
+Current Flow:
+  1. Frontend → Worker: GET /api/master-status/:jobId
+  2. Worker → Mastering Server: GET /api/mastering-progress/:id
+  3. Mastering Server → ❌ Returns 503 (server is down)
+  4. Worker → Frontend: Returns 503 with retry: true
+  5. Frontend: Retries (should show retry counts)
+
+The Worker is working correctly - it's the mastering server that's down.
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

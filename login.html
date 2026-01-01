@@ -197,6 +197,34 @@
     .divider::after {
       right: 0;
     }
+    
+    .social-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    .social-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .social-btn:hover {
+      background: rgba(255, 180, 50, 0.1);
+      border-color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -232,6 +260,22 @@
         Don't have an account? <a href="signup.html">Sign Up</a>
       </div>
     </form>
+    
+    <div class="divider">
+      <span>or</span>
+    </div>
+    
+    <div class="social-btns">
+      <button type="button" class="social-btn" id="googleSignInBtn" style="background: #fff; color: #333; font-weight: 600;">
+        <svg width="18" height="18" viewBox="0 0 18 18" style="margin-right: 8px;">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+        </svg>
+        Continue with Google
+      </button>
+    </div>
   </div>
   
   <script>
@@ -251,6 +295,27 @@
     // Handle Google OAuth callback
     (function() {
       const urlParams = new URLSearchParams(window.location.search);
+      const statusEl = document.getElementById('status');
+      
+      // Check for OAuth errors
+      const error = urlParams.get('error');
+      if (error) {
+        if (statusEl) {
+          statusEl.className = 'status error';
+          statusEl.style.display = 'block';
+          let errorMsg = 'Google sign-in failed. Please try again.';
+          if (error === 'oauth_failed') errorMsg = 'Google authentication failed. Please try again.';
+          else if (error === 'oauth_not_configured') errorMsg = 'Google sign-in is not configured.';
+          else if (error === 'oauth_token_failed') errorMsg = 'Failed to authenticate with Google. Please try again.';
+          else if (error === 'oauth_userinfo_failed') errorMsg = 'Failed to retrieve user information from Google.';
+          else if (error === 'oauth_error') errorMsg = 'An error occurred during Google sign-in.';
+          statusEl.textContent = '❌ ' + errorMsg;
+        }
+        // Clean URL
+        window.history.replaceState({}, document.title, '/login.html');
+        return;
+      }
+      
       if (urlParams.get('google_auth') === 'success') {
         const token = urlParams.get('token');
         const userId = urlParams.get('user_id');
@@ -278,6 +343,14 @@
           const returnUrl = urlParams.get('return') || 'feed.html';
           window.location.href = decodeURIComponent(returnUrl);
           return;
+        } else {
+          // Missing token or user_id
+          if (statusEl) {
+            statusEl.className = 'status error';
+            statusEl.style.display = 'block';
+            statusEl.textContent = '❌ Google sign-in incomplete. Please try again.';
+          }
+          window.history.replaceState({}, document.title, '/login.html');
         }
       }
     })();
@@ -309,7 +382,7 @@
       
       // Check for admin credentials first
       const ADMIN_EMAIL = 'chilafrican@gmail.com';
-      const ADMIN_PASSWORD = 'Semakulanico1';
+      const ADMIN_PASSWORD = 'ssemakulanico1';
       
       if (identifier.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
         // Admin login - redirect to admin dashboard
@@ -477,15 +550,27 @@
         }
       }
     });
+    
+    // Google Sign-In functionality
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    if (googleSignInBtn) {
+      googleSignInBtn.addEventListener('click', () => {
+        handleGoogleSignIn();
+      });
+    }
+    
+    async function handleGoogleSignIn() {
+      const statusEl = document.getElementById('status');
+      if (statusEl) {
+        statusEl.className = 'status';
+        statusEl.style.display = 'block';
+        statusEl.textContent = '⏳ Redirecting to Google...';
+      }
+      
+      // Redirect to backend OAuth endpoint
+      const backendURL = API_BASE_URL + '/auth/google';
+      window.location.href = backendURL;
+    }
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-

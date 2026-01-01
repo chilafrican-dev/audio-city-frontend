@@ -1,0 +1,106 @@
+═══════════════════════════════════════════════════════════════
+  TEST MASTERING PROGRESS ENDPOINT
+═══════════════════════════════════════════════════════════════
+
+The health endpoint works, but we need to test the progress endpoint.
+
+═══════════════════════════════════════════════════════════════
+  TEST 1: Test with a Fake Job ID
+═══════════════════════════════════════════════════════════════
+
+Open browser console and run:
+
+fetch('https://mastering.audiocity-ug.com/api/mastering-progress/test-job-id-12345')
+  .then(r => {
+    console.log('Status:', r.status);
+    return r.json();
+  })
+  .then(data => console.log('Response:', data))
+  .catch(err => console.error('Error:', err));
+
+EXPECTED:
+  ✅ Status: 404 (job not found - this is OK!)
+  ✅ Response: { error: 'Job not found' }
+
+IF YOU GET 503:
+  ❌ Server has an issue with the progress endpoint
+  ❌ Check server logs
+
+IF YOU GET ERR_CONNECTION_REFUSED:
+  ❌ Server is down (but health works, so unlikely)
+
+═══════════════════════════════════════════════════════════════
+  TEST 2: Submit a Real Job and Check Status
+═══════════════════════════════════════════════════════════════
+
+1. Go to: https://www.audiocity-ug.com/mastering.html
+2. Upload a small audio file
+3. Click "Master"
+4. In browser console, note the jobId from the response
+5. Immediately test the endpoint:
+
+fetch(`https://mastering.audiocity-ug.com/api/mastering-progress/YOUR_JOB_ID`)
+  .then(r => {
+    console.log('Status:', r.status);
+    return r.json();
+  })
+  .then(data => console.log('Response:', data))
+  .catch(err => console.error('Error:', err));
+
+EXPECTED:
+  ✅ Status: 200
+  ✅ Response: { status: 'processing', progress: 0, ... }
+
+IF YOU GET 404:
+  ❌ Job wasn't created properly
+  ❌ Check if /api/quick-master is working
+
+IF YOU GET 503:
+  ❌ Server issue with progress endpoint
+  ❌ Check server logs
+
+═══════════════════════════════════════════════════════════════
+  TEST 3: Test Through Worker
+═══════════════════════════════════════════════════════════════
+
+Test the Worker endpoint directly:
+
+fetch('https://api.audiocity-ug.com/api/master-status/test-job-id-12345')
+  .then(r => {
+    console.log('Worker Status:', r.status);
+    return r.json();
+  })
+  .then(data => console.log('Worker Response:', data))
+  .catch(err => console.error('Error:', err));
+
+EXPECTED:
+  ✅ Status: 503 (because job doesn't exist, we return 503 for retry)
+  ✅ Response: { status: 'processing', retry: true, ... }
+
+This confirms the Worker is working correctly.
+
+═══════════════════════════════════════════════════════════════
+  WHAT TO CHECK
+═══════════════════════════════════════════════════════════════
+
+If Test 1 returns 503 (not 404):
+  → The mastering server has an issue with the progress endpoint
+  → Check server logs on VPS
+  → Verify the endpoint is actually deployed
+
+If Test 2 returns 404 immediately after job creation:
+  → Jobs aren't being stored properly
+  → Check if masteringJobs Map is being cleared
+  → Server might be restarting and losing in-memory state
+
+If Test 3 works but you still get 503s:
+  → The Worker is working correctly
+  → The issue is with job creation or job lookup
+  → Check if job IDs match between creation and lookup
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

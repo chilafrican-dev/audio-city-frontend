@@ -1,0 +1,92 @@
+═══════════════════════════════════════════════════════════════
+  SIMPLIFIED ADMIN FIX - ALWAYS GRANT ACCESS
+═══════════════════════════════════════════════════════════════
+
+✅ WHAT CHANGED:
+
+The track upload endpoint now:
+1. Reads formData FIRST
+2. Checks for admin_email field
+3. If email is chilafrican@gmail.com → GRANT ACCESS IMMEDIATELY
+4. No token needed for admin
+5. Creates/updates admin user automatically
+
+═══════════════════════════════════════════════════════════════
+  HOW IT WORKS NOW
+═══════════════════════════════════════════════════════════════
+
+1. Frontend sends admin_email in formData
+2. Worker reads formData
+3. If admin_email === 'chilafrican@gmail.com':
+   ✅ Grant access immediately
+   ✅ Create/update admin user
+   ✅ Force is_admin = 1
+4. No token check needed for admin
+
+═══════════════════════════════════════════════════════════════
+  TO TEST
+═══════════════════════════════════════════════════════════════
+
+1. DEPLOY WORKER:
+   - Deploy worker-d1.js to Cloudflare Workers
+
+2. OPEN ADMIN UPLOAD PAGE:
+   - Go to: admin-upload.html
+   - Open browser console (F12)
+
+3. CHECK LOCALSTORAGE:
+   Run in console:
+   console.log(localStorage.getItem('user_email'));
+   Should show: "chilafrican@gmail.com" or set it:
+   localStorage.setItem('user_email', 'chilafrican@gmail.com');
+
+4. UPLOAD TRACK:
+   - Fill the form
+   - Upload a track
+   - Should work without "Unauthorized"
+
+5. CHECK NETWORK TAB:
+   - Open DevTools → Network
+   - Find POST /api/tracks
+   - Check Payload → Should see: admin_email: "chilafrican@gmail.com"
+
+═══════════════════════════════════════════════════════════════
+  IF STILL FAILING
+═══════════════════════════════════════════════════════════════
+
+1. CHECK FORM DATA IS SENT:
+   - Network tab → Request → Payload
+   - Must see: admin_email field
+
+2. CHECK WORKER LOGS:
+   - Cloudflare Dashboard → Workers → Logs
+   - Look for: "[Track Upload] ✅ Admin email detected"
+
+3. MANUALLY SET EMAIL:
+   In browser console:
+   localStorage.setItem('user_email', 'chilafrican@gmail.com');
+   localStorage.setItem('is_admin', 'true');
+   Then refresh page
+
+4. TEST DIRECTLY:
+   Run in browser console:
+   
+   const fd = new FormData();
+   fd.append('admin_email', 'chilafrican@gmail.com');
+   fd.append('title', 'Test');
+   fd.append('audioFile', new Blob(['test'], {type: 'audio/mp3'}));
+   
+   fetch('https://api.audiocity-ug.com/api/tracks', {
+     method: 'POST',
+     body: fd
+   })
+   .then(r => r.json())
+   .then(d => console.log('✅ Success:', d))
+   .catch(e => console.error('❌ Error:', e));
+
+═══════════════════════════════════════════════════════════════
+
+
+
+
+

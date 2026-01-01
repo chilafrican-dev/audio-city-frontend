@@ -1,0 +1,25 @@
+# Fix Admin Privileges - Correct Email
+
+## The Issue:
+Your email is: chilafrican@gmail.com (not chilafrocan@gmail.com)
+The UPDATE used the wrong email, so it didn't match your account.
+
+## Run This SQL in Cloudflare D1 Console:
+
+UPDATE users 
+SET is_admin = 1, updated_at = datetime('now') 
+WHERE email = 'chilafrican@gmail.com';
+
+## Verify It Worked:
+
+SELECT id, email, username, is_admin 
+FROM users 
+WHERE email = 'chilafrican@gmail.com';
+
+Should show: is_admin = 1
+
+## After Update:
+1. Log out from website
+2. Log back in
+3. Admin privileges should work!
+

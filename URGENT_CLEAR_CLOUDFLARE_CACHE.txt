@@ -1,0 +1,65 @@
+# URGENT: Clear Cloudflare Cache NOW
+
+## The Error is Still Showing Because Cloudflare is Serving Cached Files
+
+Even in incognito mode, Cloudflare's edge cache is serving old JavaScript files.
+
+## IMMEDIATE ACTION REQUIRED:
+
+### Step 1: Purge Cloudflare Cache
+1. Go to: https://dash.cloudflare.com
+2. Select domain: **audiocity-ug.com**
+3. Click **"Caching"** → **"Configuration"**
+4. Click **"Purge Everything"** button
+5. **WAIT 2-3 MINUTES** for propagation
+
+### Step 2: Verify Deployment
+Check if your latest code is deployed:
+- Go to: https://github.com/chilafrican-dev/audio-city-frontend
+- Check if latest commits are pushed
+- If using Cloudflare Pages, check deployment status
+
+### Step 3: Force Browser to Skip Cache
+After purging Cloudflare cache:
+
+1. Open DevTools (F12)
+2. Go to **Network** tab
+3. **CHECK** the box: **"Disable cache"**
+4. Keep DevTools open
+5. Reload page (F5)
+
+### Step 4: Verify New Code Loaded
+In browser console, you should see:
+```
+🎛️ Mastering module initialized
+```
+
+If you DON'T see this, the new mastering.js file isn't loading.
+
+### Step 5: Check Network Tab
+Look for `mastering.js?v=20241230-3` in the Network tab.
+- If you see `mastering.js` WITHOUT the version parameter, it's cached
+- If you see `mastering.js?v=20241230-3`, it's the new version
+
+## Alternative: Bypass Cloudflare Cache Temporarily
+
+Add this to the URL to bypass cache:
+```
+https://audiocity-ug.com/mastering?nocache=1234567890
+```
+
+## If Still Not Working:
+
+The issue might be that Cloudflare Pages hasn't deployed the latest code yet. Check:
+1. GitHub repository for latest commits
+2. Cloudflare Pages deployment status
+3. Make sure `mastering.js` file exists in the repository
+
+
+
+
+
+
+
+
+

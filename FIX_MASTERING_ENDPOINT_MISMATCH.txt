@@ -1,0 +1,67 @@
+# Fixed Mastering Endpoint Mismatch ✅
+
+## Problem:
+- Server returns `progressId` but frontend expected `jobId`
+- Frontend polled `/api/master-status/:id` but server uses `/api/mastering-progress/:id`
+- Server returns `status: 'complete'` but frontend checked for `'completed'`
+- Server returns downloads in `result.downloads.wav` but frontend looked in wrong places
+
+## Solution:
+
+### 1. **Fixed Job ID Handling:**
+   - Accept both `jobId` and `progressId` from server response
+   - Use whichever is available
+
+### 2. **Fixed Endpoint:**
+   - Changed from `/api/master-status/:id` to `/api/mastering-progress/:id`
+   - Matches server endpoint
+
+### 3. **Fixed Status Check:**
+   - Check for both `'complete'` and `'completed'` status
+   - Server returns `'complete'`
+
+### 4. **Fixed Download URL Parsing:**
+   - Check `status.result.downloads.wav` first (server format)
+   - Fallback to other property names
+   - Handle both WAV and MP3 URLs
+
+### 5. **Fixed Meter Data:**
+   - Read from `status.result` (server format)
+   - Fallback to `status` directly
+   - Handle input/output LUFS, true peak, and gain
+
+## Changes Made:
+
+**Before:**
+```javascript
+if (!data.success || !data.jobId) { ... }
+pollMasteringJob(data.jobId);
+const res = await fetch(`${API}/master-status/${jobId}`);
+if (status.status === 'completed') { ... }
+```
+
+**After:**
+```javascript
+const jobId = data.jobId || data.progressId;
+if (!data.success || !jobId) { ... }
+pollMasteringJob(jobId);
+const res = await fetch(`${API}/mastering-progress/${jobId}`);
+if (status.status === 'complete' || status.status === 'completed') { ... }
+if (status.result && status.result.downloads.wav) { ... }
+```
+
+## Result:
+
+✅ Frontend now uses correct endpoint
+✅ Handles server response format correctly
+✅ Gets download URLs from correct location
+✅ Reads meter data from correct location
+✅ Works with server's actual response format
+
+## Next Steps:
+
+1. Deploy updated mastering.js (v20241230-6)
+2. Test mastering submission
+3. Verify polling works correctly
+4. Check that downloads work
+

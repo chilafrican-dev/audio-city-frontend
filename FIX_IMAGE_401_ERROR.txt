@@ -1,0 +1,183 @@
+═══════════════════════════════════════════════════════════════
+  FIX 401 ERROR ON IMAGE LOADING
+═══════════════════════════════════════════════════════════════
+
+ISSUE:
+- Image file (e.g., 6b5db164-a8d5-467f-8fdc-cb516873e28f.png) returns 401 (Unauthorized)
+- This happens when images are accessed via direct R2 URLs instead of /api/media/ proxy
+
+═══════════════════════════════════════════════════════════════
+  ROOT CAUSE
+═══════════════════════════════════════════════════════════════
+
+1. OLD IMAGE URLs: Some tracks/images in the database may have direct R2 URLs:
+   ❌ https://pub-xxxxx.r2.dev/cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png
+   
+2. R2 BUCKET: R2 bucket may not be publicly accessible, causing 401 errors
+
+3. SOLUTION: All images should use the /api/media/ proxy:
+   ✅ https://api.audiocity-ug.com/api/media/cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png
+
+═══════════════════════════════════════════════════════════════
+  VERIFICATION & DIAGNOSTICS
+═══════════════════════════════════════════════════════════════
+
+1. CHECK /api/media/ ROUTE:
+   - Route exists at line 2174 in worker-d1.js
+   - Route is PUBLIC (no authentication required)
+   - Route handles: GET /api/media/* and GET /media/*
+   - Enhanced logging added for debugging
+   
+2. TEST THE ROUTE:
+   Run in browser console:
+   
+   fetch('https://api.audiocity-ug.com/api/media/cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png')
+     .then(r => {
+       console.log('Status:', r.status);
+       console.log('Content-Type:', r.headers.get('Content-Type'));
+       return r.status === 200 ? r.blob() : r.text();
+     })
+     .then(data => {
+       if (data instanceof Blob) {
+         console.log('✅ Image loaded successfully via /api/media/');
+       } else {
+         console.log('❌ Error:', data);
+       }
+     });
+
+3. CHECK DATABASE:
+   Query tracks with the specific track ID:
+   
+   SELECT id, title, cover_art_url, artist_id
+   FROM tracks 
+   WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+   
+   Check if:
+   - cover_art_url is NULL (no cover art uploaded)
+   - cover_art_url uses old R2 URL format
+   - cover_art_url uses /api/media/ format
+
+4. CHECK CLOUDFLARE WORKER LOGS:
+   - Go to Cloudflare Dashboard → Workers → Your Worker → Logs
+   - Look for "[Media Proxy]" messages
+   - Should see:
+     * "[Media Proxy] Requesting R2 object: cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png"
+     * Either "[Media Proxy] File found in R2" or "[Media Proxy] File not found in R2"
+     * If not found, will list similar files in the same directory
+
+5. CHECK R2 BUCKET:
+   - Go to Cloudflare Dashboard → R2
+   - Select your media bucket
+   - Search for: cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png
+   - Also check for variations:
+     * cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.jpg
+     * cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.jpeg
+     * cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.webp
+
+═══════════════════════════════════════════════════════════════
+  SOLUTIONS
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: FILE DOESN'T EXIST IN R2 (MOST COMMON)
+-------------------------------------------------
+If the file doesn't exist in R2, the track was likely uploaded without cover art.
+
+Solutions:
+1. Re-upload the track with cover art
+2. Set cover_art_url to NULL in database
+3. Use a default placeholder image in the frontend
+
+Check if file exists:
+- Look in Cloudflare Worker logs for "[Media Proxy] File not found"
+- Check R2 bucket directly in Cloudflare Dashboard
+- Verify the track was uploaded with cover art
+
+OPTION 2: UPDATE DATABASE URLs
+-------------------------------
+If cover art exists but URL is wrong, update to use /api/media/ proxy:
+
+UPDATE tracks 
+SET cover_art_url = REPLACE(
+  cover_art_url, 
+  'https://pub-xxxxx.r2.dev/', 
+  'https://api.audiocity-ug.com/api/media/'
+)
+WHERE cover_art_url LIKE '%r2.dev%';
+
+-- Or for any R2 URL pattern:
+UPDATE tracks 
+SET cover_art_url = 'https://api.audiocity-ug.com/api/media/' || 
+    SUBSTR(cover_art_url, INSTR(cover_art_url, 'cover-art/'))
+WHERE cover_art_url LIKE '%cover-art%' 
+  AND cover_art_url NOT LIKE '%/api/media/%';
+
+OPTION 3: FIX MISSING COVER ART
+--------------------------------
+If track exists but has no cover art, you can:
+
+1. Set to NULL (frontend will show placeholder):
+   UPDATE tracks 
+   SET cover_art_url = NULL 
+   WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+
+2. Upload cover art manually to R2, then update database:
+   - Upload to: cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png
+   - Update database:
+     UPDATE tracks 
+     SET cover_art_url = 'https://api.audiocity-ug.com/api/media/cover-art/6b5db164-a8d5-467f-8fdc-cb516873e28f.png'
+     WHERE id = '6b5db164-a8d5-467f-8fdc-cb516873e28f';
+
+OPTION 2: MAKE R2 BUCKET PUBLIC
+--------------------------------
+1. Go to Cloudflare Dashboard → R2
+2. Select your bucket
+3. Go to Settings → Public Access
+4. Enable "Public Access" or configure custom domain
+5. This allows direct R2 URLs to work, but /api/media/ is still recommended
+
+OPTION 3: FRONTEND FIX (TEMPORARY)
+-----------------------------------
+Add URL normalization in frontend to convert R2 URLs to /api/media/:
+
+function normalizeImageUrl(url) {
+  if (!url) return null;
+  
+  // If it's an R2 URL, convert to /api/media/
+  if (url.includes('r2.dev') || url.includes('pub-')) {
+    const r2Path = url.split('r2.dev/')[1] || url.split('pub-')[1]?.split('/').slice(1).join('/');
+    if (r2Path) {
+      return `${API_BASE_URL}/api/media/${r2Path}`;
+    }
+  }
+  
+  return url;
+}
+
+═══════════════════════════════════════════════════════════════
+  PREVENTIVE MEASURES
+═══════════════════════════════════════════════════════════════
+
+✅ NEW UPLOADS: Already fixed - track upload uses /api/media/ (line 1275)
+
+✅ COVER ART: Uses /api/media/ proxy (line 1275 in worker-d1.js)
+
+✅ PROFILE PICS: Should also use /api/media/ for consistency
+
+═══════════════════════════════════════════════════════════════
+  NOTES
+═══════════════════════════════════════════════════════════════
+
+- /api/media/ route is PUBLIC and does NOT require authentication
+- Route is placed correctly in worker-d1.js (line 2174)
+- Route handles CORS properly
+- Route supports byte-range requests for audio files
+- Route sets proper Content-Type headers
+
+If you still see 401 errors:
+1. Check if the URL format is correct (should start with /api/media/)
+2. Check Cloudflare Worker logs for actual error
+3. Verify the file exists in R2 bucket
+4. Check R2 bucket permissions
+
+═══════════════════════════════════════════════════════════════
+
