@@ -1,106 +1,52 @@
-═══════════════════════════════════════════════════════════════
-  URGENT: Deploy Worker to Fix 503 Errors
-═══════════════════════════════════════════════════════════════
+# Deploy Worker to Cloudflare - Quick Guide
 
-The fix is ready in worker-d1.js, but it needs to be deployed!
+## Why Deploy?
 
-═══════════════════════════════════════════════════════════════
-  STEP 1: Deploy Worker (5 minutes)
-═══════════════════════════════════════════════════════════════
+We made changes to `worker-d1.js`:
+- ✅ Removed old VPS mastering endpoints
+- ✅ Added new mastering endpoints pointing to persistent tunnel
+- ✅ These changes need to be deployed to take effect
 
-1. Open: https://dash.cloudflare.com
-2. Click: Workers & Pages
-3. Click: audio-city-api-d1 (your worker)
-4. Click: Edit code (or Quick edit)
-5. Select ALL existing code (Cmd+A / Ctrl+A)
-6. Delete it
-7. Open: worker-d1.js (from your local files)
-8. Copy ALL content (Cmd+A, Cmd+C)
-9. Paste into Cloudflare editor (Cmd+V)
-10. Click: Save and deploy
-11. Wait for deployment to complete (usually 10-30 seconds)
+## Deploy Methods:
 
-═══════════════════════════════════════════════════════════════
-  STEP 2: Test the Fix
-═══════════════════════════════════════════════════════════════
+### Method 1: Using Wrangler CLI (Recommended)
 
-After deployment, test:
+```bash
+# 1. Make sure you're in the project directory
+cd "/Users/nicopan/online master"
 
-1. Go to: https://www.audiocity-ug.com/mastering.html
-2. Upload an audio file
-3. Click "Master"
-4. Open browser console (F12)
-5. Look for:
-   ✅ "🔄 Polling job status: [job-id]"
-   ✅ Should NOT see continuous 503 errors
-   ✅ Should see status updates
+# 2. Login to Cloudflare (if not already logged in)
+npx wrangler login
 
-IF YOU STILL SEE 503 ERRORS:
-  → Check Step 3 below
+# 3. Deploy the worker
+npx wrangler deploy --config wrangler-d1.toml
+```
 
-═══════════════════════════════════════════════════════════════
-  STEP 3: Verify Mastering Server is Running
-═══════════════════════════════════════════════════════════════
-
-The Worker now calls: https://mastering.audiocity-ug.com/api/mastering-progress/:id
-
-TEST IT:
-1. Open browser
-2. Go to: https://mastering.audiocity-ug.com/api/health
-   (or just: https://mastering.audiocity-ug.com)
-
-EXPECTED:
-  ✅ Should return JSON or "Cannot GET /" (both are OK)
-  ❌ Should NOT return: ERR_CONNECTION_REFUSED or timeout
-
-IF SERVER IS DOWN:
-  → You need to start your mastering server on your VPS
-  → Check: Is the server running on port 3001?
-  → Check: Is the domain DNS pointing correctly?
-
-═══════════════════════════════════════════════════════════════
-  STEP 4: Check Worker Logs (If Still Failing)
-═══════════════════════════════════════════════════════════════
+### Method 2: Using Cloudflare Dashboard
 
 1. Go to: https://dash.cloudflare.com
-2. Workers & Pages → audio-city-api-d1
-3. Click: Logs tab
-4. Look for errors like:
-   - "[Master Status] Server returned 503"
-   - "[Master Status] Proxy error"
-   - Network errors
+2. Workers & Pages → `audio-city-api-d1`
+3. Click "Edit code" or "Quick edit"
+4. Copy the entire contents of `worker-d1.js`
+5. Paste into the editor
+6. Click "Save and Deploy"
 
-This will tell you WHY it's failing.
+## After Deployment:
 
-═══════════════════════════════════════════════════════════════
-  WHAT THE FIX DOES
-═══════════════════════════════════════════════════════════════
+The new mastering endpoints will be active:
+- POST /api/quick-master → https://mastering.audiocity-ug.com
+- GET /api/master-status/:id → https://mastering.audiocity-ug.com
 
-BEFORE (Broken):
-  Worker → /api/master-status/:id → ❌ 404 Not Found
+## Verify Deployment:
 
-AFTER (Fixed):
-  Worker → /api/mastering-progress/:id → ✅ Works!
+After deploying, test that it works:
+- Try using the mastering feature on your site
+- Check worker logs in Cloudflare dashboard
+- Verify requests go to the new persistent URL
 
-The Worker now:
-  ✅ Calls the correct endpoint
-  ✅ Transforms response for frontend
-  ✅ Handles errors gracefully
-  ✅ Returns retry-friendly 503s
+## Current Status:
 
-═══════════════════════════════════════════════════════════════
-  QUICK CHECKLIST
-═══════════════════════════════════════════════════════════════
-
-☐ Deploy worker-d1.js to Cloudflare Workers
-☐ Test mastering on website
-☐ Check browser console for errors
-☐ Verify mastering server is accessible
-☐ Check Worker logs if still failing
-
-═══════════════════════════════════════════════════════════════
-
-
-
-
-
+- ✅ Code is ready (worker-d1.js)
+- ✅ Configuration is ready (wrangler-d1.toml)
+- ⏳ Needs deployment to Cloudflare
+- ✅ Environment variable already set (MASTERING_SERVER_URL)

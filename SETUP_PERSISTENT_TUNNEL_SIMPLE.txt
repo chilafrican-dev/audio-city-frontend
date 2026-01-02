@@ -1,0 +1,68 @@
+# SIMPLE: Setup Persistent Tunnel (Easiest Method)
+
+## Step 1: Create Tunnel in Cloudflare Dashboard
+
+1. Go to: https://one.dash.cloudflare.com (or Zero Trust dashboard)
+2. Click: "Networks" → "Tunnels"
+3. Click: "Create a tunnel"
+4. Select: "Cloudflared"
+5. Name: `mastering-server-tunnel`
+6. Click "Save tunnel"
+
+## Step 2: Install Service on Server
+
+After creating the tunnel, Cloudflare will show you a command like:
+```bash
+cloudflared service install YOUR_TUNNEL_TOKEN
+```
+
+**Run this command on your server (43.245.227.33):**
+
+```bash
+# SSH into server first
+ssh root@43.245.227.33
+
+# Then run the install command from Cloudflare dashboard
+cloudflared service install YOUR_TUNNEL_TOKEN
+```
+
+This will automatically:
+- ✅ Create the config file
+- ✅ Set up systemd service
+- ✅ Start the tunnel
+
+## Step 3: Configure Public Hostname
+
+1. In Cloudflare dashboard, click on your tunnel (`mastering-server-tunnel`)
+2. Go to "Public Hostnames" tab
+3. Click "Add a public hostname"
+4. Fill in:
+   - **Subdomain**: `mastering`
+   - **Domain**: `audiocity-ug.com`
+   - **Service**: `http://localhost:3001`
+   - **Path**: (leave empty)
+5. Click "Save hostname"
+
+## Step 4: Update Worker
+
+In Cloudflare Dashboard:
+1. Workers & Pages → `audio-city-api-d1`
+2. Settings → Variables and Secrets
+3. Update `MASTERING_SERVER_URL` = `https://mastering.audiocity-ug.com`
+
+## Done! ✅
+
+Your persistent URL will be: `https://mastering.audiocity-ug.com`
+
+This URL will NEVER change, even if the server restarts!
+
+---
+
+## Alternative: If you already have a tunnel
+
+If you see an existing tunnel in the dashboard, you can:
+1. Click on it
+2. Go to "Public Hostnames"
+3. Add a new hostname pointing to `http://localhost:3001`
+4. Use that hostname in your worker
+

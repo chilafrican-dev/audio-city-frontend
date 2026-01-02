@@ -1,0 +1,98 @@
+# Troubleshooting mastering.audiocity-ug.com SSL/DNS Issue
+
+## Current Issue:
+SSL certificate error when accessing https://mastering.audiocity-ug.com
+
+## Possible Causes:
+
+### 1. DNS Not Configured (Most Likely)
+If DNS isn't set up, the domain won't resolve correctly.
+
+**Check DNS:**
+```bash
+dig mastering.audiocity-ug.com
+# or
+nslookup mastering.audiocity-ug.com
+```
+
+**Expected:** Should show a CNAME pointing to `806bc568-f3db-45c5-be24-99f3fe1063b4.cfargotunnel.com`
+
+### 2. DNS Not Propagated
+Even after setting DNS, it can take 2-5 minutes (sometimes up to 15 minutes) to propagate.
+
+### 3. SSL Certificate Issue
+Cloudflare tunnels use Cloudflare's SSL certificates, which should work automatically once DNS is configured.
+
+## Steps to Fix:
+
+### Step 1: Configure DNS in Cloudflare Dashboard
+
+1. Go to: https://dash.cloudflare.com
+2. Select: `audiocity-ug.com` domain
+3. Click: **DNS** → **Records**
+4. Check if `mastering` CNAME record exists:
+   - If it exists, verify it points to: `806bc568-f3db-45c5-be24-99f3fe1063b4.cfargotunnel.com`
+   - If it doesn't exist, add it:
+     - **Type**: CNAME
+     - **Name**: `mastering`
+     - **Target**: `806bc568-f3db-45c5-be24-99f3fe1063b4.cfargotunnel.com`
+     - **Proxy status**: Proxied (orange cloud) ✅
+     - **TTL**: Auto
+5. Click **Save**
+
+### Step 2: Wait for DNS Propagation
+
+- Wait 2-5 minutes (sometimes up to 15 minutes)
+- You can check propagation status at: https://www.whatsmydns.net/#CNAME/mastering.audiocity-ug.com
+
+### Step 3: Test Again
+
+```bash
+# Test with SSL verification (should work after DNS is set)
+curl https://mastering.audiocity-ug.com/api/health
+
+# Or test without SSL verification (to bypass cert check)
+curl -k https://mastering.audiocity-ug.com/api/health
+```
+
+### Step 4: Verify Tunnel is Running
+
+On the server, check:
+```bash
+ssh root@43.245.227.33
+systemctl status cloudflared.service
+journalctl -u cloudflared.service -n 20
+```
+
+## If DNS is Already Set:
+
+If DNS is configured correctly but you still get SSL errors:
+
+1. Make sure the CNAME record has **Proxy enabled** (orange cloud) in Cloudflare
+2. Wait a few more minutes for SSL certificate to be issued
+3. Clear your DNS cache:
+   ```bash
+   # macOS
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+   ```
+
+## Quick Test Commands:
+
+```bash
+# 1. Check DNS resolution
+dig mastering.audiocity-ug.com
+
+# 2. Test with SSL bypass (to see if it's just a cert issue)
+curl -k https://mastering.audiocity-ug.com/api/health
+
+# 3. Check if it resolves at all
+ping -c 2 mastering.audiocity-ug.com
+```
+
+## Expected Result:
+
+Once DNS is configured and propagated, you should get:
+```json
+{"status":"ok","ffmpeg":true,"presets":[...]}
+```
+

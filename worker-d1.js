@@ -2,7 +2,6 @@
  * Audio City API Worker with D1 Database - COMPLETE VERSION
  * 
  * This worker handles ALL API requests using Cloudflare D1 and R2
- * Backward compatible with existing VPS backend
  * No breaking changes for 8M+ users
  */
 
@@ -16,9 +15,16 @@ export default {
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Admin-Email, X-User-Email',
       'Access-Control-Max-Age': '86400',
-      'Cache-Control': 'no-cache, no-store, must-revalidate', // Prevent caching of dynamic data
+      'Cache-Control': 'no-cache, no-store, must-revalidate', // Default: no cache for dynamic data
       'Pragma': 'no-cache',
       'Expires': '0'
+    };
+    
+    // Cache headers for public feed/artists endpoints (30-120 seconds)
+    const cacheHeaders = {
+      'Cache-Control': 'public, max-age=60, s-maxage=120', // Browser: 60s, CDN: 120s
+      'CDN-Cache-Control': 'public, s-maxage=120', // Cloudflare CDN cache
+      'Vary': 'Accept'
     };
 
     // Handle CORS preflight
@@ -126,6 +132,60 @@ export default {
       return env.R2_PUBLIC_URL || `https://pub-${env.MEDIA_BUCKET?.accountId || 'unknown'}.r2.dev`;
     };
 
+    // Helper: Detect platform logos in cover art images (Advanced - Optional)
+    // This is a basic structure that can be extended with image recognition APIs
+    // like Google Vision API, AWS Rekognition, or Cloudflare AI
+    const detectPlatformLogos = async (imageBuffer, imageType) => {
+      try {
+        // List of prohibited platform names to detect
+        const prohibitedPlatforms = ['spotify', 'soundcloud', 'mdundo', 'apple music', 'youtube music', 'deezer', 'tidal'];
+        
+        // Basic detection: Check image metadata and file names
+        // For production, integrate with:
+        // - Google Cloud Vision API: https://cloud.google.com/vision
+        // - AWS Rekognition: https://aws.amazon.com/rekognition/
+        // - Cloudflare AI (if available): https://developers.cloudflare.com/workers-ai/
+        
+        // Example structure for Google Vision API integration:
+        /*
+        if (env.GOOGLE_VISION_API_KEY) {
+          const visionResponse = await fetch(
+            `https://vision.googleapis.com/v1/images:annotate?key=${env.GOOGLE_VISION_API_KEY}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                requests: [{
+                  image: { content: Buffer.from(imageBuffer).toString('base64') },
+                  features: [{ type: 'LOGO_DETECTION', maxResults: 10 }]
+                }]
+              })
+            }
+          );
+          
+          const visionData = await visionResponse.json();
+          if (visionData.responses?.[0]?.logoAnnotations) {
+            const detectedLogos = visionData.responses[0].logoAnnotations.map(logo => logo.description?.toLowerCase());
+            for (const platform of prohibitedPlatforms) {
+              if (detectedLogos.some(logo => logo.includes(platform))) {
+                return { detected: true, platform: platform };
+              }
+            }
+          }
+        }
+        */
+        
+        // For now, return no detection (allow upload)
+        // In production, implement actual logo detection using one of the APIs above
+        return { detected: false, platform: null };
+        
+      } catch (error) {
+        console.error('[Logo Detection] Error:', error);
+        // On error, allow upload (fail open) - you may want to change this to fail closed
+        return { detected: false, platform: null, error: error.message };
+      }
+    };
+
     // ==================== STATIC FILES ====================
     
     // Handle manifest.json (should be served by Pages, but handle here as fallback)
@@ -163,40 +223,203 @@ export default {
     }
 
     // GET /api/users - Get all users/artists (excludes admin accounts from public view)
+    // CACHED: Public artists list - cache for 60s (browser) / 120s (CDN)
     if (url.pathname === '/api/users' && request.method === 'GET') {
       try {
         if (!env.DB) {
-          return Response.json([], { headers: corsHeaders });
+          console.warn('[GET /api/users] Database not configured');
+          return Response.json([], { headers: { ...corsHeaders, ...cacheHeaders } });
         }
+        
+        // Get limit and name filter from query params
+        const limit = parseInt(url.searchParams.get('limit') || '1000');
+        const nameFilter = url.searchParams.get('name')?.trim();
+        
+        // Skip cache for name searches (admin upload form needs fresh data)
+        const useCache = !nameFilter; // Only cache when not searching by name
+        
         // Filter out admin accounts - only hide users with is_admin=1 or username exactly 'admin'
-        const users = await env.DB.prepare(`
+        let query = `
           SELECT * FROM users 
           WHERE (is_admin IS NULL OR is_admin = 0 OR is_admin != 1) 
             AND (LOWER(username) != 'admin')
-          ORDER BY created_at DESC
-        `).all();
+        `;
+        const params = [];
         
-        // Enrich with accurate counts
-        const enrichedUsers = await Promise.all((users.results || []).map(async (user) => {
-          const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
-            .bind(user.id).first();
-          const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
-            .bind(user.id).first();
-          const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
-            .bind(user.id).first();
+        // Add name filter if provided (case-insensitive match on name or username)
+        if (nameFilter) {
+          // Exact match (case-insensitive) - matches exact name or username
+          query += ` AND (LOWER(name) = LOWER(?) OR LOWER(username) = LOWER(?))`;
+          params.push(nameFilter, nameFilter);
+        }
+        
+        query += ` ORDER BY created_at DESC`;
+        
+        if (limit > 0) {
+          query += ` LIMIT ?`;
+          params.push(limit);
+        }
+        
+        const users = params.length > 0
+          ? await env.DB.prepare(query).bind(...params).all()
+          : await env.DB.prepare(query).all();
+        
+        console.log(`[GET /api/users] Found ${users.results?.length || 0} users`);
+        
+        // Helper function to normalize profile image URLs to use /api/media/ route
+        const normalizeProfileImageUrl = (url, userId) => {
+          if (!url || url.trim() === '') return null;
           
-          user.followers_count = followersCount?.count || 0;
-          user.following_count = followingCount?.count || 0;
-          user.tracks_count = tracksCount?.count || 0;
-          user.verified = user.verified === 1;
-          user.is_admin = user.is_admin === 1;
-          return user;
+          // If it's already a data URI, return as is
+          if (url.startsWith('data:')) return url;
+          
+          // If it's already pointing to /api/media/, return as is
+          if (url.includes('/api/media/')) {
+            // Ensure it uses the correct origin
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              // Replace www.audiocity-ug.com with api.audiocity-ug.com
+              if (url.includes('www.audiocity-ug.com')) {
+                return url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+              }
+              return url;
+            }
+          }
+          
+          // Extract the path/key from various URL formats
+          let r2Key = null;
+          
+          // Handle full URLs
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Extract path after domain
+            const urlObj = new URL(url);
+            const path = urlObj.pathname;
+            
+            // If it's already /api/media/, extract the key
+            if (path.startsWith('/api/media/')) {
+              r2Key = path.replace('/api/media/', '');
+            } else if (path.startsWith('/media/')) {
+              r2Key = path.replace('/media/', '');
+            } else if (path.startsWith('/uploads/profiles/')) {
+              r2Key = `profiles/${path.replace('/uploads/profiles/', '')}`;
+            } else if (path.startsWith('/profiles/')) {
+              r2Key = `profiles/${path.replace('/profiles/', '')}`;
+            } else if (path.includes('/profiles/')) {
+              const match = path.match(/\/profiles\/(.+)/);
+              if (match) r2Key = `profiles/${match[1]}`;
+            }
+          } else if (url.startsWith('/')) {
+            // Handle relative paths
+            if (url.startsWith('/api/media/')) {
+              r2Key = url.replace('/api/media/', '');
+            } else if (url.startsWith('/media/')) {
+              r2Key = url.replace('/media/', '');
+            } else if (url.startsWith('/uploads/profiles/')) {
+              r2Key = `profiles/${url.replace('/uploads/profiles/', '')}`;
+            } else if (url.startsWith('/profiles/')) {
+              r2Key = `profiles/${url.replace('/profiles/', '')}`;
+            }
+          } else {
+            // Handle R2 keys or filenames
+            if (url.startsWith('profiles/')) {
+              r2Key = url;
+            } else {
+              // Assume it's a filename in profiles/ directory
+              r2Key = `profiles/${url}`;
+            }
+          }
+          
+          // Return normalized URL using /api/media/ route only if we extracted a valid key
+          if (r2Key) {
+            return `${requestUrl.origin}/api/media/${r2Key}`;
+          }
+          
+          // If we couldn't extract a key but the URL looks valid, try to preserve it
+          // (frontend normalization will handle it)
+          if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+            // Fix domain if needed
+            if (url.includes('www.audiocity-ug.com')) {
+              return url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+            }
+            return url;
+          }
+          
+          // Fallback: return null if we can't normalize
+          return null;
+        };
+        
+        // Enrich with accurate counts and normalize profile image URLs
+        const enrichedUsers = await Promise.all((users.results || []).map(async (user) => {
+          try {
+            const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
+              .bind(user.id).first();
+            const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
+              .bind(user.id).first();
+            const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+              .bind(user.id).first();
+            
+            user.followers_count = followersCount?.count || 0;
+            user.following_count = followingCount?.count || 0;
+            user.tracks_count = tracksCount?.count || 0;
+            user.verified = user.verified === 1;
+            user.is_admin = user.is_admin === 1;
+            
+            // Normalize profile image URLs
+            const originalImageUrl = user.profile_image_url || user.profile_image || user.avatar_url;
+            const profileImageUrl = normalizeProfileImageUrl(originalImageUrl, user.id);
+            
+            // Set all profile image fields to the normalized URL for consistency
+            if (profileImageUrl) {
+              user.profile_image_url = profileImageUrl;
+              user.profile_image = profileImageUrl;
+              user.avatar_url = profileImageUrl;
+            } else {
+              // If no valid URL, set all to null
+              user.profile_image_url = null;
+              user.profile_image = null;
+              user.avatar_url = null;
+              
+              // Log for debugging if there was an original URL that couldn't be normalized
+              if (originalImageUrl && originalImageUrl.trim() !== '') {
+                console.log(`[Users API] Could not normalize profile image URL for user ${user.id}: ${originalImageUrl}`);
+              }
+            }
+            
+            return user;
+          } catch (enrichError) {
+            console.error(`[Users API] Error enriching user ${user.id}:`, enrichError);
+            // Return user with default values if enrichment fails
+            return {
+              ...user,
+              followers_count: 0,
+              following_count: 0,
+              tracks_count: 0,
+              verified: false,
+              is_admin: false,
+              profile_image_url: null,
+              profile_image: null,
+              avatar_url: null
+            };
+          }
         }));
         
-        return Response.json(enrichedUsers, { headers: corsHeaders });
+        console.log(`[GET /api/users] Returning ${enrichedUsers.length} enriched users`);
+        // Return with cache headers for public artists list (unless searching by name)
+        const responseHeaders = useCache 
+          ? { ...corsHeaders, ...cacheHeaders }
+          : corsHeaders; // No cache for name searches
+        return Response.json(enrichedUsers, { headers: responseHeaders });
       } catch (error) {
-        console.error('Error fetching users:', error);
-        return Response.json([], { headers: corsHeaders });
+        console.error('[GET /api/users] Error fetching users:', error);
+        console.error('[GET /api/users] Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        // Return empty array instead of error to prevent frontend from breaking
+        const responseHeaders = useCache 
+          ? { ...corsHeaders, ...cacheHeaders }
+          : corsHeaders;
+        return Response.json([], { headers: responseHeaders });
       }
     }
 
@@ -263,8 +486,681 @@ export default {
       }
     }
 
+    // Visitor tracking endpoints removed - all visitor-related endpoints have been removed
+    if (false && url.pathname.includes('/users/') && url.pathname.includes('/visitors') && !url.pathname.includes('/count') && request.method === 'GET') {
+      const profileId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      if (!profileId || !env.DB) {
+        return Response.json({ error: 'Invalid profile ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        const token = getAuthToken(request);
+        const currentUser = await getUserFromToken(token);
+        
+        if (!currentUser || currentUser.id !== profileId) {
+          return Response.json({ error: 'Unauthorized - can only view your own visitors' }, { status: 401, headers: corsHeaders });
+        }
+        
+        // Ensure profile_visitor_payments table exists
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS profile_visitor_payments (
+              id TEXT PRIMARY KEY,
+              profile_id TEXT NOT NULL,
+              payment_reference TEXT,
+              amount REAL DEFAULT 1000,
+              currency TEXT DEFAULT 'UGX',
+              paid_at TEXT DEFAULT (datetime('now')),
+              julypay_transaction_id TEXT,
+              status TEXT DEFAULT 'pending'
+            )
+          `).run();
+        } catch (e) {
+          // Table might already exist
+        }
+        
+        // First, check if table exists and has any records for this profile
+        let tableCheck = await env.DB.prepare(`
+          SELECT name FROM sqlite_master WHERE type='table' AND name='profile_visitor_payments'
+        `).first();
+        console.log('[Visitors] Table exists:', !!tableCheck);
+        
+        // Check if user has paid (check for 'completed' status, case-insensitive)
+        // Also try exact match in case LOWER() doesn't work as expected
+        let payment = await env.DB.prepare(`
+          SELECT * FROM profile_visitor_payments 
+          WHERE profile_id = ? AND (status = 'completed' OR LOWER(status) = 'completed')
+          ORDER BY paid_at DESC LIMIT 1
+        `).bind(profileId).first();
+        
+        // If no completed payment found, check for any payment with status that might be valid
+        if (!payment) {
+          const anyPayment = await env.DB.prepare(`
+            SELECT * FROM profile_visitor_payments 
+            WHERE profile_id = ?
+            ORDER BY paid_at DESC LIMIT 1
+          `).bind(profileId).first();
+          
+          console.log('[Visitors] No completed payment found. Checking any payment:', anyPayment ? `Found payment with status: "${anyPayment.status}"` : 'No payments found');
+          
+          // If there's a payment but status isn't 'completed', log it for debugging
+          if (anyPayment) {
+            console.log('[Visitors] ⚠️ Payment exists but status is:', anyPayment.status, 'Expected: completed');
+            console.log('[Visitors] Payment details:', JSON.stringify(anyPayment, null, 2));
+            console.log('[Visitors] Status comparison:', {
+              status: anyPayment.status,
+              equals_completed: anyPayment.status === 'completed',
+              lower_equals: anyPayment.status?.toLowerCase() === 'completed',
+              status_type: typeof anyPayment.status
+            });
+          }
+        }
+        
+        console.log('[Visitors] Checking payment for profile:', profileId, 'found completed payment:', payment ? 'YES' : 'NO');
+        if (payment) {
+          console.log('[Visitors] ✅ Payment found:', JSON.stringify(payment, null, 2));
+        }
+        
+        if (!payment) {
+          // Also check if there are any payments at all (for debugging)
+          const allPayments = await env.DB.prepare(`
+            SELECT id, profile_id, status, amount, paid_at, payment_reference, julypay_transaction_id FROM profile_visitor_payments WHERE profile_id = ?
+          `).bind(profileId).all();
+          console.log('[Visitors] All payments for profile:', allPayments.results?.length || 0);
+          if (allPayments.results && allPayments.results.length > 0) {
+            console.log('[Visitors] Payment records found:', JSON.stringify(allPayments.results, null, 2));
+          }
+          
+          return Response.json({ 
+            error: 'Payment required',
+            message: 'Please pay 1000 UGX to view visitor list',
+            amount: 1000,
+            currency: 'UGX',
+            debug: {
+              table_exists: !!tableCheck,
+              payments_found: allPayments.results?.length || 0
+            }
+          }, { status: 402, headers: corsHeaders }); // 402 Payment Required
+        }
+        
+        console.log('[Visitors] ✅ Payment found, granting access:', payment);
+        
+        // Get visitors with user info
+        console.log('[Visitors] Fetching visitors for profile:', profileId);
+        
+        // First check if profile_visits table exists and has data
+        try {
+          const visitCount = await env.DB.prepare('SELECT COUNT(*) as count FROM profile_visits WHERE profile_id = ?')
+            .bind(profileId).first();
+          console.log('[Visitors] Total visits for profile:', visitCount?.count || 0);
+        } catch (e) {
+          console.log('[Visitors] Error checking visit count:', e.message);
+        }
+        
+        const visits = await env.DB.prepare(`
+          SELECT DISTINCT v.visitor_id, v.visited_at, u.username, u.name, u.profile_image_url
+          FROM profile_visits v
+          LEFT JOIN users u ON v.visitor_id = u.id
+          WHERE v.profile_id = ?
+          ORDER BY v.visited_at DESC
+          LIMIT 100
+        `).bind(profileId).all();
+        
+        console.log('[Visitors] Raw visits query result:', visits.results?.length || 0, 'visits');
+        
+        const visitors = (visits.results || []).map(visit => {
+          const visitor = {
+            visitor_id: visit.visitor_id,
+            visited_at: visit.visited_at,
+            username: visit.username || (visit.visitor_id && visit.visitor_id.startsWith('anonymous_') ? 'Anonymous' : null),
+            name: visit.name || 'Anonymous Visitor',
+            profile_image_url: visit.profile_image_url || null
+          };
+          console.log('[Visitors] Mapped visitor:', visitor);
+          return visitor;
+        });
+        
+        console.log('[Visitors] Returning', visitors.length, 'visitors for profile', profileId);
+        return Response.json({ visitors, count: visitors.length }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Visitors] Error fetching visitors:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // Visitor tracking endpoints removed
+    if (false && url.pathname.includes('/users/') && url.pathname.includes('/visitors/payment') && request.method === 'POST') {
+      const profileId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      if (!profileId || !env.DB) {
+        return Response.json({ error: 'Invalid profile ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        const token = getAuthToken(request);
+        const currentUser = await getUserFromToken(token);
+        
+        if (!currentUser || currentUser.id !== profileId) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        // Ensure profile_visitor_payments table exists
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS profile_visitor_payments (
+              id TEXT PRIMARY KEY,
+              profile_id TEXT NOT NULL,
+              payment_reference TEXT,
+              amount REAL DEFAULT 1000,
+              currency TEXT DEFAULT 'UGX',
+              paid_at TEXT DEFAULT (datetime('now')),
+              julypay_transaction_id TEXT,
+              status TEXT DEFAULT 'pending'
+            )
+          `).run();
+        } catch (e) {
+          // Table might already exist
+          console.log('[Payment] Table creation check:', e.message);
+        }
+        
+        const body = await parseBody(request);
+        const { payment_reference, julypay_transaction_id, amount } = body || {};
+        
+        console.log('[Payment] Verifying payment for profile:', profileId, 'reference:', payment_reference || julypay_transaction_id, 'amount:', amount);
+        
+        // Validate payment amount - must be exactly 1000 UGX
+        const requiredAmount = 1000;
+        const paymentAmount = parseFloat(amount) || 0;
+        
+        if (paymentAmount < requiredAmount) {
+          console.log('[Payment] ❌ Insufficient payment amount:', paymentAmount, 'required:', requiredAmount);
+          return Response.json({ 
+            error: 'Insufficient payment amount',
+            message: `Payment amount (${paymentAmount} UGX) is less than required (${requiredAmount} UGX). Please pay the full amount.`,
+            required_amount: requiredAmount,
+            received_amount: paymentAmount
+          }, { status: 400, headers: corsHeaders });
+        }
+        
+        // For now, we'll mark payment as completed if reference is provided and amount is valid
+        // TODO: In production, verify with Julypay API to confirm:
+        // 1. Transaction exists and is completed
+        // 2. Amount matches (1000 UGX)
+        // 3. Transaction is for the correct user/service
+        if (payment_reference || julypay_transaction_id) {
+          const paymentId = uuid();
+          try {
+            // Use the provided amount if valid, otherwise default to 1000
+            const finalAmount = paymentAmount >= requiredAmount ? paymentAmount : requiredAmount;
+            
+            const insertResult = await env.DB.prepare(`
+              INSERT INTO profile_visitor_payments (id, profile_id, payment_reference, julypay_transaction_id, status, amount, currency, paid_at)
+              VALUES (?, ?, ?, ?, 'completed', ?, 'UGX', datetime('now'))
+            `).bind(paymentId, profileId, payment_reference || null, julypay_transaction_id || null, finalAmount).run();
+            
+            console.log('[Payment] ✅ Payment record inserted:', paymentId, 'for profile:', profileId, 'insert success:', insertResult.success);
+            
+            // Small delay to ensure write is committed
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Verify the payment was actually saved by querying for it
+            const savedPayment = await env.DB.prepare(`
+              SELECT * FROM profile_visitor_payments WHERE id = ?
+            `).bind(paymentId).first();
+            
+            if (savedPayment) {
+              console.log('[Payment] ✅ Payment verified in database:', JSON.stringify(savedPayment, null, 2));
+              
+              // Double-check by querying for the profile's completed payments
+              // Try multiple query variations to ensure we can find it
+              const verifyQuery1 = await env.DB.prepare(`
+                SELECT * FROM profile_visitor_payments 
+                WHERE profile_id = ? AND status = 'completed'
+                ORDER BY paid_at DESC LIMIT 1
+              `).bind(profileId).first();
+              
+              const verifyQuery2 = await env.DB.prepare(`
+                SELECT * FROM profile_visitor_payments 
+                WHERE profile_id = ? AND LOWER(status) = 'completed'
+                ORDER BY paid_at DESC LIMIT 1
+              `).bind(profileId).first();
+              
+              const verifyQuery3 = await env.DB.prepare(`
+                SELECT * FROM profile_visitor_payments 
+                WHERE profile_id = ?
+                ORDER BY paid_at DESC LIMIT 1
+              `).bind(profileId).first();
+              
+              console.log('[Payment] ✅ Verification queries:');
+              console.log('[Payment]   - Exact match (status = "completed"):', verifyQuery1 ? 'FOUND' : 'NOT FOUND');
+              console.log('[Payment]   - Case-insensitive (LOWER(status) = "completed"):', verifyQuery2 ? 'FOUND' : 'NOT FOUND');
+              console.log('[Payment]   - Any payment for profile:', verifyQuery3 ? `FOUND (status: "${verifyQuery3.status}")` : 'NOT FOUND');
+              
+              if (verifyQuery1 || verifyQuery2) {
+                const foundPayment = verifyQuery1 || verifyQuery2;
+                console.log('[Payment] ✅ Verification query payment details:', JSON.stringify(foundPayment, null, 2));
+              } else if (verifyQuery3) {
+                console.log('[Payment] ⚠️ Payment found but status mismatch:', verifyQuery3.status, 'Expected: completed');
+              }
+              
+              return Response.json({ 
+                success: true, 
+                message: 'Payment verified',
+                payment_id: paymentId,
+                payment: savedPayment
+              }, { headers: corsHeaders });
+            } else {
+              console.error('[Payment] ❌ Payment was inserted but not found in database');
+              return Response.json({ error: 'Payment verification failed - record not saved' }, { status: 500, headers: corsHeaders });
+            }
+          } catch (insertError) {
+            console.error('[Payment] ❌ Error inserting payment:', insertError);
+            return Response.json({ error: 'Failed to save payment: ' + insertError.message }, { status: 500, headers: corsHeaders });
+          }
+        }
+        
+        return Response.json({ error: 'Payment reference required' }, { status: 400, headers: corsHeaders });
+      } catch (error) {
+        console.error('[Payment] Error processing payment:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // GET /api/users/:id/messages - Get user conversations (alias for /api/conversations?user_id=:id)
+    if (url.pathname.includes('/users/') && url.pathname.includes('/messages') && request.method === 'GET') {
+      const userId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      if (!userId || !env.DB) {
+        return Response.json([], { headers: corsHeaders });
+      }
+      try {
+        const conversations = await env.DB.prepare(`
+          SELECT c.*, 
+            CASE WHEN c.participant1_id = ? THEN c.participant2_id ELSE c.participant1_id END as other_user_id
+          FROM conversations c
+          WHERE c.participant1_id = ? OR c.participant2_id = ?
+          ORDER BY c.last_message_at DESC
+        `).bind(userId, userId, userId).all();
+        
+        // Enrich with user info and last message
+        const enriched = await Promise.all((conversations.results || []).map(async (conv) => {
+          const otherUser = await env.DB.prepare('SELECT id, username, name, profile_image_url FROM users WHERE id = ?')
+            .bind(conv.other_user_id).first();
+          const lastMsg = await env.DB.prepare('SELECT text as content, created_at, sender_id FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 1')
+            .bind(conv.id).first();
+          const unreadCount = await env.DB.prepare('SELECT COUNT(*) as count FROM messages WHERE conversation_id = ? AND receiver_id = ? AND read = 0')
+            .bind(conv.id, userId).first();
+          return {
+            ...conv,
+            other_user: otherUser,
+            last_message: lastMsg,
+            unread_count: unreadCount?.count || 0
+          };
+        }));
+        return Response.json(enriched, { headers: corsHeaders });
+      } catch (e) {
+        console.error('[GET /api/users/:id/messages] Error fetching conversations:', e);
+        return Response.json([], { headers: corsHeaders });
+      }
+    }
+
+    // ==================== PLAYLIST ENDPOINTS ====================
+    
+    // GET /api/users/:id/playlists - Get all playlists for a user
+    if (url.pathname.includes('/users/') && url.pathname.includes('/playlists') && request.method === 'GET' && !url.pathname.includes('/tracks')) {
+      const userId = url.pathname.split('/api/users/')[1]?.split('/')[0];
+      if (!userId || !env.DB) {
+        return Response.json([], { headers: corsHeaders });
+      }
+      
+      try {
+        // Ensure playlists table exists
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS playlists (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              name TEXT NOT NULL,
+              description TEXT,
+              cover_image_url TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              updated_at TEXT DEFAULT (datetime('now'))
+            )
+          `).run();
+          await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_playlists_user ON playlists(user_id)`).run();
+        } catch (e) { /* Table might already exist */ }
+        
+        const playlists = await env.DB.prepare(`
+          SELECT p.*, 
+            (SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id = p.id) as tracks_count
+          FROM playlists p
+          WHERE p.user_id = ?
+          ORDER BY p.created_at DESC
+        `).bind(userId).all();
+        
+        return Response.json(playlists.results || [], { headers: corsHeaders });
+      } catch (error) {
+        console.error('[GET /api/users/:id/playlists] Error:', error);
+        return Response.json([], { headers: corsHeaders });
+      }
+    }
+    
+    // GET /api/playlists/:id - Get single playlist with tracks
+    if (url.pathname.startsWith('/api/playlists/') && request.method === 'GET' && !url.pathname.includes('/tracks/')) {
+      const playlistId = url.pathname.split('/api/playlists/')[1]?.split('/')[0];
+      if (!playlistId || !env.DB) {
+        return Response.json({ error: 'Invalid playlist ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        // Ensure tables exist
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS playlists (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              name TEXT NOT NULL,
+              description TEXT,
+              cover_image_url TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              updated_at TEXT DEFAULT (datetime('now'))
+            )
+          `).run();
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS playlist_tracks (
+              id TEXT PRIMARY KEY,
+              playlist_id TEXT NOT NULL,
+              track_id TEXT NOT NULL,
+              position INTEGER DEFAULT 0,
+              added_at TEXT DEFAULT (datetime('now')),
+              UNIQUE(playlist_id, track_id)
+            )
+          `).run();
+          await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_playlist_tracks_playlist ON playlist_tracks(playlist_id)`).run();
+          await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_playlist_tracks_track ON playlist_tracks(track_id)`).run();
+        } catch (e) { /* Tables might already exist */ }
+        
+        const playlist = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        if (!playlist) {
+          return Response.json({ error: 'Playlist not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        // Get tracks in playlist
+        const playlistTracks = await env.DB.prepare(`
+          SELECT pt.position, t.*
+          FROM playlist_tracks pt
+          JOIN tracks t ON pt.track_id = t.id
+          WHERE pt.playlist_id = ?
+          ORDER BY pt.position ASC, pt.added_at ASC
+        `).bind(playlistId).all();
+        
+        return Response.json({
+          ...playlist,
+          tracks: playlistTracks.results || [],
+          tracks_count: playlistTracks.results?.length || 0
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[GET /api/playlists/:id] Error:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // POST /api/playlists - Create new playlist
+    if (url.pathname === '/api/playlists' && request.method === 'POST') {
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const { name, description, cover_image_url } = body || {};
+        
+        if (!name || !name.trim()) {
+          return Response.json({ error: 'Playlist name is required' }, { status: 400, headers: corsHeaders });
+        }
+        
+        // Ensure playlists table exists
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS playlists (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              name TEXT NOT NULL,
+              description TEXT,
+              cover_image_url TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              updated_at TEXT DEFAULT (datetime('now'))
+            )
+          `).run();
+        } catch (e) { /* Table might already exist */ }
+        
+        const playlistId = uuid();
+        await env.DB.prepare(`
+          INSERT INTO playlists (id, user_id, name, description, cover_image_url, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(playlistId, user.id, name.trim(), description?.trim() || null, cover_image_url || null).run();
+        
+        const playlist = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        return Response.json({ ...playlist, tracks: [], tracks_count: 0 }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[POST /api/playlists] Error:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // PUT /api/playlists/:id - Update playlist
+    if (url.pathname.startsWith('/api/playlists/') && request.method === 'PUT' && !url.pathname.includes('/tracks')) {
+      const playlistId = url.pathname.split('/api/playlists/')[1]?.split('/')[0];
+      if (!playlistId || !env.DB) {
+        return Response.json({ error: 'Invalid playlist ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        const playlist = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        if (!playlist) {
+          return Response.json({ error: 'Playlist not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        if (playlist.user_id !== user.id) {
+          return Response.json({ error: 'Forbidden - you can only edit your own playlists' }, { status: 403, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const { name, description, cover_image_url } = body || {};
+        
+        const updates = [];
+        const params = [];
+        
+        if (name !== undefined) {
+          if (!name.trim()) {
+            return Response.json({ error: 'Playlist name cannot be empty' }, { status: 400, headers: corsHeaders });
+          }
+          updates.push('name = ?');
+          params.push(name.trim());
+        }
+        if (description !== undefined) {
+          updates.push('description = ?');
+          params.push(description?.trim() || null);
+        }
+        if (cover_image_url !== undefined) {
+          updates.push('cover_image_url = ?');
+          params.push(cover_image_url || null);
+        }
+        
+        if (updates.length === 0) {
+          return Response.json(playlist, { headers: corsHeaders });
+        }
+        
+        updates.push('updated_at = datetime("now")');
+        params.push(playlistId);
+        
+        await env.DB.prepare(`
+          UPDATE playlists SET ${updates.join(', ')} WHERE id = ?
+        `).bind(...params).run();
+        
+        const updated = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        return Response.json(updated, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[PUT /api/playlists/:id] Error:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // DELETE /api/playlists/:id - Delete playlist
+    if (url.pathname.startsWith('/api/playlists/') && request.method === 'DELETE' && !url.pathname.includes('/tracks')) {
+      const playlistId = url.pathname.split('/api/playlists/')[1]?.split('/')[0];
+      if (!playlistId || !env.DB) {
+        return Response.json({ error: 'Invalid playlist ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        const playlist = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        if (!playlist) {
+          return Response.json({ error: 'Playlist not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        if (playlist.user_id !== user.id) {
+          return Response.json({ error: 'Forbidden - you can only delete your own playlists' }, { status: 403, headers: corsHeaders });
+        }
+        
+        // Delete playlist tracks first
+        await env.DB.prepare('DELETE FROM playlist_tracks WHERE playlist_id = ?').bind(playlistId).run();
+        // Delete playlist
+        await env.DB.prepare('DELETE FROM playlists WHERE id = ?').bind(playlistId).run();
+        
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[DELETE /api/playlists/:id] Error:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // POST /api/playlists/:id/tracks - Add track to playlist
+    if (url.pathname.includes('/playlists/') && url.pathname.includes('/tracks') && request.method === 'POST' && !url.pathname.includes('/tracks/')) {
+      const playlistId = url.pathname.split('/api/playlists/')[1]?.split('/')[0];
+      if (!playlistId || !env.DB) {
+        return Response.json({ error: 'Invalid playlist ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        // Ensure tables exist
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS playlist_tracks (
+              id TEXT PRIMARY KEY,
+              playlist_id TEXT NOT NULL,
+              track_id TEXT NOT NULL,
+              position INTEGER DEFAULT 0,
+              added_at TEXT DEFAULT (datetime('now')),
+              UNIQUE(playlist_id, track_id)
+            )
+          `).run();
+        } catch (e) { /* Table might already exist */ }
+        
+        const playlist = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        if (!playlist) {
+          return Response.json({ error: 'Playlist not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        if (playlist.user_id !== user.id) {
+          return Response.json({ error: 'Forbidden - you can only edit your own playlists' }, { status: 403, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const { track_id } = body || {};
+        
+        if (!track_id) {
+          return Response.json({ error: 'track_id is required' }, { status: 400, headers: corsHeaders });
+        }
+        
+        // Check if track exists
+        const track = await env.DB.prepare('SELECT id FROM tracks WHERE id = ?').bind(track_id).first();
+        if (!track) {
+          return Response.json({ error: 'Track not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        // Get current max position
+        const maxPosition = await env.DB.prepare(`
+          SELECT MAX(position) as max FROM playlist_tracks WHERE playlist_id = ?
+        `).bind(playlistId).first();
+        const nextPosition = (maxPosition?.max || -1) + 1;
+        
+        try {
+          const id = uuid();
+          await env.DB.prepare(`
+            INSERT INTO playlist_tracks (id, playlist_id, track_id, position, added_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+          `).bind(id, playlistId, track_id, nextPosition).run();
+          
+          return Response.json({ success: true, id }, { headers: corsHeaders });
+        } catch (insertError) {
+          if (insertError.message?.includes('UNIQUE')) {
+            return Response.json({ error: 'Track is already in playlist' }, { status: 409, headers: corsHeaders });
+          }
+          throw insertError;
+        }
+      } catch (error) {
+        console.error('[POST /api/playlists/:id/tracks] Error:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // DELETE /api/playlists/:id/tracks/:trackId - Remove track from playlist
+    if (url.pathname.includes('/playlists/') && url.pathname.includes('/tracks/') && request.method === 'DELETE') {
+      const pathParts = url.pathname.split('/api/playlists/')[1]?.split('/');
+      const playlistId = pathParts?.[0];
+      const trackId = pathParts?.[2];
+      
+      if (!playlistId || !trackId || !env.DB) {
+        return Response.json({ error: 'Invalid playlist or track ID' }, { status: 400, headers: corsHeaders });
+      }
+      
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        if (!user) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+        
+        const playlist = await env.DB.prepare('SELECT * FROM playlists WHERE id = ?').bind(playlistId).first();
+        if (!playlist) {
+          return Response.json({ error: 'Playlist not found' }, { status: 404, headers: corsHeaders });
+        }
+        
+        if (playlist.user_id !== user.id) {
+          return Response.json({ error: 'Forbidden - you can only edit your own playlists' }, { status: 403, headers: corsHeaders });
+        }
+        
+        await env.DB.prepare('DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?')
+          .bind(playlistId, trackId).run();
+        
+        return Response.json({ success: true }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[DELETE /api/playlists/:id/tracks/:trackId] Error:', error);
+        return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+
     // GET /api/users/:id - Get single user
-    if (url.pathname.startsWith('/api/users/') && request.method === 'GET' && !url.pathname.includes('/follow') && !url.pathname.includes('/profile-picture') && !url.pathname.includes('/messages') && !url.pathname.includes('/notifications') && !url.pathname.includes('/requests') && !url.pathname.includes('/online')) {
+    if (url.pathname.startsWith('/api/users/') && request.method === 'GET' && !url.pathname.includes('/follow') && !url.pathname.includes('/profile-picture') && !url.pathname.includes('/messages') && !url.pathname.includes('/notifications') && !url.pathname.includes('/requests') && !url.pathname.includes('/online') && !url.pathname.includes('/playlists')) {
       const userId = url.pathname.split('/api/users/')[1]?.split('?')[0]?.split('/')[0];
       if (!userId) {
         return Response.json({
@@ -542,7 +1438,7 @@ export default {
       }
     }
 
-    // GET /api/tracks - Get tracks (excludes tracks from admin users)
+    // GET /api/tracks - Get tracks (admin posts on behalf of artists are visible)
     if (url.pathname === '/api/tracks' && request.method === 'GET') {
       try {
         if (!env.DB) {
@@ -553,12 +1449,14 @@ export default {
         const limit = parseInt(url.searchParams.get('limit') || '100');
         const artistId = url.searchParams.get('artist_id');
         
-        // Filter out tracks from admin users (only hide is_admin=1 or username exactly 'admin')
+        // Filter out pending/rejected tracks - only show approved tracks
+        // Note: Admin posts on behalf of artists, so we show tracks based on artist_id (not uploader)
+        // The artist_id should be the actual artist (not admin), so tracks should be visible
+        // Note: review_status column may not exist, so we'll filter in JavaScript if needed
         let query = `SELECT t.*, u.username as artist_username, u.name as artist_name, u.profile_image_url as artist_profile_image, u.verified as artist_is_verified 
           FROM tracks t 
           LEFT JOIN users u ON t.artist_id = u.id
-          WHERE (u.is_admin IS NULL OR u.is_admin = 0 OR u.is_admin != 1) 
-            AND (u.username IS NULL OR LOWER(u.username) != 'admin')`;
+          WHERE 1=1`;
         const params = [];
         
         if (artistId) {
@@ -593,9 +1491,20 @@ export default {
         // Return raw tracks if enrichment fails
         const rawTracks = tracks.results || [];
         
+        // Filter out pending/rejected tracks (if review_status column exists)
+        // Only show approved tracks or tracks without review_status (backward compatibility)
+        const filteredTracks = rawTracks.filter(track => {
+          // If review_status doesn't exist on track, assume it's approved (legacy tracks)
+          if (track.review_status === undefined || track.review_status === null) {
+            return true; // Show tracks without review_status
+          }
+          // Only show approved tracks, hide pending/rejected
+          return track.review_status === 'approved' || track.review_status === '';
+        });
+        
         // Try to enrich with like counts (use track_likes table, not likes)
         try {
-          const enrichedTracks = await Promise.all(rawTracks.map(async (track) => {
+          const enrichedTracks = await Promise.all(filteredTracks.map(async (track) => {
             const likes = await env.DB.prepare('SELECT COUNT(*) as count FROM track_likes WHERE track_id = ?')
             .bind(track.id).first();
           const comments = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE track_id = ?')
@@ -611,15 +1520,22 @@ export default {
           track.artist_is_verified = track.artist_is_verified === 1;
           return track;
         }));
-        return Response.json(enrichedTracks, { headers: corsHeaders });
+        // Return with cache headers for public feed data
+        return Response.json(enrichedTracks, { headers: { ...corsHeaders, ...cacheHeaders } });
         } catch (enrichError) {
           // Return raw tracks without enrichment if it fails
           console.error('Enrichment error:', enrichError);
-          return Response.json(rawTracks, { headers: corsHeaders });
+          return Response.json(filteredTracks, { headers: { ...corsHeaders, ...cacheHeaders } });
         }
       } catch (error) {
-        console.error('Error fetching tracks:', error);
-        return Response.json({ error: error.message, stack: error.stack }, { status: 500, headers: corsHeaders });
+        console.error('[GET /api/tracks] Error fetching tracks:', error);
+        console.error('[GET /api/tracks] Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        // Return empty array instead of error to prevent feed from breaking
+        return Response.json([], { headers: { ...corsHeaders, ...cacheHeaders } });
       }
     }
 
@@ -895,7 +1811,88 @@ export default {
           LIMIT 10
         `).all();
         
-        // Enrich with primary genre from tracks
+        // Helper function to normalize profile image URLs (reuse from /api/users)
+        const normalizeProfileImageUrl = (url, userId) => {
+          if (!url || url.trim() === '') return null;
+          
+          // If it's already a data URI, return as is
+          if (url.startsWith('data:')) return url;
+          
+          // If it's already pointing to /api/media/, return as is
+          if (url.includes('/api/media/')) {
+            // Ensure it uses the correct origin
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              // Replace www.audiocity-ug.com with api.audiocity-ug.com
+              if (url.includes('www.audiocity-ug.com')) {
+                return url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+              }
+              return url;
+            }
+          }
+          
+          // Extract the path/key from various URL formats
+          let r2Key = null;
+          
+          // Handle full URLs
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // Extract path after domain
+            const urlObj = new URL(url);
+            const path = urlObj.pathname;
+            
+            // If it's already /api/media/, extract the key
+            if (path.startsWith('/api/media/')) {
+              r2Key = path.replace('/api/media/', '');
+            } else if (path.startsWith('/media/')) {
+              r2Key = path.replace('/media/', '');
+            } else if (path.startsWith('/uploads/profiles/')) {
+              r2Key = `profiles/${path.replace('/uploads/profiles/', '')}`;
+            } else if (path.startsWith('/profiles/')) {
+              r2Key = `profiles/${path.replace('/profiles/', '')}`;
+            } else if (path.includes('/profiles/')) {
+              const match = path.match(/\/profiles\/(.+)/);
+              if (match) r2Key = `profiles/${match[1]}`;
+            }
+          } else if (url.startsWith('/')) {
+            // Handle relative paths
+            if (url.startsWith('/api/media/')) {
+              r2Key = url.replace('/api/media/', '');
+            } else if (url.startsWith('/media/')) {
+              r2Key = url.replace('/media/', '');
+            } else if (url.startsWith('/uploads/profiles/')) {
+              r2Key = `profiles/${url.replace('/uploads/profiles/', '')}`;
+            } else if (url.startsWith('/profiles/')) {
+              r2Key = `profiles/${url.replace('/profiles/', '')}`;
+            }
+          } else {
+            // Handle R2 keys or filenames
+            if (url.startsWith('profiles/')) {
+              r2Key = url;
+            } else {
+              // Assume it's a filename in profiles/ directory
+              r2Key = `profiles/${url}`;
+            }
+          }
+          
+          // Return normalized URL using /api/media/ route only if we extracted a valid key
+          if (r2Key) {
+            return `${requestUrl.origin}/api/media/${r2Key}`;
+          }
+          
+          // If we couldn't extract a key but the URL looks valid, try to preserve it
+          // (frontend normalization will handle it)
+          if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+            // Fix domain if needed
+            if (url.includes('www.audiocity-ug.com')) {
+              return url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+            }
+            return url;
+          }
+          
+          // Fallback: return null if we can't normalize
+          return null;
+        };
+        
+        // Enrich with primary genre from tracks and normalize profile image URLs
         const results = await Promise.all((artists.results || []).map(async (artist) => {
           // Get most common genre from artist's tracks (excluding 'General')
           const genreResult = await env.DB.prepare(`
@@ -907,12 +1904,20 @@ export default {
             LIMIT 1
           `).bind(artist.id).first();
           
+          // Normalize profile image URLs
+          const originalImageUrl = artist.profile_image_url || artist.profile_image || artist.avatar_url;
+          const profileImageUrl = normalizeProfileImageUrl(originalImageUrl, artist.id);
+          
           return {
             ...artist,
             verified: artist.verified === 1,
             is_admin: artist.is_admin === 1,
             tracks_count: artist.track_count || 0,
-            primary_genre: genreResult?.genre || null
+            primary_genre: genreResult?.genre || null,
+            // Set all profile image fields to the normalized URL for consistency
+            profile_image_url: profileImageUrl,
+            profile_image: profileImageUrl,
+            avatar_url: profileImageUrl
           };
         }));
         
@@ -945,16 +1950,55 @@ export default {
         }
         
         const userId = uuid();
-        await env.DB.prepare(`
-          INSERT INTO users (id, username, email, name, password, auth_provider, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, 'local', datetime('now'), datetime('now'))
-        `).bind(
-          userId,
-          body.username,
-          body.email.toLowerCase(),
-          body.name || body.username,
-          body.password // TODO: Hash password in production!
-        ).run();
+        // Try to insert with biography, fallback if column doesn't exist
+        try {
+          await env.DB.prepare(`
+            INSERT INTO users (id, username, email, name, password, auth_provider, bio, biography, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, 'local', ?, ?, datetime('now'), datetime('now'))
+          `).bind(
+            userId,
+            body.username,
+            body.email.toLowerCase(),
+            body.name || body.username,
+            body.password, // TODO: Hash password in production!
+            body.biography || body.bio || null,
+            body.biography || body.bio || null
+          ).run();
+        } catch (insertError) {
+          // If bio/biography columns don't exist, try without them
+          console.log('[Signup] bio/biography columns may not exist, trying without:', insertError.message);
+          try {
+            // Try to add bio column if it doesn't exist
+            await env.DB.prepare('ALTER TABLE users ADD COLUMN bio TEXT').run();
+            await env.DB.prepare('ALTER TABLE users ADD COLUMN biography TEXT').run();
+            // Retry insert
+            await env.DB.prepare(`
+              INSERT INTO users (id, username, email, name, password, auth_provider, bio, biography, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, 'local', ?, ?, datetime('now'), datetime('now'))
+            `).bind(
+              userId,
+              body.username,
+              body.email.toLowerCase(),
+              body.name || body.username,
+              body.password,
+              body.biography || body.bio || null,
+              body.biography || body.bio || null
+            ).run();
+          } catch (alterError) {
+            // Column might already exist or other error, try insert without bio fields
+            console.log('[Signup] Could not add bio columns, inserting without them:', alterError.message);
+            await env.DB.prepare(`
+              INSERT INTO users (id, username, email, name, password, auth_provider, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, 'local', datetime('now'), datetime('now'))
+            `).bind(
+              userId,
+              body.username,
+              body.email.toLowerCase(),
+              body.name || body.username,
+              body.password
+            ).run();
+          }
+        }
         
         const token = 'token_' + Date.now() + '_' + uuid();
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -1464,6 +2508,22 @@ export default {
                 { status: 400, headers: corsHeaders });
             }
 
+            // Optional: Logo Detection (Advanced Feature)
+            // Uncomment and configure when ready to use image recognition APIs
+            /*
+            const coverBuffer = await coverArtFile.arrayBuffer();
+            const logoDetection = await detectPlatformLogos(coverBuffer, coverArtFile.type);
+            
+            if (logoDetection.detected) {
+              console.warn('[Track Upload] ⚠️ Platform logo detected:', logoDetection.platform);
+              return Response.json({ 
+                error: 'Cover art contains prohibited platform logo',
+                message: `Cover art contains ${logoDetection.platform} logo or watermark. Please upload original artwork without other platforms' branding.`,
+                detectedPlatform: logoDetection.platform
+              }, { status: 400, headers: corsHeaders });
+            }
+            */
+
             const coverExt = coverArtFile.name.split('.').pop() || 'jpg';
             const coverR2Key = `cover-art/${trackId}.${coverExt}`;
             const coverBuffer = await coverArtFile.arrayBuffer();
@@ -1486,18 +2546,57 @@ export default {
           }
         }
 
+        // Get review status and flag reason from form data
+        const reviewStatus = formData.get('review_status') || 'approved'; // Default to approved, can be 'pending' if logo detected
+        const flagReason = formData.get('flag_reason') || null;
+        
         // Create track in database
         // Note: duration column may not exist in all database schemas, so we'll store it separately if needed
-        await env.DB.prepare(`
-          INSERT INTO tracks (
-            id, artist_id, title, description, audio_url, cover_art_url,
-            genre, views_count, likes_count, shares_count, plays_count,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
-        `).bind(
-          trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
-          genre
-        ).run();
+        // Try to insert with review_status, fallback if column doesn't exist
+        try {
+          await env.DB.prepare(`
+            INSERT INTO tracks (
+              id, artist_id, title, description, audio_url, cover_art_url,
+              genre, views_count, likes_count, shares_count, plays_count,
+              review_status, flag_reason, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, datetime('now'), datetime('now'))
+          `).bind(
+            trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
+            genre, reviewStatus, flagReason
+          ).run();
+        } catch (insertError) {
+          // If review_status column doesn't exist, try without it
+          console.log('[Track Upload] review_status column may not exist, trying without it:', insertError.message);
+          try {
+            // Try to create the column
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN review_status TEXT DEFAULT "approved"').run();
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN flag_reason TEXT').run();
+            // Retry insert
+            await env.DB.prepare(`
+              INSERT INTO tracks (
+                id, artist_id, title, description, audio_url, cover_art_url,
+                genre, views_count, likes_count, shares_count, plays_count,
+                review_status, flag_reason, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, datetime('now'), datetime('now'))
+            `).bind(
+              trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
+              genre, reviewStatus, flagReason
+            ).run();
+          } catch (alterError) {
+            // Column might already exist or other error, try insert without review fields
+            console.log('[Track Upload] Could not add review_status column, inserting without it:', alterError.message);
+            await env.DB.prepare(`
+              INSERT INTO tracks (
+                id, artist_id, title, description, audio_url, cover_art_url,
+                genre, views_count, likes_count, shares_count, plays_count,
+                created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
+            `).bind(
+              trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
+              genre
+            ).run();
+          }
+        }
 
         // Update user's track count
         await env.DB.prepare(
@@ -1852,41 +2951,74 @@ export default {
       return Response.json([], { headers: corsHeaders });
     }
 
-    // GET /api/stats - Get stats (stub)
+    // GET /api/stats - Get stats (with permanent mastering count)
     if (url.pathname === '/api/stats' && request.method === 'GET') {
-      return Response.json({
-        total_tracks: 0,
-        total_users: 0,
-        total_plays: 0
-      }, { headers: corsHeaders });
-    }
-
-    // POST /api/violations/check - Check violations (stub)
-    if (url.pathname === '/api/violations/check' && request.method === 'POST') {
-      return Response.json({ violations: [] }, { headers: corsHeaders });
+      try {
+        if (!env.DB) {
+          return Response.json({
+            tracksMastered: 0,
+            total_tracks: 0,
+            total_users: 0,
+            total_plays: 0
+          }, { headers: corsHeaders });
+        }
+        
+        // Create mastering_stats table if it doesn't exist
+        try {
+          await env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS mastering_stats (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              tracks_mastered INTEGER DEFAULT 0,
+              last_updated TEXT DEFAULT (datetime('now'))
+            )
+          `).run();
+          
+          // Initialize with 0 if empty
+          const existing = await env.DB.prepare('SELECT tracks_mastered FROM mastering_stats LIMIT 1').first();
+          if (!existing) {
+            await env.DB.prepare('INSERT INTO mastering_stats (tracks_mastered) VALUES (0)').run();
+          }
+        } catch (e) {
+          console.error('[Stats] Error creating mastering_stats table:', e);
+        }
+        
+        // Get mastering count
+        const stats = await env.DB.prepare('SELECT tracks_mastered FROM mastering_stats LIMIT 1').first();
+        const tracksMastered = stats?.tracks_mastered || 0;
+        
+        return Response.json({
+          tracksMastered: tracksMastered,
+          total_tracks: 0,
+          total_users: 0,
+          total_plays: 0,
+          lastUpdated: stats?.last_updated || new Date().toISOString()
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Stats] Error fetching stats:', error);
+        return Response.json({
+          tracksMastered: 0,
+          total_tracks: 0,
+          total_users: 0,
+          total_plays: 0
+        }, { headers: corsHeaders });
+      }
     }
 
     // POST /api/quick-master - Audio mastering (proxy to VPS server)
     if (url.pathname === '/api/quick-master' && request.method === 'POST') {
       try {
         // Proxy request to VPS mastering server
-        // Note: Cloudflare Workers can make HTTP requests, but may have connectivity issues
-        // MASTERING_SERVER_URL should be base URL (e.g., https://mastering.audiocity-ug.com)
-        // The endpoint path is appended: /api/master or /api/quick-master
-        // Default to new mastering server domain
-        const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com';
-        // If URL includes /api/master or /api/quick-master, use it directly
-        // If it's a tunnel URL (trycloudflare.com), append /api/quick-master
-        // Otherwise append /api/quick-master for backward compatibility
+        // New server: 43.245.227.33:3001 (Hostkey VPS)
+        // Can be overridden via env.MASTERING_SERVER_URL
+        const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'http://43.245.227.33:3001';
+        // Append endpoint path if not already present
         let MASTERING_SERVER_URL;
         if (MASTERING_SERVER_BASE.includes('/api/')) {
           MASTERING_SERVER_URL = MASTERING_SERVER_BASE;
-        } else if (MASTERING_SERVER_BASE.includes('trycloudflare.com')) {
-          // Tunnel URLs need the full path
-          MASTERING_SERVER_URL = `${MASTERING_SERVER_BASE}/api/quick-master`;
         } else {
           MASTERING_SERVER_URL = `${MASTERING_SERVER_BASE}/api/quick-master`;
         }
+        
         const formData = await request.formData();
         
         // Forward the request to the mastering server with timeout
@@ -1894,12 +3026,11 @@ export default {
         const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15 minutes timeout
         
         try {
-          console.log('Proxying mastering request to:', MASTERING_SERVER_URL);
+          console.log('[Quick Master] Proxying request to:', MASTERING_SERVER_URL);
           const masteringResponse = await fetch(MASTERING_SERVER_URL, {
             method: 'POST',
             body: formData,
             signal: controller.signal,
-            // Add headers to help with connection
             headers: {
               'User-Agent': 'AudioCity-Worker/1.0'
             }
@@ -1909,23 +3040,78 @@ export default {
           
           if (!masteringResponse.ok) {
             const errorText = await masteringResponse.text().catch(() => 'Unknown error');
-            console.error('Mastering server error:', masteringResponse.status, errorText);
+            console.error('[Quick Master] Server error:', masteringResponse.status, errorText.substring(0, 200));
             throw new Error(`Mastering server returned ${masteringResponse.status}: ${errorText.substring(0, 200)}`);
           }
           
           // Get response data
-          const contentType = masteringResponse.headers.get('content-type') || '';
+          const contentType = masteringResponse.headers.get('content-type') || 'application/json';
           let responseData;
           
           if (contentType.includes('application/json')) {
             responseData = await masteringResponse.json();
-            // Log job creation for debugging
-            if (responseData.progressId || responseData.jobId) {
+            
+            // Check if this is a synchronous response (immediate completion)
+            // Server returns: { success: true, preset, input, output, gain, downloads: { wav, mp3 } }
+            if (responseData.success && responseData.downloads && !responseData.jobId && !responseData.progressId) {
+              // Increment mastering count in database (synchronous completion)
+              if (env.DB) {
+                try {
+                  // Ensure table exists
+                  await env.DB.prepare(`
+                    CREATE TABLE IF NOT EXISTS mastering_stats (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      tracks_mastered INTEGER DEFAULT 0,
+                      last_updated TEXT DEFAULT (datetime('now'))
+                    )
+                  `).run();
+                  
+                  // Initialize if empty
+                  const existing = await env.DB.prepare('SELECT tracks_mastered FROM mastering_stats LIMIT 1').first();
+                  if (!existing) {
+                    await env.DB.prepare('INSERT INTO mastering_stats (tracks_mastered) VALUES (0)').run();
+                  }
+                  
+                  // Increment count
+                  await env.DB.prepare(`
+                    UPDATE mastering_stats 
+                    SET tracks_mastered = tracks_mastered + 1, 
+                        last_updated = datetime('now')
+                    WHERE id = (SELECT id FROM mastering_stats LIMIT 1)
+                  `).run();
+                  
+                  console.log('[Quick Master] ✅ Incremented mastering count (synchronous)');
+                } catch (e) {
+                  console.error('[Quick Master] Error incrementing mastering count:', e);
+                }
+              }
+              
+              // Transform synchronous response to match frontend expectations
+              const baseUrl = MASTERING_SERVER_BASE.replace(/\/api\/.*$/, '');
+              responseData = {
+                success: true,
+                status: 'completed', // Mark as completed
+                preset: responseData.preset,
+                input: responseData.input,
+                output: responseData.output,
+                gain: responseData.gain,
+                audioUrl: responseData.downloads.wav 
+                  ? `${baseUrl}${responseData.downloads.wav}`
+                  : null,
+                downloadUrl: responseData.downloads.wav 
+                  ? `${baseUrl}${responseData.downloads.wav}`
+                  : null,
+                mp3: responseData.downloads.mp3 
+                  ? `${baseUrl}${responseData.downloads.mp3}`
+                  : null
+              };
+              console.log('[Quick Master] Synchronous completion - transformed response');
+            } else if (responseData.progressId || responseData.jobId) {
+              // Async job pattern - return jobId for polling
               const jobId = responseData.progressId || responseData.jobId;
-              console.log(`[Quick Master] Job created successfully: ${jobId}`);
+              console.log(`[Quick Master] Job created: ${jobId}`);
             }
           } else {
-            // Handle other content types (e.g., file downloads)
             responseData = await masteringResponse.text();
           }
           
@@ -1936,69 +3122,36 @@ export default {
               status: masteringResponse.status,
               headers: {
                 ...corsHeaders,
-                'Content-Type': contentType || 'application/json'
+                'Content-Type': contentType
               }
             }
           );
         } catch (fetchError) {
           clearTimeout(timeoutId);
-          console.error('Mastering fetch error:', fetchError.name, fetchError.message);
+          console.error('[Quick Master] Fetch error:', fetchError.name, fetchError.message);
           
           if (fetchError.name === 'AbortError') {
-            throw new Error('Mastering request timed out. The file may be too large or the server is taking too long.');
+            throw new Error('Mastering request timed out after 15 minutes');
           }
           
-          // Check for specific network errors
+          // Network errors
           if (fetchError.message.includes('fetch failed') || fetchError.message.includes('network') || fetchError.message.includes('ECONNREFUSED')) {
-            throw new Error('Cannot connect to mastering server. The server may be offline or unreachable from Cloudflare Workers. Please ensure the VPS server is accessible.');
+            throw new Error(`Cannot connect to mastering server at ${MASTERING_SERVER_URL}. Please check if the server is running.`);
           }
           
           throw fetchError;
         }
       } catch (error) {
-        console.error('Mastering proxy error:', error);
+        console.error('[Quick Master] Proxy error:', error);
         return Response.json({
           success: false,
           error: 'Failed to connect to mastering server',
-          message: error.message || 'Mastering service is temporarily unavailable. Please try again later.',
-          details: error.name || 'Unknown error'
-        }, { status: 503, headers: corsHeaders });
-      }
-    }
-
-    // GET /api/mastering-progress/:id - Mastering progress (proxy to VPS server)
-    if (url.pathname.startsWith('/api/mastering-progress/') && request.method === 'GET') {
-      try {
-        const progressId = url.pathname.split('/api/mastering-progress/')[1];
-        // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
-        // Default to new mastering server domain
-        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
-        
-        const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/mastering-progress/${progressId}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        const responseData = await masteringResponse.json();
-        
-        return Response.json(responseData, {
-          status: masteringResponse.status,
-          headers: corsHeaders
-        });
-      } catch (error) {
-        console.error('Mastering progress proxy error:', error);
-        return Response.json({
-          status: 'error',
-          message: 'Failed to fetch mastering progress',
-          progress: 0
+          message: error.message || 'Mastering service is temporarily unavailable. Please try again later.'
         }, { status: 503, headers: corsHeaders });
       }
     }
 
     // GET /api/master-status/:id - Mastering job status (proxy to VPS server)
-    // NOTE: This endpoint maps to /api/mastering-progress/:id on the mastering server
     if (url.pathname.startsWith('/api/master-status/') && request.method === 'GET') {
       try {
         const jobId = url.pathname.split('/api/master-status/')[1];
@@ -2006,61 +3159,73 @@ export default {
           return Response.json({ error: 'Job ID required' }, { status: 400, headers: corsHeaders });
         }
         
-        // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
-        // Default to new mastering server domain
-        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
+        // Use same server base URL
+        const MASTERING_SERVER_BASE = env.MASTERING_SERVER_URL || 'http://43.245.227.33:3001';
+        // Remove any /api/ path from base URL
+        const baseUrl = MASTERING_SERVER_BASE.replace(/\/api\/.*$/, '');
+        // Most mastering servers use /api/mastering-progress/:id or /api/master-status/:id
+        // Try both endpoints, prefer mastering-progress
+        const statusUrl = `${baseUrl}/api/mastering-progress/${jobId}`;
+        const fallbackUrl = `${baseUrl}/api/master-status/${jobId}`;
         
-        // Use the correct endpoint: /api/mastering-progress/:id (not /api/master-status/:id)
-        const statusUrl = `${MASTERING_SERVER_BASE}/api/mastering-progress/${jobId}`;
-        console.log(`[Master Status] Fetching status for job ${jobId} from: ${statusUrl}`);
+        console.log(`[Master Status] Checking job ${jobId} at: ${statusUrl}`);
         
         // Add timeout to prevent hanging
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
         try {
-          const masteringResponse = await fetch(statusUrl, {
+          let masteringResponse = await fetch(statusUrl, {
             method: 'GET',
             headers: {
-              'Accept': 'application/json'
+              'Accept': 'application/json',
+              'User-Agent': 'AudioCity-Worker/1.0'
             },
             signal: controller.signal
-          });
+          }).catch(() => null);
+          
+          // Try fallback URL if first attempt failed
+          if (!masteringResponse || !masteringResponse.ok) {
+            console.log(`[Master Status] Trying fallback URL: ${fallbackUrl}`);
+            masteringResponse = await fetch(fallbackUrl, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'AudioCity-Worker/1.0'
+              },
+              signal: controller.signal
+            });
+          }
           
           clearTimeout(timeoutId);
           
           if (!masteringResponse.ok) {
             const errorText = await masteringResponse.text().catch(() => 'Unknown error');
-            console.error(`[Master Status] Server returned ${masteringResponse.status} for job ${jobId}:`, errorText.substring(0, 200));
+            console.error(`[Master Status] Server returned ${masteringResponse.status}:`, errorText.substring(0, 200));
             
-            // Handle different error status codes
+            // Handle 503 - service temporarily unavailable (keep polling)
             if (masteringResponse.status === 503) {
-              // Service unavailable - keep polling
-              console.warn(`[Master Status] Mastering server returned 503 - service temporarily unavailable`);
               return Response.json({
                 success: false,
-                status: 'processing', // Keep polling
+                status: 'processing',
                 error: 'Mastering service temporarily unavailable',
-                message: 'The mastering server is currently unavailable. Please try again in a moment.',
+                message: 'The mastering server is currently busy. Please wait...',
                 retry: true
               }, { status: 503, headers: corsHeaders });
             }
             
+            // Handle 404 - job not found (might still be processing)
             if (masteringResponse.status === 404) {
-              // Job not found - might be processing or expired
-              console.warn(`[Master Status] Job ${jobId} not found on mastering server (404)`);
-              // Return as processing to allow retry - job might still be initializing
               return Response.json({
                 success: false,
-                status: 'processing', // Keep polling in case job is still being created
+                status: 'processing',
                 error: 'Job not found',
                 message: 'Job status is being checked. Please wait...',
                 retry: true
-              }, { status: 503, headers: corsHeaders }); // Return 503 to allow retry
+              }, { status: 503, headers: corsHeaders });
             }
             
-            // For other errors (500, etc.), log and return as processing to allow retry
-            console.error(`[Master Status] Unexpected error ${masteringResponse.status} from mastering server`);
+            // Other errors
             return Response.json({
               success: false,
               status: 'processing',
@@ -2072,26 +3237,57 @@ export default {
           
           const responseData = await masteringResponse.json();
           
+          // Check if job is completed (both 'complete' and 'completed' status)
+          const isCompleted = responseData.status === 'completed' || responseData.status === 'complete';
+          
           // Transform response to match frontend expectations
-          // Mastering server returns: { status: 'complete', result: { downloads: { wav: '...', mp3: '...' } } }
-          // Frontend expects: { status: 'completed', audioUrl: '...', mp3: '...' }
+          // If server returns: { status: 'complete', result: { downloads: { wav: '...', mp3: '...' } } }
+          // Transform to: { status: 'completed', audioUrl: '...', mp3: '...' }
           if (responseData.status === 'complete' && responseData.result) {
+            // Increment mastering count for async completion
+            if (env.DB) {
+              try {
+                await env.DB.prepare(`
+                  CREATE TABLE IF NOT EXISTS mastering_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tracks_mastered INTEGER DEFAULT 0,
+                    last_updated TEXT DEFAULT (datetime('now'))
+                  )
+                `).run();
+                
+                const existing = await env.DB.prepare('SELECT tracks_mastered FROM mastering_stats LIMIT 1').first();
+                if (!existing) {
+                  await env.DB.prepare('INSERT INTO mastering_stats (tracks_mastered) VALUES (0)').run();
+                }
+                
+                await env.DB.prepare(`
+                  UPDATE mastering_stats 
+                  SET tracks_mastered = tracks_mastered + 1, 
+                      last_updated = datetime('now')
+                  WHERE id = (SELECT id FROM mastering_stats LIMIT 1)
+                `).run();
+                
+                console.log('[Master Status] ✅ Incremented mastering count (async completion)');
+              } catch (e) {
+                console.error('[Master Status] Error incrementing mastering count:', e);
+              }
+            }
+            
             const transformed = {
-              status: 'completed', // Change 'complete' to 'completed'
+              status: 'completed',
               success: true,
               preset: responseData.result.preset,
               input: responseData.result.input,
               output: responseData.result.output,
               gain: responseData.result.gain,
-              // Transform downloads to frontend format
               audioUrl: responseData.result.downloads?.wav 
-                ? `${MASTERING_SERVER_BASE}${responseData.result.downloads.wav}`
+                ? `${baseUrl}${responseData.result.downloads.wav}`
                 : null,
               downloadUrl: responseData.result.downloads?.wav 
-                ? `${MASTERING_SERVER_BASE}${responseData.result.downloads.wav}`
+                ? `${baseUrl}${responseData.result.downloads.wav}`
                 : null,
               mp3: responseData.result.downloads?.mp3 
-                ? `${MASTERING_SERVER_BASE}${responseData.result.downloads.mp3}`
+                ? `${baseUrl}${responseData.result.downloads.mp3}`
                 : null
             };
             return Response.json(transformed, {
@@ -2100,9 +3296,49 @@ export default {
             });
           }
           
-          // For processing/error status, return as-is but normalize status
+          // Normalize 'complete' to 'completed'
           if (responseData.status === 'complete') {
             responseData.status = 'completed';
+          }
+          
+          // Increment count if status is 'completed' (after normalization)
+          if (responseData.status === 'completed' && env.DB) {
+            try {
+              await env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS mastering_stats (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  tracks_mastered INTEGER DEFAULT 0,
+                  last_updated TEXT DEFAULT (datetime('now'))
+                )
+              `).run();
+              
+              const existing = await env.DB.prepare('SELECT tracks_mastered FROM mastering_stats LIMIT 1').first();
+              if (!existing) {
+                await env.DB.prepare('INSERT INTO mastering_stats (tracks_mastered) VALUES (0)').run();
+              }
+              
+              await env.DB.prepare(`
+                UPDATE mastering_stats 
+                SET tracks_mastered = tracks_mastered + 1, 
+                    last_updated = datetime('now')
+                WHERE id = (SELECT id FROM mastering_stats LIMIT 1)
+              `).run();
+              
+              console.log('[Master Status] ✅ Incremented mastering count (async completion)');
+            } catch (e) {
+              console.error('[Master Status] Error incrementing mastering count:', e);
+            }
+          }
+          
+          // Ensure URLs are absolute
+          if (responseData.audioUrl && !responseData.audioUrl.startsWith('http')) {
+            responseData.audioUrl = `${baseUrl}${responseData.audioUrl}`;
+          }
+          if (responseData.downloadUrl && !responseData.downloadUrl.startsWith('http')) {
+            responseData.downloadUrl = `${baseUrl}${responseData.downloadUrl}`;
+          }
+          if (responseData.mp3 && !responseData.mp3.startsWith('http')) {
+            responseData.mp3 = `${baseUrl}${responseData.mp3}`;
           }
           
           return Response.json(responseData, {
@@ -2111,62 +3347,41 @@ export default {
           });
         } catch (fetchError) {
           clearTimeout(timeoutId);
+          console.error(`[Master Status] Fetch error for job ${jobId}:`, fetchError.name, fetchError.message);
+          
           if (fetchError.name === 'AbortError') {
             throw new Error('Request timeout - mastering server took too long to respond');
           }
+          
+          // Network errors - return as processing to allow retry
+          if (fetchError.message.includes('fetch failed') || fetchError.message.includes('network') || fetchError.message.includes('ECONNREFUSED')) {
+            return Response.json({
+              success: false,
+              status: 'processing',
+              error: 'Connection failed',
+              message: 'Cannot connect to mastering server. Retrying...',
+              retry: true
+            }, { status: 503, headers: corsHeaders });
+          }
+          
           throw fetchError;
         }
       } catch (error) {
-        // Enhanced error logging for debugging
-        const errorDetails = {
-          name: error.name,
-          message: error.message,
-          stack: error.stack?.substring(0, 500),
-          url: statusUrl,
-          jobId: jobId
-        };
-        console.error('[Master Status] Proxy error:', JSON.stringify(errorDetails, null, 2));
-        
-        // Return status that allows polling to continue (not a fatal error)
+        console.error('[Master Status] Proxy error:', error);
+        // Return as processing to allow polling to continue
         return Response.json({
           success: false,
-          status: 'processing', // Keep status as processing so frontend continues polling
+          status: 'processing',
           error: 'Failed to fetch mastering status',
           message: error.message || 'Mastering service is temporarily unavailable. Retrying...',
-          details: error.name || 'Unknown error',
           retry: true
         }, { status: 503, headers: corsHeaders });
       }
     }
 
-    // GET /api/mastering-result/:id - Mastering result (proxy to VPS server)
-    if (url.pathname.startsWith('/api/mastering-result/') && request.method === 'GET') {
-      try {
-        const resultId = url.pathname.split('/api/mastering-result/')[1];
-        // Extract base URL from MASTERING_SERVER_URL (remove /api/master or /api/quick-master if present)
-        // Default to new mastering server domain
-        const MASTERING_SERVER_BASE = (env.MASTERING_SERVER_URL || 'https://mastering.audiocity-ug.com').replace(/\/api\/(master|quick-master)$/, '');
-        
-        const masteringResponse = await fetch(`${MASTERING_SERVER_BASE}/api/mastering-result/${resultId}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        const responseData = await masteringResponse.json();
-        
-        return Response.json(responseData, {
-          status: masteringResponse.status,
-          headers: corsHeaders
-        });
-      } catch (error) {
-        console.error('Mastering result proxy error:', error);
-        return Response.json({
-          success: false,
-          error: 'Failed to fetch mastering result'
-        }, { status: 503, headers: corsHeaders });
-      }
+    // POST /api/violations/check - Check violations (stub)
+    if (url.pathname === '/api/violations/check' && request.method === 'POST') {
+      return Response.json({ violations: [] }, { headers: corsHeaders });
     }
 
     // POST /api/tracks/:id/comment - Add comment
@@ -2371,6 +3586,154 @@ export default {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
+    // GET /api/admin/tracks/pending - Get tracks pending review (admin only)
+    if (url.pathname === '/api/admin/tracks/pending' && request.method === 'GET') {
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        
+        if (!user || !user.is_admin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        if (!env.DB) {
+          return Response.json([], { headers: corsHeaders });
+        }
+        
+        // Get tracks with review_status = 'pending'
+        const tracks = await env.DB.prepare(`
+          SELECT t.*, u.name as artist_name, u.username as artist_username
+          FROM tracks t
+          LEFT JOIN users u ON t.artist_id = u.id
+          WHERE t.review_status = 'pending' OR t.review_status IS NULL
+          ORDER BY t.created_at DESC
+        `).all();
+        
+        return Response.json(tracks.results || [], { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error fetching pending tracks:', error);
+        return Response.json([], { headers: corsHeaders });
+      }
+    }
+
+    // POST /api/admin/tracks/:id/approve - Approve track (admin only)
+    if (url.pathname.includes('/approve') && request.method === 'POST') {
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        
+        if (!user || !user.is_admin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const trackId = url.pathname.split('/api/admin/tracks/')[1]?.split('/')[0];
+        if (!trackId || !env.DB) {
+          return Response.json({ error: 'Track ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        // Update review status to approved
+        try {
+          await env.DB.prepare(`
+            UPDATE tracks 
+            SET review_status = 'approved', 
+                flag_reason = NULL,
+                updated_at = datetime('now')
+            WHERE id = ?
+          `).bind(trackId).run();
+        } catch (updateError) {
+          // If review_status column doesn't exist, try to create it
+          console.log('[Approve Track] review_status column may not exist, creating it:', updateError.message);
+          try {
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN review_status TEXT DEFAULT "approved"').run();
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN flag_reason TEXT').run();
+            await env.DB.prepare(`
+              UPDATE tracks 
+              SET review_status = 'approved', 
+                  flag_reason = NULL,
+                  updated_at = datetime('now')
+              WHERE id = ?
+            `).bind(trackId).run();
+          } catch (alterError) {
+            console.error('[Approve Track] Could not update review status:', alterError.message);
+          }
+        }
+        
+        const track = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(trackId).first();
+        
+        return Response.json({
+          success: true,
+          message: 'Track approved',
+          track: track
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error approving track:', error);
+        return Response.json({ error: 'Failed to approve track' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // POST /api/admin/tracks/:id/reject - Reject track (admin only)
+    if (url.pathname.includes('/reject') && request.method === 'POST') {
+      try {
+        const token = getAuthToken(request);
+        const user = await getUserFromToken(token);
+        
+        if (!user || !user.is_admin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const trackId = url.pathname.split('/api/admin/tracks/')[1]?.split('/')[0];
+        if (!trackId || !env.DB) {
+          return Response.json({ error: 'Track ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const rejectionReason = body?.reason || 'Violates platform rules';
+        
+        // Update review status to rejected
+        try {
+          await env.DB.prepare(`
+            UPDATE tracks 
+            SET review_status = 'rejected', 
+                flag_reason = ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+          `).bind(rejectionReason, trackId).run();
+        } catch (updateError) {
+          // If review_status column doesn't exist, try to create it
+          console.log('[Reject Track] review_status column may not exist, creating it:', updateError.message);
+          try {
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN review_status TEXT DEFAULT "approved"').run();
+            await env.DB.prepare('ALTER TABLE tracks ADD COLUMN flag_reason TEXT').run();
+            await env.DB.prepare(`
+              UPDATE tracks 
+              SET review_status = 'rejected', 
+                  flag_reason = ?,
+                  updated_at = datetime('now')
+              WHERE id = ?
+            `).bind(rejectionReason, trackId).run();
+          } catch (alterError) {
+            console.error('[Reject Track] Could not update review status:', alterError.message);
+          }
+        }
+        
+        return Response.json({
+          success: true,
+          message: 'Track rejected',
+          reason: rejectionReason
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('Error rejecting track:', error);
+        return Response.json({ error: 'Failed to reject track' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+
     // GET /media/* or /api/media/* - Proxy audio/media files from R2 (handle CORS and access)
     // Handle both legacy /media/* and new /api/media/* routes
     if ((url.pathname.startsWith('/api/media/') || url.pathname.startsWith('/media/')) && request.method === 'GET') {
@@ -2540,8 +3903,8 @@ export default {
             const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : object.size - 1;
             const chunkSize = end - start + 1;
             
-            // Read the range from the object
-            const rangeResponse = await env.MEDIA_BUCKET.get(mediaPath, {
+            // Read the range from the object (use finalMediaPath instead of mediaPath for consistency)
+            const rangeResponse = await env.MEDIA_BUCKET.get(finalMediaPath, {
               range: { offset: start, length: chunkSize }
             });
             

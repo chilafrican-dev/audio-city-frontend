@@ -1,0 +1,53 @@
+# Check and Update MASTERING_SERVER_URL Variable
+
+## If Variable Was Added Before:
+
+If you added `MASTERING_SERVER_URL` before, it's probably set to:
+- OLD (temporary): `https://xxxx-xxxx.trycloudflare.com` ❌
+- OLD (quick tunnel): `https://talks-pointed-mai-complimentary.trycloudflare.com` ❌
+
+## You Need to Update It To:
+
+- NEW (persistent): `https://mastering.audiocity-ug.com` ✅
+
+## How to Check Current Value:
+
+### Option 1: Cloudflare Dashboard
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1`
+3. Settings → Variables
+4. Look for `MASTERING_SERVER_URL`
+5. Check what value it has
+
+### Option 2: Check Worker Logs
+When a mastering request comes in, the worker logs will show what URL it's trying to use.
+
+## How to Update:
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1`
+3. Settings → Variables
+4. Find `MASTERING_SERVER_URL`
+5. Click the **pencil/edit icon** (or delete and re-add)
+6. Update value to: `https://mastering.audiocity-ug.com`
+7. Click **Save**
+
+## Will It Work If Left As Old URL?
+
+❌ **NO** - If it's still set to the old temporary tunnel URL:
+- Old quick tunnels expire/change when restarted
+- The old URL probably doesn't work anymore
+- You'll get connection errors
+
+✅ **YES** - After updating to `https://mastering.audiocity-ug.com`:
+- Permanent URL that never changes
+- Already configured and working
+- Will work forever
+
+## Quick Test:
+
+After updating, the mastering service should work. You can test by:
+1. Trying to master a track on your site
+2. Check worker logs for any errors
+3. The request should go to `https://mastering.audiocity-ug.com/api/quick-master`
+

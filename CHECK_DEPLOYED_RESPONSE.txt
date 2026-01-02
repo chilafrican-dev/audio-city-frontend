@@ -1,0 +1,57 @@
+# Check Deployed Worker Response Format
+
+## Issue:
+After deploying, still getting "Mastering request failed" error
+
+## The Problem:
+
+The mastering server (on VPS) returns a synchronous response:
+```json
+{
+  "success": true,
+  "preset": "...",
+  "input": {...},
+  "output": {...},
+  "gain": ...,
+  "downloads": {
+    "wav": "/output/...",
+    "mp3": "/output/..."
+  }
+}
+```
+
+But the frontend expects:
+```json
+{
+  "success": true,
+  "jobId": "..." OR "progressId": "..."
+}
+```
+
+OR for completed:
+```json
+{
+  "success": true,
+  "status": "completed",
+  "audioUrl": "...",
+  ...
+}
+```
+
+## The Worker Code Should Transform It:
+
+Looking at worker-d1.js lines 2993-3013, it should transform synchronous responses. But there might be an issue with the transformation logic.
+
+## Let's Check:
+
+1. Open browser DevTools (F12)
+2. Go to Network tab
+3. Try mastering again
+4. Click on the `/api/quick-master` request
+5. Check the "Response" tab - what does it actually return?
+
+This will tell us if:
+- The worker is transforming correctly
+- The server is responding
+- The format matches what's expected
+

@@ -1,0 +1,77 @@
+# SSH Key Setup for Server Access (43.245.227.33)
+
+## Your SSH Public Key:
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIE3a4eSINkDODuNj+JxMgVDmp0X/Fc2KgRsmQcVaDXg audio-city-cloudflared-install
+
+## Option 1: Add Key to Server (if key is not already on server)
+
+If this key needs to be added to the server, you'll need server access first (password or existing key).
+
+Once you have access, run on the server:
+```bash
+# Add the public key to authorized_keys
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIE3a4eSINkDODuNj+JxMgVDmp0X/Fc2KgRsmQcVaDXg audio-city-cloudflared-install" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+## Option 2: Save Key Locally and Connect
+
+If you have the private key file, save it and connect:
+
+```bash
+# Save private key (if you have it) to:
+~/.ssh/audio_city_hostkey
+chmod 600 ~/.ssh/audio_city_hostkey
+
+# Connect to server:
+ssh -i ~/.ssh/audio_city_hostkey root@43.245.227.33
+```
+
+## Option 3: Use Password Authentication
+
+If the key is already on the server, you can also use password:
+```bash
+ssh root@43.245.227.33
+# Enter password: vMC3_K5+74 (change it immediately!)
+```
+
+## Once Connected, Check cloudflared:
+
+Run these commands on the server:
+```bash
+# Check if cloudflared is installed
+which cloudflared
+cloudflared --version
+
+# Check if it's running
+ps aux | grep cloudflared | grep -v grep
+
+# Check service status
+systemctl status mastering-tunnel.service
+
+# Check logs for tunnel URL
+journalctl -u mastering-tunnel.service -n 50 | grep -i trycloudflare
+
+# Or check log file
+tail -50 /var/log/mastering-tunnel.log | grep -i trycloudflare
+```
+
+## If Tunnel is NOT Running, Start It:
+
+```bash
+# Quick start (temporary):
+cloudflared tunnel --url http://localhost:3001
+
+# Background start:
+nohup cloudflared tunnel --url http://localhost:3001 > /var/log/mastering-tunnel.log 2>&1 &
+```
+
+## After Getting Tunnel URL:
+
+1. Copy the URL (e.g., https://xxxx-xxxx.trycloudflare.com)
+2. Set it in Cloudflare Worker:
+   - Dashboard → Workers → audio-city-api-d1 → Settings → Variables
+   - Add/Update: MASTERING_SERVER_URL = https://xxxx-xxxx.trycloudflare.com
+

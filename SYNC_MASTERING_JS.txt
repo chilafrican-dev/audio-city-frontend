@@ -1,0 +1,31 @@
+# Sync mastering.js Files - Avoid Confusion
+
+## Problem:
+There are TWO mastering.js files:
+1. `/mastering.js` (root) - 327 lines
+2. `/cloudflare-frontend/mastering.js` - 456 lines
+
+Both HTML files reference `mastering.js` (relative path), which causes confusion about which one is actually being used.
+
+## Solution Options:
+
+### Option 1: Use Only cloudflare-frontend Version (Recommended)
+Since you're using cloudflare-frontend, copy the updated cloudflare-frontend/mastering.js to root:
+
+```bash
+cp cloudflare-frontend/mastering.js mastering.js
+```
+
+### Option 2: Delete Root Version
+If you only use cloudflare-frontend, delete the root version:
+
+```bash
+rm mastering.js
+```
+
+### Option 3: Keep Both in Sync
+Always update both files when making changes (current approach).
+
+## Recommendation:
+Since you're deploying via Cloudflare, use Option 1 - copy the cloudflare-frontend version to root to ensure consistency.
+

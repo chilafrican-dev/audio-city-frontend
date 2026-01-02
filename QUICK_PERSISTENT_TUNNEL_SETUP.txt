@@ -1,0 +1,110 @@
+# Quick Guide: Setup Persistent Tunnel (2 Methods)
+
+## METHOD 1: Using Cloudflare Dashboard (Easiest)
+
+### Step 1: Create Tunnel in Dashboard
+1. Go to: https://dash.cloudflare.com
+2. Click: "Zero Trust" (or go directly to: https://one.dash.cloudflare.com)
+3. Networks → Tunnels
+4. Click: "Create a tunnel"
+5. Select: "Cloudflared"
+6. Name: `mastering-server-tunnel`
+7. Click "Save tunnel"
+
+### Step 2: Copy Configuration
+After creating, you'll see a command like:
+```bash
+cloudflared service install YOUR_TUNNEL_TOKEN
+```
+
+### Step 3: Run on Server
+SSH into your server and run:
+```bash
+# Install cloudflared service with your token
+cloudflared service install YOUR_TUNNEL_TOKEN
+
+# This will automatically:
+# - Create /etc/cloudflared/config.yml
+# - Create systemd service
+# - Start the tunnel
+```
+
+### Step 4: Configure Route
+1. In Cloudflare dashboard, click on your tunnel
+2. Go to "Public Hostnames" tab
+3. Click "Add a public hostname"
+4. Configure:
+   - Subdomain: `mastering` (or `mastering-api`)
+   - Domain: `audiocity-ug.com`
+   - Service: `http://localhost:3001`
+   - Path: (leave empty)
+5. Click "Save hostname"
+
+### Step 5: Update Worker
+Set `MASTERING_SERVER_URL` = `https://mastering.audiocity-ug.com`
+
+---
+
+## METHOD 2: Manual Configuration (More Control)
+
+### Step 1: Create Tunnel in Dashboard (same as Method 1)
+
+### Step 2: Get Tunnel ID
+After creating tunnel, note the Tunnel ID (looks like: `abc123def456...`)
+
+### Step 3: Authenticate on Server
+```bash
+# Login to Cloudflare (opens browser)
+cloudflared tunnel login
+
+# Or use token directly
+cloudflared tunnel create mastering-server-tunnel
+```
+
+### Step 4: Create Config File
+```bash
+cat > /etc/cloudflared/config.yml << 'EOF'
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /root/.cloudflared/YOUR_TUNNEL_ID.json
+
+ingress:
+  - hostname: mastering.audiocity-ug.com
+    service: http://localhost:3001
+  - service: http_status:404
+EOF
+```
+
+### Step 5: Update Service
+```bash
+cat > /etc/systemd/system/cloudflared.service << 'EOF'
+[Unit]
+Description=Cloudflare Tunnel
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --config /etc/cloudflared/config.yml run
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl restart cloudflared
+systemctl enable cloudflared
+```
+
+### Step 6: Configure DNS (same as Method 1, Step 4)
+
+---
+
+## Which Method to Use?
+
+- **Method 1**: Faster, automatic setup
+- **Method 2**: More control, can customize config
+
+Both will give you a persistent URL: `https://mastering.audiocity-ug.com`
+

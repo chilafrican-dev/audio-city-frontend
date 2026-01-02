@@ -1,0 +1,38 @@
+# Commands to Check cloudflared on Server (43.245.227.33)
+# Run these commands on your VPS server via SSH or web console
+
+# 1. Check if cloudflared is installed:
+which cloudflared
+cloudflared --version
+
+# 2. Check if cloudflared process is running:
+ps aux | grep cloudflared | grep -v grep
+
+# 3. Check systemd service (if set up):
+systemctl status mastering-tunnel.service
+# OR if it has a different name:
+systemctl list-units | grep cloudflared
+systemctl list-units | grep tunnel
+
+# 4. Check tunnel logs:
+journalctl -u mastering-tunnel.service -n 50 --no-pager
+# OR if running in background:
+tail -50 /var/log/mastering-tunnel.log
+
+# 5. Check if local mastering server is running:
+curl http://localhost:3001/api/health
+
+# 6. If tunnel is running, you should see a URL in the logs containing "trycloudflare.com"
+# Look for a line like:
+# "Your quick Tunnel has been created! Visit it at: https://xxxx-xxxx.trycloudflare.com"
+
+# 7. To start a new tunnel (if not running):
+cloudflared tunnel --url http://localhost:3001
+
+# 8. To start tunnel in background:
+nohup cloudflared tunnel --url http://localhost:3001 > /var/log/mastering-tunnel.log 2>&1 &
+
+# IMPORTANT: Copy the tunnel URL (https://xxxx-xxxx.trycloudflare.com) and update:
+# - Worker environment variable: MASTERING_SERVER_URL
+# - Or set it in Cloudflare Dashboard → Workers → Settings → Variables
+

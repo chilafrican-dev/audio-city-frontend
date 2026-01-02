@@ -1,0 +1,87 @@
+# Setup Cloudflare Tunnel for New Mastering Server (43.245.227.33)
+
+## On Your New VPS Server (43.245.227.33):
+
+### Step 1: Install cloudflared
+```bash
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+chmod +x /usr/local/bin/cloudflared
+```
+
+### Step 2: Start Quick Tunnel (temporary)
+```bash
+cloudflared tunnel --url http://localhost:3001
+```
+
+This will output a URL like:
+```
+https://xxxx-xxxx.trycloudflare.com
+```
+
+### Step 3: Keep Tunnel Running (background)
+```bash
+nohup cloudflared tunnel --url http://localhost:3001 > /var/log/mastering-tunnel.log 2>&1 &
+```
+
+### Step 4: Make Tunnel Run on Boot (systemd service)
+```bash
+# Create service file
+sudo nano /etc/systemd/system/mastering-tunnel.service
+```
+
+Paste this:
+```ini
+[Unit]
+Description=Cloudflare Tunnel for Mastering Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:3001
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mastering-tunnel.service
+sudo systemctl start mastering-tunnel.service
+sudo systemctl status mastering-tunnel.service
+```
+
+### Step 5: Copy the Tunnel URL
+Copy the HTTPS URL (e.g., `https://xxxx-xxxx.trycloudflare.com`)
+
+### Step 6: Update Worker Environment Variable
+
+In Cloudflare Dashboard:
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → audio-city-api-d1 (or your worker name)
+3. Settings → Variables and Secrets
+4. Add/Update Environment Variable:
+   - Name: `MASTERING_SERVER_URL`
+   - Value: `https://xxxx-xxxx.trycloudflare.com` (use your tunnel URL)
+5. Save
+
+OR use wrangler CLI:
+```bash
+echo "https://xxxx-xxxx.trycloudflare.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+```
+
+## Test the Tunnel:
+```bash
+curl https://xxxx-xxxx.trycloudflare.com/api/health
+```
+
+Should return: `{"status":"ok","ffmpeg":true,...}`
+
+## Notes:
+- Quick tunnels (trycloudflare.com) are temporary and change when restarted
+- For production, consider setting up a named tunnel with a persistent URL
+- The tunnel URL should point to your NEW server: 43.245.227.33:3001
+

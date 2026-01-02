@@ -1,0 +1,49 @@
+# Fix: "Mastering request failed" Error
+
+## Problem:
+Error: "Mastering request failed" when trying to master a track
+
+## Root Cause:
+**The worker has NOT been deployed yet!**
+
+The updated `worker-d1.js` file contains the new mastering endpoints, but they're not live on Cloudflare yet. The old worker code is still running, which doesn't have the `/api/quick-master` endpoint (or has it in a different format).
+
+## Solution:
+
+### Deploy the Worker NOW:
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1`
+3. Click: **"Edit code"** button
+4. In your computer, open `worker-d1.js`
+5. Select ALL code (Cmd+A / Ctrl+A)
+6. Copy (Cmd+C / Ctrl+C)
+7. In Cloudflare editor:
+   - Select ALL existing code
+   - Paste (Cmd+V)
+8. Click: **"Save and Deploy"**
+9. Wait 10-30 seconds for deployment
+
+## After Deployment:
+
+✅ The new mastering endpoints will be active:
+- `POST /api/quick-master` → proxies to `https://mastering.audiocity-ug.com`
+- `GET /api/master-status/:id` → proxies to mastering server
+
+✅ The `MASTERING_SERVER_URL` environment variable is already set, so it will work immediately
+
+✅ Try mastering a track again - it should work!
+
+## Why This Happens:
+
+- Updated code exists locally (`worker-d1.js`)
+- But Cloudflare is still running the OLD deployed code
+- Frontend makes request → Old worker → Endpoint doesn't exist or returns wrong format → Error
+
+## Verification:
+
+After deploying, check:
+1. Worker logs in Cloudflare dashboard
+2. Try mastering a track
+3. Should see successful request in logs
+

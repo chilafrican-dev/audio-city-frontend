@@ -1,0 +1,40 @@
+# ============================================
+# CURRENT CLOUDFLARE TUNNEL URL - WORKING
+# ============================================
+
+✅ ACTIVE TUNNEL URL: https://talks-pointed-mai-complimentary.trycloudflare.com
+
+Created: 2026-01-01 22:09:14 UTC
+Status: ✅ Active and Running
+Service: mastering-tunnel.service (systemd)
+Points to: http://localhost:3001 (✅ CORRECT)
+
+⚠️  NOTE: Quick tunnels change when restarted. For production stability, 
+    consider setting up a named tunnel with a persistent URL.
+
+# ============================================
+# SET THIS IN CLOUDFLARE DASHBOARD:
+# ============================================
+# 
+# 1. Go to: https://dash.cloudflare.com
+# 2. Workers & Pages → audio-city-api-d1 (or your worker name)
+# 3. Settings → Variables and Secrets
+# 4. Add/Update Environment Variable:
+#    Name: MASTERING_SERVER_URL
+#    Value: https://talks-pointed-mai-complimentary.trycloudflare.com
+#
+# OR use wrangler CLI:
+# echo "https://talks-pointed-mai-complimentary.trycloudflare.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+#
+# ============================================
+# SERVER STATUS:
+# ============================================
+# Server: 43.245.227.33 (HostKey)
+# cloudflared: ✅ Installed (version 2025.11.1)
+# Service: mastering-tunnel.service ✅ Running
+# Service Config: ✅ Fixed (now points to localhost:3001)
+# Mastering Server: ✅ Running on localhost:3001
+# 
+# ✅ FIXED: Service configuration updated from old IP (168.119.241.59) 
+#    to localhost:3001
+# ============================================

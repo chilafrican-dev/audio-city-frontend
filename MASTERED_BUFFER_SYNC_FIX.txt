@@ -1,0 +1,32 @@
+# Fixed: No Difference Between Before/After Audio
+
+## Problem:
+User reported no audible difference between "Before" and "After" mastering modes.
+
+## Root Cause:
+`mastering.js` sets `window.masteredBuffer` when mastering completes, but `mastering.html` was using the local `masteredBuffer` variable, which never gets updated from `window.masteredBuffer`. So it always played the original `audioBuffer` instead of the mastered version.
+
+## Fix Applied:
+
+Updated all playback logic to check `window.masteredBuffer` first, then fall back to local `masteredBuffer`:
+
+1. ✅ `startPlayback()` - checks `window.masteredBuffer` first
+2. ✅ `updatePlayhead()` - checks `window.masteredBuffer` first
+3. ✅ `playBtn` click handler - checks `window.masteredBuffer` first
+4. ✅ `rewindBtn` click handler - checks `window.masteredBuffer` first
+5. ✅ `forwardBtn` click handler - checks `window.masteredBuffer` first
+
+All instances now use:
+```javascript
+const actualMasteredBuffer = window.masteredBuffer || masteredBuffer;
+const bufferToUse = (playbackMode === 'before' || !actualMasteredBuffer) ? audioBuffer : actualMasteredBuffer;
+```
+
+## Result:
+
+Now when `mastering.js` sets `window.masteredBuffer`, the playback will actually use the mastered audio buffer, so you'll hear the difference!
+
+## Test:
+
+After deploying, try mastering again and toggle between "Before" and "After" - you should now hear the difference in audio quality.
+

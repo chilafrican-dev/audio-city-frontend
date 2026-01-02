@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <script>
     // Authentication check - only required for own profile (no ?id param)
     (function() {
@@ -213,6 +215,27 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Audio City" />
   <style>
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
     * {
       margin: 0;
       padding: 0;
@@ -843,6 +866,7 @@
             <span class="stat-label">Total Plays</span>
           </div>
         </div>
+        
       </div>
 
       <div class="sc-embed" id="profileSoundCloudEmbed"></div>
@@ -873,6 +897,15 @@
           <a href="#" class="section-link">View All →</a>
         </div>
         <div class="tracks-grid" id="producersGrid"></div>
+      </div>
+      
+      <!-- Playlists Section -->
+      <div class="section" id="playlistsSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">📀 Playlists</h3>
+          <button id="createPlaylistBtn" class="section-link" style="background: none; border: none; color: var(--accent) !important; cursor: pointer; font-weight: 600; padding: 0;">+ Create</button>
+        </div>
+        <div class="tracks-grid" id="playlistsGrid"></div>
       </div>
       
       <!-- Activity Section (always visible) -->
@@ -1444,6 +1477,10 @@
     
     // Load profile
     async function loadProfile() {
+      // Determine if this is own profile (needed throughout the function, even if errors occur)
+      const currentUserId = localStorage.getItem('user_id');
+      let isOwnProfile = false;
+      
       try {
         // Always get profileUserId from URL first, don't fallback to localStorage if viewing another user
         const urlParams = new URLSearchParams(window.location.search);
@@ -1472,6 +1509,9 @@
           return;
         }
         
+        // Update isOwnProfile now that we have profileUserId
+        isOwnProfile = profileUserId === currentUserId;
+        
         console.log('Loading profile for user ID:', profileUserId);
         
         // Try to fetch user data from API
@@ -1499,8 +1539,6 @@
           document.getElementById('profileHandle').textContent = '@unknown';
           return;
         }
-        
-        const isOwnProfile = profileUserId === localStorage.getItem('user_id');
         const userName = userData?.name || userData?.full_name || 'User';
         const username = userData?.username || userData?.handle || 'user';
         
@@ -1616,6 +1654,9 @@
         
         // Load stats (followers, following)
         loadUserStats(profileUserId);
+        
+        // Load playlists
+        await loadPlaylists(profileUserId);
 
         // SoundCloud playlist embed (only if user has a playlist URL)
         const scEmbedContainer = document.getElementById('profileSoundCloudEmbed');
@@ -1643,7 +1684,25 @@
       } catch (error) {
         console.error('Error loading profile:', error);
       }
+      
     }
+    
+    // Helper: Escape HTML
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Wire up payment verification button
+    document.addEventListener('DOMContentLoaded', () => {
+      const verifyBtn = document.getElementById('verifyPaymentBtn');
+      if (verifyBtn) {
+        verifyBtn.addEventListener('click', async () => {
+        });
+      }
+    });
     
     // Delete track function (for admins and track creators)
     async function deleteTrack(trackId, isAdmin) {
@@ -1770,6 +1829,73 @@
         if (userPostsContainer) {
           userPostsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">Error loading posts</div>';
         }
+      }
+    }
+    
+    // Open playlist - load first track with playlist context
+    async function openPlaylist(playlistId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/playlists/${playlistId}`);
+        if (!response.ok) {
+          console.error('Failed to load playlist:', response.status);
+          return;
+        }
+        
+        const playlist = await response.json();
+        const tracks = playlist.tracks || [];
+        
+        if (tracks.length === 0) {
+          alert('This playlist is empty');
+          return;
+        }
+        
+        // Navigate to first track with playlist context
+        window.location.href = `track.html?id=${tracks[0].id}&playlist=${playlistId}`;
+      } catch (error) {
+        console.error('Error opening playlist:', error);
+        alert('Failed to load playlist');
+      }
+    }
+    
+    // Load playlists for a user
+    async function loadPlaylists(userId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users/${userId}/playlists`);
+        if (!response.ok) {
+          console.error('Failed to load playlists:', response.status);
+          return;
+        }
+        
+        const playlists = await response.json();
+        const playlistsSection = document.getElementById('playlistsSection');
+        const playlistsGrid = document.getElementById('playlistsGrid');
+        
+        if (!playlistsSection || !playlistsGrid) return;
+        
+        if (playlists.length === 0) {
+          playlistsSection.style.display = 'none';
+          return;
+        }
+        
+        playlistsSection.style.display = 'block';
+        
+        playlistsGrid.innerHTML = playlists.map(playlist => {
+          const coverImage = playlist.cover_image_url || null;
+          return `
+            <div class="track-card" onclick="openPlaylist('${playlist.id}')" style="position: relative;">
+              <div class="track-cover">
+                ${coverImage ? `<img src="${escapeHtml(coverImage)}" alt="${escapeHtml(playlist.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                <div style="${coverImage ? 'display: none;' : 'display: flex;'}">📀</div>
+              </div>
+              <div class="track-info">
+                <div class="track-title">${escapeHtml(playlist.name || 'Untitled Playlist')}</div>
+                <div class="track-stats">🎵 ${(playlist.tracks_count || 0).toLocaleString()} tracks</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading playlists:', error);
       }
     }
     

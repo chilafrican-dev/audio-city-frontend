@@ -1,0 +1,24 @@
+# Fix: No Difference Between Before/After Mastering
+
+## Problem:
+User reports no audible difference between "Before" and "After" mastering modes.
+
+## Potential Causes:
+
+1. **masteredBuffer not synced**: `mastering.js` sets `window.masteredBuffer`, but `mastering.html` uses local `masteredBuffer` variable
+2. **Mastering server returning original file**: The server might not be processing correctly
+3. **Wrong audio source**: Both modes might be playing the same file
+
+## Investigation Needed:
+
+1. Check console logs - is `masteredBuffer` being set?
+2. Check if mastered audio file is different from original
+3. Check if playback logic correctly switches between buffers
+4. Verify mastering server is actually processing the audio
+
+## Next Steps:
+
+- Check if `window.masteredBuffer` is being synced to local `masteredBuffer`
+- Verify the mastered file URL actually contains processed audio
+- Test if mastering server is working correctly
+

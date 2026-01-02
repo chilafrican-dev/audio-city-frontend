@@ -1,0 +1,40 @@
+# Which Files to Deploy - Clear Answer
+
+## For Cloudflare Pages/Frontend:
+
+**Deploy the `cloudflare-frontend/` folder**
+
+This includes:
+- ✅ `cloudflare-frontend/mastering.html`
+- ✅ `cloudflare-frontend/mastering.js` (the one we just updated)
+- ✅ All other HTML files in that folder
+
+## Why cloudflare-frontend?
+
+1. **Cloudflare Pages** typically deploys from a specific directory
+2. The `cloudflare-frontend/` folder is your production frontend
+3. The root `mastering.html` and `mastering.js` are likely for local development
+
+## Deployment Steps:
+
+### If using Cloudflare Pages Dashboard:
+1. Go to: https://dash.cloudflare.com
+2. Pages → Your project
+3. Make sure it's set to deploy from `cloudflare-frontend/` directory
+4. Deploy (or it auto-deploys on git push)
+
+### If using Git:
+- Push changes to your repository
+- Cloudflare Pages will auto-deploy from `cloudflare-frontend/`
+
+### If deploying manually:
+- Upload the entire `cloudflare-frontend/` folder
+- Make sure `mastering.js` is in that folder
+
+## Summary:
+
+✅ **Deploy**: `cloudflare-frontend/mastering.js` (and all files in cloudflare-frontend/)
+❌ **Don't deploy**: Root `mastering.js` (that's just synced for consistency)
+
+The root files are synced to avoid confusion, but the actual deployment should use `cloudflare-frontend/`.
+

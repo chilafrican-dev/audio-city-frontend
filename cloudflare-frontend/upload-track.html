@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload Track — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Cinzel:wght@400;600&family=Poppins:wght@400;500;600&family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1374,6 +1376,24 @@
           <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Quality Check</h3>
           <div id="qualityItems"></div>
         </div>
+        
+        <!-- Content Ownership Confirmation -->
+        <div style="margin-top: 32px; padding: 24px; background: rgba(239, 68, 68, 0.05); border: 2px solid rgba(239, 68, 68, 0.2); border-radius: 12px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <input type="checkbox" id="contentOwnershipConfirm" required style="margin-top: 4px; width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+            <label for="contentOwnershipConfirm" style="cursor: pointer; line-height: 1.6;">
+              <strong style="color: var(--text-primary);">I confirm this track is my original content or I have rights to upload it.</strong>
+              <div style="margin-top: 8px; font-size: 14px; color: var(--text-secondary);">
+                By checking this box, I acknowledge that:
+                <ul style="margin-top: 8px; margin-left: 20px; list-style: disc;">
+                  <li>I own or have proper rights to this music</li>
+                  <li>This track does not contain other platforms' logos or watermarks (e.g., Spotify, SoundCloud, Mdundo)</li>
+                  <li>I have read and agree to the <a href="terms.html" target="_blank" style="color: var(--accent-purple); text-decoration: underline;">Terms & Conditions</a></li>
+                </ul>
+              </div>
+            </label>
+          </div>
+        </div>
       </div>
       
       <!-- Navigation Buttons -->
@@ -1393,7 +1413,7 @@
   <script>
     // Global State
     let currentStep = 1;
-    let uploadData = {
+      let uploadData = {
       audioFile: null,
       audioInfo: null,
       coverArt: null,
@@ -2072,6 +2092,15 @@
         return;
       }
       
+      // Check content ownership confirmation
+      const ownershipConfirm = document.getElementById('contentOwnershipConfirm');
+      if (!ownershipConfirm || !ownershipConfirm.checked) {
+        showAlert('Please confirm that this track is your original content or you have rights to upload it.', 'error');
+        ownershipConfirm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ownershipConfirm?.focus();
+        return;
+      }
+      
       const authToken = localStorage.getItem('auth_token');
       if (!authToken) {
         showAlert('Please log in to upload tracks', 'error');
@@ -2097,6 +2126,9 @@
         formData.append('artist_name', document.getElementById('artistName').value.trim());
         formData.append('genre', document.getElementById('genre').value);
         formData.append('language', document.getElementById('language').value);
+        
+        // Review status - default to approved
+        formData.append('review_status', 'approved');
         
         // Optional fields
         const releaseYear = document.getElementById('releaseYear').value;

@@ -3,148 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="version" content="2024-12-19-v2">
   <title>Feed — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <script>
-    // Manifest loading disabled - Cloudflare WAF blocks JSON files
-    // PWA functionality is optional, app works fine without it
-    // To re-enable: check Cloudflare WAF settings and unblock manifest.json
-  </script>
-  <script data-cfasync="false">
-    // CRITICAL: Check auth state IMMEDIATELY - data-cfasync="false" prevents Cloudflare Rocket Loader from deferring this
-    (function() {
-      function checkAuth() {
-        var token = localStorage.getItem('auth_token');
-        var userId = localStorage.getItem('user_id');
-        var isLoggedIn = !!(token && userId);
-        
-        // DEBUG: Log ALL localStorage items
-        console.log('🔍 [Feed] Early auth check:', {
-          token: !!token,
-          tokenValue: token ? token.substring(0, 20) + '...' : null,
-          userId: userId,
-          isLoggedIn: isLoggedIn,
-          allLocalStorage: {
-            auth_token: !!localStorage.getItem('auth_token'),
-            user_id: localStorage.getItem('user_id'),
-            user_name: localStorage.getItem('user_name'),
-            username: localStorage.getItem('username'),
-            user_email: localStorage.getItem('user_email'),
-            is_admin: localStorage.getItem('is_admin')
-          }
-        });
-        
-        if (!token) {
-          console.error('❌ [Feed] NO TOKEN in localStorage!');
-        }
-        if (!userId) {
-          console.error('❌ [Feed] NO USER_ID in localStorage! This is why you appear logged out!');
-          console.error('❌ [Feed] Fix: Login must set user_id. Check login.html response handling.');
-        }
-        
-        if (isLoggedIn) {
-          document.documentElement.classList.add('user-logged-in');
-          console.log('🔐 [Feed] Auth: User logged in - added user-logged-in class');
-          
-          // FALLBACK: Directly show/hide elements if CSS class doesn't work
-          setTimeout(function() {
-            var loggedOut = document.querySelectorAll('.auth-logged-out');
-            var loggedIn = document.querySelectorAll('.auth-logged-in');
-            var signOutBtn = document.getElementById('signOutBtn');
-            var signInBtn = document.getElementById('signInBtn');
-            var signUpBtn = document.getElementById('signUpBtn');
-            var uploadBtn = document.getElementById('uploadBtn');
-            var inboxLink = document.getElementById('inboxNavLink');
-            var profileBtn = document.getElementById('profileBtn');
-            
-            // Hide logged-out buttons
-            loggedOut.forEach(function(el) {
-              if (el) {
-                el.style.display = 'none';
-                el.style.visibility = 'hidden';
-              }
-            });
-            if (signInBtn) {
-              signInBtn.style.display = 'none';
-              signInBtn.style.visibility = 'hidden';
-            }
-            if (signUpBtn) {
-              signUpBtn.style.display = 'none';
-              signUpBtn.style.visibility = 'hidden';
-            }
-            
-            // Show logged-in buttons
-            loggedIn.forEach(function(el) {
-              if (el && el.id !== 'profileBtn') {
-                el.style.display = 'inline-block';
-                el.style.visibility = 'visible';
-              } else if (el && el.id === 'profileBtn') {
-                el.style.display = 'flex';
-                el.style.visibility = 'visible';
-              }
-            });
-            if (signOutBtn) {
-              signOutBtn.style.display = 'inline-block';
-              signOutBtn.style.visibility = 'visible';
-              console.log('✅ [Feed] Sign out button made visible');
-            }
-            if (uploadBtn) {
-              uploadBtn.style.display = 'inline-block';
-              uploadBtn.style.visibility = 'visible';
-            }
-            if (inboxLink) {
-              inboxLink.style.display = 'inline-block';
-              inboxLink.style.visibility = 'visible';
-            }
-            if (profileBtn) {
-              profileBtn.style.display = 'flex';
-              profileBtn.style.visibility = 'visible';
-            }
-            console.log('✅ [Feed] Fallback: Directly updated', loggedOut.length, 'logged-out and', loggedIn.length, 'logged-in elements');
-          }, 50);
-        } else {
-          document.documentElement.classList.remove('user-logged-in');
-          console.log('🔓 [Feed] Auth: User NOT logged in - removed class');
-          
-          // FALLBACK: Directly show/hide elements
-          setTimeout(function() {
-            var loggedOut = document.querySelectorAll('.auth-logged-out');
-            var loggedIn = document.querySelectorAll('.auth-logged-in');
-            loggedOut.forEach(function(el) {
-              if (el) el.style.display = 'inline-block';
-            });
-            loggedIn.forEach(function(el) {
-              if (el) el.style.display = 'none';
-            });
-          }, 50);
-        }
-      }
-      
-      // Run immediately
-      checkAuth();
-      
-      // Run again after tiny delays to catch race conditions
-      setTimeout(checkAuth, 10);
-      setTimeout(checkAuth, 50);
-      setTimeout(checkAuth, 100);
-      setTimeout(checkAuth, 200);
-      setTimeout(checkAuth, 500);
-      
-      // Also run when DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', checkAuth);
-      }
-      
-      // And on window load
-      window.addEventListener('load', function() {
-        setTimeout(checkAuth, 100);
-        setTimeout(checkAuth, 500);
-      });
-    })();
+    // Only load manifest.json when not using file:// protocol (avoids CORS errors)
+    if (window.location.protocol !== 'file:') {
+      var link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
   </script>
   <meta name="theme-color" content="#8b5cf6" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -173,18 +46,6 @@
       --shadow: rgba(0, 0, 0, 0.4);
       --glass: rgba(255, 255, 255, 0.05);
     }
-    
-    /* AUTH UI - CSS-based visibility control (faster than JavaScript) */
-    /* Default state: show logged-out buttons, hide logged-in buttons */
-    /* CRITICAL: Protected UI is HIDDEN by default - only shown after backend validation */
-    .auth-logged-out { display: inline-block !important; }
-    .auth-logged-in { display: none !important; visibility: hidden !important; }
-    
-    /* When html has 'user-logged-in' class, flip visibility */
-    html.user-logged-in .auth-logged-out { display: none !important; visibility: hidden !important; }
-    html.user-logged-in .auth-logged-in { display: inline-block !important; visibility: visible !important; }
-    html.user-logged-in .profile-btn.auth-logged-in { display: flex !important; visibility: visible !important; }
-    html.user-logged-in #inboxNavLink { display: inline-block !important; visibility: visible !important; }
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -498,8 +359,8 @@
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px;
+      border-radius: 16px;
+      padding: 16px;
       transition: all 0.3s;
       cursor: pointer;
     }
@@ -511,28 +372,29 @@
     }
     
     .post-card.large {
-      padding: 28px;
+      padding: 16px;
     }
     
     .post-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 12px;
     }
     
     .post-avatar {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: var(--bg-light);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 18px;
       position: relative;
       overflow: hidden;
       border: 2px solid var(--border);
+      flex-shrink: 0;
     }
     
     .post-avatar img {
@@ -613,7 +475,7 @@
     }
     
     .post-content {
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
     
     .post-text {
@@ -626,12 +488,12 @@
     .music-player-card {
       background: var(--glass);
       backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 12px;
+      padding: 12px;
       display: flex;
-      gap: 20px;
+      gap: 12px;
       align-items: center;
-      margin-top: 16px;
+      margin-top: 12px;
       border: 1px solid var(--border);
       transition: all 0.3s;
     }
@@ -644,8 +506,8 @@
     .player {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px 16px;
+      gap: 10px;
+      padding: 8px 12px;
       background: rgba(255,255,255,0.05);
       border-radius: 999px;
       backdrop-filter: blur(10px);
@@ -653,8 +515,8 @@
     }
 
     .disc {
-      width: 96px;
-      height: 96px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       overflow: hidden;
       animation: spin 6s linear infinite;
@@ -828,19 +690,69 @@
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      background: transparent; /* Ensure background is transparent by default */
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 40px;
       flex-shrink: 0;
       overflow: hidden;
+      position: relative;
+    }
+    
+    /* Only show gradient background when there's no image */
+    .music-cover:not(:has(img[src]:not([src=""]):not([src="null"]))) {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+    }
+    
+    /* Fallback for browsers that don't support :has() */
+    .music-cover:has(.cover-fallback.show-fallback),
+    .music-cover:has(.cover-fallback[style*="display: flex"]) {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
     }
     
     .music-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 1 !important; /* Image is on top */
+      background: transparent !important; /* Ensure image itself has no background */
+    }
+    
+    /* Ensure images with a valid src are always visible */
+    .music-cover img[src]:not([src=""]):not([src="null"]):not([src="undefined"]) {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .music-cover .cover-fallback {
+      position: absolute;
+      inset: 0;
+      display: none; /* Hidden by default */
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+      font-size: 40px;
+      z-index: 0; /* Behind the image */
+      pointer-events: none;
+      border-radius: 50%;
+    }
+    
+    .music-cover .cover-fallback.show-fallback {
+      display: flex !important;
+      z-index: 1; /* Bring fallback forward if image fails */
+    }
+    
+    /* Hide fallback when image is present and visible */
+    .music-cover img[src]:not([src=""]):not([src="null"]):not([src="undefined"]):not([style*="display: none"]) ~ .cover-fallback {
+      display: none !important;
     }
     
     .music-info {
@@ -1212,16 +1124,15 @@
             <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
       </div>
         </div>
-        <a href="inbox.html" class="nav-item auth-logged-in" id="inboxNavLink">Inbox</a>
+        <a href="inbox.html" class="nav-item" id="inboxNavLink" style="display: none !important;">Inbox</a>
       </nav>
       <div class="nav-right">
         <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
         <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
-        <a href="login.html" class="header-btn btn-signin auth-logged-out" id="signInBtn" style="padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
-        <a href="signup.html" class="header-btn btn-create auth-logged-out" id="signUpBtn" style="padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
-        <a href="artist-corner.html" class="header-btn btn-upload auth-logged-in" id="uploadBtn" style="padding: 8px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s;">🎵 Create</a>
-        <button id="signOutBtn" class="auth-logged-in" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
-        <div class="profile-btn auth-logged-in" id="profileBtn" style="position: relative;">
+        <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <button class="create-btn" id="createBtn" title="Create" style="display: none;">+</button>
+        <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative;">
           <a href="profile.html" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer;">
             <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
             <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px; pointer-events: none;">👤</div>
@@ -1246,11 +1157,12 @@
         <button class="filter-tab" data-filter="following">Following</button>
         <button class="filter-tab" data-filter="music">Music Only</button>
         <button class="filter-tab" data-filter="community">Community</button>
+        <button class="filter-tab" data-filter="ads">Ads</button>
         <button class="filter-tab" data-filter="nearby">Near You</button>
         </div>
       </div>
       
-    <div class="feed-posts" id="feedPosts" style="display: none;"></div>
+    <div class="feed-posts" id="feedPosts" style="display: block;"></div>
       </div>
       
   <!-- Mini Player -->
@@ -1281,11 +1193,6 @@
         : 'https://api.audiocity-ug.com';
     }
     
-    // Auth UI is now handled by CSS classes only - no JavaScript manipulation needed
-    // The <html> element gets 'user-logged-in' class from the early script in <head>
-    // CSS rules in <style> handle showing/hiding elements based on that class
-    console.log('Auth UI controlled by CSS class on <html>:', document.documentElement.classList.contains('user-logged-in') ? 'LOGGED IN' : 'NOT LOGGED IN');
-    
     // Normalize image URLs (allows data URIs for base64 images)
     function normalizeImageUrl(url) {
       if (!url) return null;
@@ -1295,8 +1202,53 @@
         return url; // Return data URI as-is for images
       }
       
-      // Use the same normalization logic as audio URLs
-      return normalizeAudioUrl(url);
+      // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+      if (url.includes('.r2.dev/')) {
+        const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+        if (r2PathMatch) {
+          const r2Path = r2PathMatch[1];
+          // Proxy through API to handle CORS
+          return `${API_BASE_URL}/api/media/${r2Path}`;
+        }
+      }
+      
+      // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Only fix URLs that have /media/ but are missing /api/ (don't break working URLs)
+        if (url.includes('/media/') && !url.includes('/api/media/')) {
+          try {
+            const urlObj = new URL(url);
+            if (urlObj.pathname.startsWith('/media/')) {
+              urlObj.pathname = '/api' + urlObj.pathname;
+              return urlObj.toString();
+            }
+          } catch (e) {
+            // If URL parsing fails, try string replacement
+            return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+          }
+        }
+        return url; // Leave working URLs alone
+      }
+      
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        // If it's an R2 URL pattern, proxy through API
+        if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+          return `${API_BASE_URL}/api/media${url}`;
+        }
+        // If URL already has /media/ but missing /api/, fix it
+        if (url.startsWith('/media/')) {
+          return `${API_BASE_URL}/api${url}`;
+        }
+        return `${API_BASE_URL}${url}`;
+      }
+      
+      // If it's a relative path without leading slash, check if it's an R2 path
+      if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+        return `${API_BASE_URL}/api/media/${url}`;
+      }
+      
+      return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
     }
     
     // Normalize audio URLs to use correct API base URL
@@ -1311,8 +1263,26 @@
         return null; // Reject data URIs for audio
       }
       
-      // If already absolute URL with correct base, return as is
-      if (url.startsWith('http://') || url.startsWith('https://')) {
+      // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+      if (url.includes('.r2.dev/')) {
+        const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+        if (r2PathMatch) {
+          const r2Path = r2PathMatch[1];
+          // Use the current frontend origin for the proxy
+          return `${window.location.origin}/api/media/${r2Path}`;
+        }
+      }
+      
+      // If URL points to API domain, convert to frontend origin (for media files)
+      if (url.startsWith('http')) {
+        const apiDomain = API_BASE_URL.replace(/^https?:\/\//, '');
+        if (url.includes(apiDomain) && (url.includes('/api/media/') || url.includes('/media/'))) {
+          // Replace API domain with frontend origin, preserving the path
+          const pathMatch = url.match(/^https?:\/\/[^\/]+(\/.*)$/);
+          if (pathMatch) {
+            return `${window.location.origin}${pathMatch[1]}`;
+          }
+        }
         // Replace incorrect ports/hosts with correct API_BASE_URL
         if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) {
           return url.replace(/https?:\/\/[^\/]+/, API_BASE_URL);
@@ -1355,10 +1325,6 @@
             if (avatar && avatar.startsWith('/uploads/')) {
               avatar = `${API_BASE_URL}${avatar}`;
             }
-            // Force HTTPS for any http avatar URLs to avoid mixed-content blocks
-            if (avatar && avatar.startsWith('http://')) {
-              avatar = avatar.replace('http://', 'https://');
-            }
           }
       } catch (error) {
           console.error('Failed to load profile picture from API:', error);
@@ -1368,10 +1334,6 @@
       // Fallback to localStorage if API didn't return an avatar
       if (!avatar) {
         avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
-      }
-      // Upgrade any cached http avatar URLs to https (avoid mixed content)
-      if (avatar && avatar.startsWith('http://')) {
-        avatar = avatar.replace('http://', 'https://');
       }
       
       // Update header image
@@ -1385,120 +1347,68 @@
       }
     }
     
-    // Validate token with backend - DO NOT clear localStorage on failure
-    // Trust localStorage - only use this for refreshing user data
-    async function validateAndUpdateToken() {
-      const authToken = localStorage.getItem('auth_token');
-      const userId = localStorage.getItem('user_id');
-      
-      // Trust localStorage - if we have token and user_id, user is logged in
-      if (!authToken || !userId) {
-        console.log('No token or user_id in localStorage, user not logged in');
-        return false;
-      }
-      
-      // User has localStorage data, they are logged in
-      // Try to validate and refresh data, with auto-renewal if token expired
-      try {
-        // Send user_id as query param for auto-renewal
-        const validateUrl = `${API_BASE_URL}/api/auth/validate${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`;
-        const response = await fetch(validateUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.valid && data.user) {
-            // If token was renewed, update it in localStorage
-            if (data.token && data.renewed) {
-              console.log('🔄 Token auto-renewed, updating localStorage');
-              localStorage.setItem('auth_token', data.token);
-            }
-            
-            console.log('✅ Token validated, user:', data.user.username);
-            // Update localStorage with fresh user data
-            if (data.user.id) localStorage.setItem('user_id', data.user.id);
-            if (data.user.username) localStorage.setItem('username', data.user.username);
-            if (data.user.name) localStorage.setItem('user_name', data.user.name);
-            if (data.user.email) localStorage.setItem('user_email', data.user.email);
-            if (data.user.user_type) localStorage.setItem('user_type', data.user.user_type);
-            if (data.user.is_admin !== undefined) {
-              localStorage.setItem('is_admin', data.user.is_admin ? 'true' : 'false');
-            }
-            if (data.user.profile_image_url) {
-              localStorage.setItem('profile_image_url', data.user.profile_image_url);
-            }
-          } else {
-            console.log('⚠️ Token validation returned invalid, but keeping localStorage (user may need to re-login later)');
-            // DO NOT clear localStorage - let the user stay "logged in" until they explicitly sign out
-          }
-        } else {
-          console.log('⚠️ Token validation request failed, keeping localStorage');
-          // DO NOT clear localStorage
-        }
-      } catch (error) {
-        console.error('Token validation error:', error);
-        // DO NOT clear localStorage
-      }
-      
-      // Always return true if we have localStorage data
-      return !!(localStorage.getItem('auth_token') && localStorage.getItem('user_id'));
-    }
-    
-    // Update authentication UI - trust localStorage immediately, validate in background
-    // Update auth UI - uses CSS classes + inline style fallback
+    // Update authentication UI
     function updateAuthUI() {
-      const authToken = localStorage.getItem('auth_token');
+            const authToken = localStorage.getItem('auth_token');
       const userId = localStorage.getItem('user_id');
-      const isLoggedIn = !!(authToken && userId);
+      const signInBtn = document.getElementById('signInBtn');
+      const signUpBtn = document.getElementById('signUpBtn');
+      const profileBtn = document.getElementById('profileBtn');
+      const createBtn = document.getElementById('createBtn');
+      const inboxNavLink = document.getElementById('inboxNavLink');
       
-      console.log('updateAuthUI:', { isLoggedIn, userId: userId || 'none' });
-      
-      // Update CSS class on html element
-      if (isLoggedIn) {
-        document.documentElement.classList.add('user-logged-in');
+      if (authToken && userId) {
+        // User is logged in - hide sign in/up, show profile button, create button, and inbox
+        if (signInBtn) {
+          signInBtn.style.setProperty('display', 'none', 'important');
+          signInBtn.style.setProperty('visibility', 'hidden', 'important');
+        }
+        if (signUpBtn) {
+          signUpBtn.style.setProperty('display', 'none', 'important');
+          signUpBtn.style.setProperty('visibility', 'hidden', 'important');
+        }
+        if (profileBtn) {
+          profileBtn.style.setProperty('display', 'flex', 'important');
+          profileBtn.style.setProperty('visibility', 'visible', 'important');
+          profileBtn.classList.add('show');
+        }
+        if (createBtn) {
+          createBtn.style.setProperty('display', 'flex', 'important');
+          createBtn.style.setProperty('visibility', 'visible', 'important');
+          createBtn.classList.add('show');
+        }
+        if (inboxNavLink) {
+          inboxNavLink.style.setProperty('display', 'inline-block', 'important');
+          inboxNavLink.style.setProperty('visibility', 'visible', 'important');
+          inboxNavLink.classList.add('show');
+        }
         // Update profile picture
         updateHeaderProfilePicture();
-        
-        // FALLBACK: Directly update elements
-        setTimeout(function() {
-          var signOutBtn = document.getElementById('signOutBtn');
-          var signInBtn = document.getElementById('signInBtn');
-          var signUpBtn = document.getElementById('signUpBtn');
-          var uploadBtn = document.getElementById('uploadBtn');
-          var inboxLink = document.getElementById('inboxNavLink');
-          var profileBtn = document.getElementById('profileBtn');
-          
-          if (signOutBtn) {
-            signOutBtn.style.display = 'inline-block';
-            signOutBtn.style.visibility = 'visible';
-          }
-          if (signInBtn) {
-            signInBtn.style.display = 'none';
-            signInBtn.style.visibility = 'hidden';
-          }
-          if (signUpBtn) {
-            signUpBtn.style.display = 'none';
-            signUpBtn.style.visibility = 'hidden';
-          }
-          if (uploadBtn) {
-            uploadBtn.style.display = 'inline-block';
-            uploadBtn.style.visibility = 'visible';
-          }
-          if (inboxLink) {
-            inboxLink.style.display = 'inline-block';
-            inboxLink.style.visibility = 'visible';
-          }
-          if (profileBtn) {
-            profileBtn.style.display = 'flex';
-            profileBtn.style.visibility = 'visible';
-          }
-        }, 100);
       } else {
-        document.documentElement.classList.remove('user-logged-in');
+        // User is not logged in - show sign in/up, hide profile button, create button, and inbox
+        if (signInBtn) {
+          signInBtn.style.setProperty('display', 'inline-block', 'important');
+          signInBtn.style.setProperty('visibility', 'visible', 'important');
+        }
+        if (signUpBtn) {
+          signUpBtn.style.setProperty('display', 'inline-block', 'important');
+          signUpBtn.style.setProperty('visibility', 'visible', 'important');
+        }
+        if (profileBtn) {
+          profileBtn.style.setProperty('display', 'none', 'important');
+          profileBtn.style.setProperty('visibility', 'hidden', 'important');
+          profileBtn.classList.remove('show');
+        }
+        if (createBtn) {
+          createBtn.style.setProperty('display', 'none', 'important');
+          createBtn.style.setProperty('visibility', 'hidden', 'important');
+          createBtn.classList.remove('show');
+        }
+        if (inboxNavLink) {
+          inboxNavLink.style.setProperty('display', 'none', 'important');
+          inboxNavLink.style.setProperty('visibility', 'hidden', 'important');
+          inboxNavLink.classList.remove('show');
+        }
       }
     }
     if (typeof currentFilter === 'undefined') {
@@ -1525,180 +1435,15 @@
     
     let isPlaying = false;
     
-    // CRITICAL: Check auth state with backend on page load
-    async function checkAuthStateOnLoad() {
-      const token = localStorage.getItem('auth_token');
-      const userId = localStorage.getItem('user_id');
-      
-      // If no token/userId, user is definitely not logged in
-      if (!token || !userId) {
-        console.log('🔓 [Feed] No auth data in localStorage - user not logged in');
-        updateAuthUI();
-        return;
-      }
-      
-      // Validate with backend to confirm session is still valid
-      try {
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-          ? 'http://localhost:3002'
-          : 'https://api.audiocity-ug.com';
-        
-        const validateUrl = `${API_BASE_URL}/api/auth/validate${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`;
-        const response = await fetch(validateUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.valid && data.user) {
-            console.log('✅ [Feed] Backend confirms user is logged in:', data.user.username);
-            // Update token if it was renewed
-            if (data.token && data.renewed) {
-              localStorage.setItem('auth_token', data.token);
-            }
-            // Ensure user_id is set
-            if (data.user.id) {
-              localStorage.setItem('user_id', data.user.id);
-            }
-            updateAuthUI();
-            return;
-          }
-        }
-        
-        // If validation failed, user is not logged in - clear invalid session
-        console.log('❌ [Feed] Backend validation failed - user session invalid, clearing auth data');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_id');
-        localStorage.removeItem('user_name');
-        localStorage.removeItem('username');
-        localStorage.removeItem('user_email');
-        localStorage.removeItem('is_admin');
-        document.documentElement.classList.remove('user-logged-in');
-        updateAuthUI();
-      } catch (error) {
-        console.error('❌ [Feed] Error validating auth:', error);
-        // On error, trust localStorage but log warning
-        console.warn('⚠️ [Feed] Auth validation failed, trusting localStorage');
-        updateAuthUI();
-      }
-    }
-    
-    // Initialize authentication UI - check with backend first
+    // Initialize authentication UI
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        updateAuthUI(); // Show UI immediately based on localStorage
-        checkAuthStateOnLoad(); // Then validate with backend
-      });
-    } else {
-      updateAuthUI(); // Show UI immediately
-      checkAuthStateOnLoad(); // Then validate with backend
+      document.addEventListener('DOMContentLoaded', updateAuthUI);
+      } else {
+      updateAuthUI();
     }
     
-    // Auth UI - CSS class + inline style fallback
-    function forceAuthUI() {
-      const hasToken = !!localStorage.getItem('auth_token');
-      const hasUser = !!localStorage.getItem('user_id');
-      const isLoggedIn = hasToken && hasUser;
-      
-      // Update CSS class
-      if (isLoggedIn) {
-        document.documentElement.classList.add('user-logged-in');
-      } else {
-        document.documentElement.classList.remove('user-logged-in');
-      }
-      
-      // FALLBACK: Directly update elements
-      const signOutBtn = document.getElementById('signOutBtn');
-      const signInBtn = document.getElementById('signInBtn');
-      const signUpBtn = document.getElementById('signUpBtn');
-      const uploadBtn = document.getElementById('uploadBtn');
-      const inboxLink = document.getElementById('inboxNavLink');
-      const profileBtn = document.getElementById('profileBtn');
-      
-      if (isLoggedIn) {
-        // Show logged-in elements
-        if (signOutBtn) {
-          signOutBtn.style.display = 'inline-block';
-          signOutBtn.style.visibility = 'visible';
-        }
-        if (uploadBtn) {
-          uploadBtn.style.display = 'inline-block';
-          uploadBtn.style.visibility = 'visible';
-        }
-        if (inboxLink) {
-          inboxLink.style.display = 'inline-block';
-          inboxLink.style.visibility = 'visible';
-        }
-        if (profileBtn) {
-          profileBtn.style.display = 'flex';
-          profileBtn.style.visibility = 'visible';
-        }
-        // Hide logged-out elements
-        if (signInBtn) {
-          signInBtn.style.display = 'none';
-          signInBtn.style.visibility = 'hidden';
-        }
-        if (signUpBtn) {
-          signUpBtn.style.display = 'none';
-          signUpBtn.style.visibility = 'hidden';
-        }
-      } else {
-        // Hide logged-in elements
-        if (signOutBtn) {
-          signOutBtn.style.display = 'none';
-          signOutBtn.style.visibility = 'hidden';
-        }
-        if (uploadBtn) {
-          uploadBtn.style.display = 'none';
-          uploadBtn.style.visibility = 'hidden';
-        }
-        if (inboxLink) {
-          inboxLink.style.display = 'none';
-          inboxLink.style.visibility = 'hidden';
-        }
-        if (profileBtn) {
-          profileBtn.style.display = 'none';
-          profileBtn.style.visibility = 'hidden';
-        }
-        // Show logged-out elements
-        if (signInBtn) {
-          signInBtn.style.display = 'inline-block';
-          signInBtn.style.visibility = 'visible';
-        }
-        if (signUpBtn) {
-          signUpBtn.style.display = 'inline-block';
-          signUpBtn.style.visibility = 'visible';
-        }
-      }
-      
-      // Attach sign out button click handler if needed
-      if (signOutBtn && !signOutBtn.dataset.listenerAttached) {
-        signOutBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (window.signOut) {
-            window.signOut();
-          } else {
-            if (confirm('Are you sure you want to sign out?')) {
-              localStorage.clear();
-              document.documentElement.classList.remove('user-logged-in');
-              window.location.href = 'feed.html';
-            }
-          }
-        });
-        signOutBtn.dataset.listenerAttached = 'true';
-      }
-    }
-    
-    // Run once on load to set class
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', forceAuthUI);
-    } else {
-      forceAuthUI();
-    }
+    // Update auth UI periodically
+    setInterval(updateAuthUI, 1000);
     
     // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
@@ -1733,13 +1478,20 @@
       console.error('Donate button not found!');
     }
     
-    // Upload button (Create) - now using uploadBtn
-    const uploadBtn = document.getElementById('uploadBtn');
-    if (uploadBtn) {
-      uploadBtn.addEventListener('click', (e) => {
-        // Button is already a link, no need to prevent default
-      });
-    }
+    // Create button
+    const createBtn = document.getElementById('createBtn');
+    createBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showCreateModal();
+    });
+    // Keyboard support
+    createBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        showCreateModal();
+      }
+    });
     
     // Sign out function - make it global
     window.signOut = function() {
@@ -1754,10 +1506,6 @@
         localStorage.removeItem('profile_image_url');
         localStorage.removeItem('bio');
         localStorage.removeItem('location');
-        // Remove the class immediately
-        document.documentElement.classList.remove('user-logged-in');
-        // Force UI update
-        forceAuthUI();
         window.location.href = 'index.html';
       }
     };
@@ -1801,6 +1549,12 @@
     
     // Load feed data
     async function loadFeed() {
+      const container = document.getElementById('feedPosts');
+      // Show container immediately (instant display like home page)
+      if (container) {
+        container.style.display = 'block';
+      }
+      
       try {
         console.log('Loading feed for all users (no authentication required)...');
         
@@ -1812,7 +1566,7 @@
           orderParam = 'order=views_count.desc,likes_count.desc';
         }
         
-        const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?${orderParam}&limit=100`);
+        const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?${orderParam}&limit=50`);
         
         if (!tracksResponse.ok) {
           console.error('Failed to fetch tracks:', tracksResponse.status, tracksResponse.statusText);
@@ -1821,17 +1575,6 @@
         
         const tracks = await tracksResponse.json();
         console.log(`Loaded ${tracks.length} tracks for feed`);
-        
-        // If no tracks, show empty state immediately
-        if (tracks.length === 0) {
-          const container = document.getElementById('feedPosts');
-          if (container) {
-            container.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">🎵 No tracks yet</p><p style="font-size: 14px;">Be the first to upload music!</p><a href="artist-corner.html" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: var(--accent); color: white; text-decoration: none; border-radius: 8px;">Upload Your First Track</a></div>';
-            container.style.display = 'block';
-          }
-          console.log('No tracks found, showing empty state');
-          return;
-        }
         
         // For Hot 100, sort by engagement score (views + likes + recency factor)
         if (currentFilter === 'hot' && tracks.length > 0) {
@@ -1851,8 +1594,8 @@
             
             return bScore - aScore; // Descending order
           });
-          // Limit to top 100
-          tracks.splice(100);
+          // Limit to top 50
+          tracks.splice(50);
         }
         
         // Load trending artists for announcements
@@ -1870,7 +1613,7 @@
             id: track.id,
             rank: currentFilter === 'hot' ? index + 1 : null, // Add ranking number for Hot 100
             userId: track.artist_id,
-            userName: track.artist_name || 'Unknown Creator',
+            userName: track.artist_name || track.artist_username || 'Unknown Creator',
             userHandle: track.artist_username || 'creator',
             userAvatar: track.artist_profile_image ? normalizeImageUrl(track.artist_profile_image) : null,
             isVerified: track.artist_is_verified || false,
@@ -1878,11 +1621,12 @@
             text: `Uploaded a new track`,
             music: {
               title: track.title || track.song_title || 'Untitled',
-              artist: track.artist_name || 'Unknown Creator',
+              artist: track.artist_name || track.artist_username || 'Unknown Creator',
               cover: normalizedCoverUrl,
               audioUrl: normalizedAudioUrl,
               genre: track.genre || 'General',
-              views: track.views_count || 0
+              views: track.views_count || 0,
+              downloads_count: track.downloads_count || 0
             },
             stats: {
               likes: track.likes_count || 0,
@@ -1901,16 +1645,22 @@
         // Generate featured announcements
         const featuredPosts = generateFeaturedPosts(artists);
         
-        // Combine all posts sorted by timestamp
+        // Generate ad posts
+        const adPosts = generateAdPosts();
+        
+        // Combine all posts - featured ads first, then sort by timestamp
         const allPosts = [
           ...musicPosts,
           ...activityPosts,
           ...textPosts,
-          ...featuredPosts
+          ...featuredPosts,
+          ...adPosts
         ];
         
-        // Sort by timestamp (newest first)
+        // Sort: featured ads at top, then by timestamp
         feedData = allPosts.sort((a, b) => {
+          if (a.type === 'ad' && a.isFeatured && b.type !== 'ad') return -1;
+          if (b.type === 'ad' && b.isFeatured && a.type !== 'ad') return 1;
           return b.timestamp - a.timestamp;
         });
         
@@ -2058,6 +1808,9 @@
         case 'community':
           filteredData = feedData.filter(post => post.type === 'text' || post.type === 'activity');
           break;
+        case 'ads':
+          filteredData = feedData.filter(post => post.type === 'ad');
+          break;
         case 'following':
         case 'nearby':
         case 'all':
@@ -2071,9 +1824,47 @@
         return;
       }
         
-      container.innerHTML = filteredData.map(post => renderPost(post)).join('');
+      // Use document fragment for better performance
+      const fragment = document.createDocumentFragment();
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = filteredData.map(post => renderPost(post)).join('');
+      
+      // Move all children to fragment
+      while (tempDiv.firstChild) {
+        fragment.appendChild(tempDiv.firstChild);
+      }
+      
+      // Show container immediately (like home page - instant display)
       container.style.display = 'block';
+      
+      // Replace content in one operation (no flash)
+      // Use replaceChildren for seamless update
+      container.replaceChildren(fragment);
       attachEventListeners();
+      ensureCoverImagesVisible();
+    }
+    
+    // Ensure cover images are visible after rendering
+    function ensureCoverImagesVisible() {
+      document.querySelectorAll('.music-cover img[src]:not([src=""]):not([src="null"]):not([src="undefined"])').forEach(img => {
+        img.style.setProperty('display', 'block', 'important');
+        img.style.setProperty('visibility', 'visible', 'important');
+        img.style.setProperty('opacity', '1', 'important');
+        img.style.setProperty('position', 'absolute', 'important');
+        img.style.setProperty('top', '0', 'important');
+        img.style.setProperty('left', '0', 'important');
+        img.style.setProperty('width', '100%', 'important');
+        img.style.setProperty('height', '100%', 'important');
+        img.style.setProperty('z-index', '1', 'important'); // Ensure image is on top
+        img.style.setProperty('background', 'transparent', 'important'); // Ensure image itself has no background
+
+        // Hide the fallback if the image is now visible
+        const fallback = img.nextElementSibling;
+        if (fallback && fallback.classList.contains('cover-fallback')) {
+          fallback.classList.remove('show-fallback');
+          fallback.style.setProperty('display', 'none', 'important');
+        }
+      });
     }
 
     // Check if post belongs to current user
@@ -2134,8 +1925,8 @@
                   <div class="player" data-track-title="${escapeHtml(post.music.title)}">
                     <div class="disc">
                       <div class="music-cover" style="position: relative;">
-                        ${post.music.cover ? `<img src="${escapeHtml(post.music.cover)}" alt="${escapeHtml(post.music.title)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
-                        <div style="${post.music.cover ? 'display: none;' : 'display: flex;'}">🎵</div>
+                        ${post.music.cover ? `<img src="${escapeHtml(post.music.cover)}" alt="${escapeHtml(post.music.title)}" onerror="console.error('Cover art failed to load:', '${escapeHtml(post.music.cover)}'); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) { fallback.classList.add('show-fallback'); fallback.style.setProperty('display', 'flex', 'important'); }" onload="this.style.display='block'; this.style.visibility='visible'; this.style.opacity='1'; const fallback = this.nextElementSibling; if(fallback) { fallback.classList.remove('show-fallback'); fallback.style.setProperty('display', 'none', 'important'); }" loading="lazy" style="display: block !important; visibility: visible !important; opacity: 1 !important; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">` : ''}
+                        <div class="cover-fallback" style="${post.music.cover ? 'display: none !important;' : 'display: flex !important;'}">🎵</div>
                         <!-- SoundCloud-style play button overlay -->
                         <div class="cover-play-overlay">
                           <button class="cover-play-button" aria-label="Play" data-src="${escapeHtml(post.music.audioUrl || '')}" data-title="${escapeHtml(post.music.title)}" data-artist="${escapeHtml(post.music.artist)}" data-cover="${escapeHtml(post.music.cover || '')}">
@@ -2168,13 +1959,9 @@
                   <span>❤️</span>
                   <span>${(post.stats.likes || 0).toLocaleString()}</span>
                 </button>
-                <button class="action-btn" data-action="comment" data-post-id="${post.id}">
-                  <span>💬</span>
-                  <span>${(post.stats.comments || 0).toLocaleString()}</span>
-                </button>
-                <button class="action-btn" data-action="repost" data-post-id="${post.id}">
-                  <span>🔄</span>
-                  <span>${(post.stats.reposts || 0).toLocaleString()}</span>
+                <button class="action-btn download-btn" data-action="download" data-post-id="${post.id}" data-audio-url="${escapeHtml(post.music.audioUrl || '')}" data-track-title="${escapeHtml(post.music.title)}">
+                  <span>📥</span>
+                  <span>${(post.music.downloads_count || 0).toLocaleString()}</span>
                 </button>
               </div>
             </div>
@@ -2215,10 +2002,6 @@
               <div class="post-actions">
                 <button class="action-btn" data-action="like" data-post-id="${post.id}">
                   <span>❤️</span>
-                  <span>0</span>
-                </button>
-                <button class="action-btn" data-action="comment" data-post-id="${post.id}">
-                  <span>💬</span>
                   <span>0</span>
                 </button>
               </div>
@@ -2540,12 +2323,17 @@
               return;
             }
 
+            // Get admin email for admin bypass
+            const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+            
             // Call API to delete the post
             const response = await fetch(`${API_BASE_URL}/api/tracks/${postId}`, {
               method: 'DELETE',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Admin-Email': adminEmail,
+                'X-User-Email': adminEmail
               }
             });
 
@@ -2757,11 +2545,64 @@
             ? (currentCount + 1).toLocaleString()
             : (currentCount - 1).toLocaleString();
           break;
-        case 'comment':
-          alert('Comments coming soon!');
-          break;
-        case 'repost':
-          alert('Repost feature coming soon!');
+        case 'download':
+          const audioUrl = btn.dataset.audioUrl;
+          const trackTitle = btn.dataset.trackTitle || 'track';
+          
+          if (!audioUrl || audioUrl === 'null' || audioUrl === 'undefined' || audioUrl.trim() === '') {
+            alert('Audio file not available for download.');
+            return;
+          }
+          
+          // Increment download count on server
+          fetch(`${API_BASE_URL}/api/tracks/${postId}/download`, { method: 'POST' })
+            .catch(err => console.warn('Download count update failed:', err));
+          
+          // Fetch the file as a blob to ensure we download the actual file
+          const resolvedUrl = normalizeAudioUrl(audioUrl) || audioUrl;
+          fetch(resolvedUrl)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`Failed to fetch audio file: ${response.status} ${response.statusText}`);
+              }
+              return response.blob();
+            })
+            .then(blob => {
+              console.log('Downloaded blob size:', blob.size, 'bytes');
+
+              if (blob.size < 1000) {
+                // If file is too small, it's probably an error page
+                return blob.text().then(text => {
+                  console.error('Downloaded file is too small, likely an error:', text.substring(0, 200));
+                  alert('Failed to download: File appears to be invalid. Please try again.');
+                });
+              }
+
+              // Create blob URL and download
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = `${trackTitle}.mp3`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              // Clean up blob URL after a short delay
+              setTimeout(() => {
+                URL.revokeObjectURL(blobUrl);
+              }, 100);
+              
+              // Update download count in UI
+              const downloadCount = btn.querySelector('span:last-child');
+              if (downloadCount) {
+                const currentCount = parseInt(downloadCount.textContent.replace(/,/g, '')) || 0;
+                downloadCount.textContent = (currentCount + 1).toLocaleString();
+              }
+            })
+            .catch(error => {
+              console.error('Download error:', error);
+              alert('Failed to download track. Please try again.');
+            });
           break;
       }
     }
@@ -3038,10 +2879,48 @@
     }
     
     // Update header profile picture and wire donate on load
+    // Auto-refresh feed (where necessary)
+    let feedRefreshInterval = null;
+    
+    function startFeedAutoRefresh() {
+      // Clear existing interval if any
+      if (feedRefreshInterval) {
+        clearInterval(feedRefreshInterval);
+      }
+      
+      // Auto-refresh feed every 45 seconds (only if page is visible)
+      feedRefreshInterval = setInterval(() => {
+        if (!document.hidden) {
+          console.log('Auto-refreshing feed...');
+          loadFeed();
+        }
+      }, 45000); // 45 seconds
+    }
+    
+    function stopFeedAutoRefresh() {
+      if (feedRefreshInterval) {
+        clearInterval(feedRefreshInterval);
+        feedRefreshInterval = null;
+      }
+    }
+    
+    // Pause auto-refresh when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopFeedAutoRefresh();
+      } else {
+        startFeedAutoRefresh();
+        // Also refresh immediately when tab becomes visible
+        loadFeed();
+      }
+    });
+    
     window.addEventListener('load', () => {
       updateHeaderProfilePicture();
       // Load feed on page load
       loadFeed();
+      // Start auto-refresh
+      startFeedAutoRefresh();
     });
     
     // Also load feed when DOM is ready
@@ -3052,60 +2931,24 @@
     } else {
       // DOM already loaded
       loadFeed();
+      startFeedAutoRefresh();
     }
     
     // Development mode check (only show logs in development)
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    // Service Worker Configuration
-    // Set to false to disable service worker (useful if it's causing issues with Cloudflare Workers)
-    const ENABLE_SERVICE_WORKER = false; // Disabled to prevent conflicts with Cloudflare Worker API
-    
-    // Unregister any existing service workers if disabled
-    if (!ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(registration => {
-          registration.unregister().then(() => {
-            if (isDevelopment) {
-              console.log('✅ Service Worker unregistered');
-            }
-          }).catch(error => {
-            if (isDevelopment) {
-              console.error('❌ Service Worker unregistration failed:', error);
-            }
-          });
-        });
-      });
-    }
-    
     // Register service worker for PWA
-    // Only register if sw.js is available with correct MIME type
-    if (ENABLE_SERVICE_WORKER && 'serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Verify sw.js exists and has correct content type before registering
-        fetch('/sw.js', { method: 'HEAD' })
-          .then(response => {
-            const contentType = response.headers.get('content-type') || '';
-            if (response.ok && contentType.includes('javascript')) {
-              return navigator.serviceWorker.register('/sw.js');
-            } else {
-              // File doesn't exist or wrong MIME type - skip registration silently
-              if (isDevelopment) {
-                console.warn('⚠️ Service Worker file not available (404 or wrong MIME type)');
-              }
-              return Promise.reject(new Error('Service worker file not available'));
-            }
-          })
+        navigator.serviceWorker.register('/sw.js')
           .then(registration => {
             if (isDevelopment) {
-              console.log('✅ Service Worker registered:', registration.scope);
+            console.log('✅ Service Worker registered:', registration.scope);
             }
           })
           .catch(error => {
-            // Silently fail - service worker is optional for PWA
-            if (isDevelopment) {
-              console.error('❌ Service Worker registration failed:', error.message);
-            }
+            // Always log errors, even in production
+            console.error('❌ Service Worker registration failed:', error);
           });
       });
     }
@@ -3175,7 +3018,10 @@
       </div>
     </div>
     <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+      <p style="color: var(--muted); font-size: 14px;">&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </footer>
   

@@ -7,7 +7,9 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Feed — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <script>
     // Only load manifest.json when not using file:// protocol (avoids CORS errors)
     if (window.location.protocol !== 'file:') {
@@ -1835,9 +1837,9 @@
       // Show container immediately (like home page - instant display)
       container.style.display = 'block';
       
-      // Clear and append in one operation
-      container.innerHTML = '';
-      container.appendChild(fragment);
+      // Replace content in one operation (no flash)
+      // Use replaceChildren for seamless update
+      container.replaceChildren(fragment);
       attachEventListeners();
       ensureCoverImagesVisible();
     }
@@ -1957,14 +1959,6 @@
                   <span>❤️</span>
                   <span>${(post.stats.likes || 0).toLocaleString()}</span>
                 </button>
-                <button class="action-btn" data-action="comment" data-post-id="${post.id}">
-                  <span>💬</span>
-                  <span>${(post.stats.comments || 0).toLocaleString()}</span>
-                </button>
-                <button class="action-btn" data-action="repost" data-post-id="${post.id}">
-                  <span>🔄</span>
-                  <span>${(post.stats.reposts || 0).toLocaleString()}</span>
-                </button>
                 <button class="action-btn download-btn" data-action="download" data-post-id="${post.id}" data-audio-url="${escapeHtml(post.music.audioUrl || '')}" data-track-title="${escapeHtml(post.music.title)}">
                   <span>📥</span>
                   <span>${(post.music.downloads_count || 0).toLocaleString()}</span>
@@ -2008,10 +2002,6 @@
               <div class="post-actions">
                 <button class="action-btn" data-action="like" data-post-id="${post.id}">
                   <span>❤️</span>
-                  <span>0</span>
-                </button>
-                <button class="action-btn" data-action="comment" data-post-id="${post.id}">
-                  <span>💬</span>
                   <span>0</span>
                 </button>
               </div>
@@ -2554,12 +2544,6 @@
           likeCount.textContent = btn.classList.contains('liked') 
             ? (currentCount + 1).toLocaleString()
             : (currentCount - 1).toLocaleString();
-          break;
-        case 'comment':
-          alert('Comments coming soon!');
-          break;
-        case 'repost':
-          alert('Repost feature coming soon!');
           break;
         case 'download':
           const audioUrl = btn.dataset.audioUrl;

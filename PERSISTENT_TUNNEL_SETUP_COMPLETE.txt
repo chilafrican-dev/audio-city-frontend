@@ -1,0 +1,63 @@
+# ✅ Persistent Tunnel Setup Complete!
+
+## What I Did:
+
+1. ✅ Found existing persistent tunnel (ID: 806bc568-f3db-45c5-be24-99f3fe1063b4)
+2. ✅ Added new hostname: `mastering.audiocity-ug.com` → `http://localhost:3001`
+3. ✅ Restarted cloudflared service
+4. ✅ Service is running and active
+
+## Your Persistent URLs:
+
+- **API**: `https://api.audiocity-ug.com` → localhost:3001
+- **Mastering**: `https://mastering.audiocity-ug.com` → localhost:3001 ✅ NEW
+
+## Next Steps:
+
+### 1. Configure DNS in Cloudflare Dashboard
+
+1. Go to: https://dash.cloudflare.com
+2. Select: `audiocity-ug.com`
+3. DNS → Records
+4. Add CNAME record:
+   - **Name**: `mastering`
+   - **Target**: `806bc568-f3db-45c5-be24-99f3fe1063b4.cfargotunnel.com`
+   - **Proxy**: ON (orange cloud)
+5. Save
+
+### 2. Update Worker Environment Variable
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1` (or your worker name)
+3. Settings → Variables and Secrets
+4. Update `MASTERING_SERVER_URL` = `https://mastering.audiocity-ug.com`
+5. Save
+
+### 3. Test (after DNS propagates, ~2-5 minutes)
+
+```bash
+curl https://mastering.audiocity-ug.com/api/health
+```
+
+Should return: `{"status":"ok","ffmpeg":true,...}`
+
+## ✅ Benefits of Persistent Tunnel:
+
+- ✅ URL never changes (unlike quick tunnels)
+- ✅ Survives server restarts
+- ✅ Professional domain name
+- ✅ Already configured and running
+
+## Current Status:
+
+- Tunnel ID: `806bc568-f3db-45c5-be24-99f3fe1063b4`
+- Service: `cloudflared.service` ✅ Running
+- Config: `/etc/cloudflared/config.yml` ✅ Updated
+- Hostnames:
+  - `api.audiocity-ug.com` ✅
+  - `mastering.audiocity-ug.com` ✅ NEW
+
+---
+
+**Note**: DNS may take 2-5 minutes to propagate. Once it does, `https://mastering.audiocity-ug.com` will work permanently!
+

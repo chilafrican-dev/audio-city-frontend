@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Track Upload — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * {
       margin: 0;
@@ -189,8 +191,10 @@
     }
     
     .form-textarea {
-      min-height: 120px;
+      min-height: 150px;
       resize: vertical;
+      font-family: inherit;
+      line-height: 1.6;
     }
     
     .char-counter {
@@ -678,15 +682,30 @@
             <div class="file-upload-area" id="artistPhotoUploadArea" style="padding: 20px;">
               <div class="file-upload-icon">📷</div>
               <div class="file-upload-text">Click to upload photo</div>
-              <div class="file-upload-hint">JPG, PNG (Max 5MB)</div>
+              <div class="file-upload-hint">JPG, PNG (Max 5MB) - Will be cropped to 3000x3000</div>
               <input type="file" id="artistPhoto" accept="image/*" style="display: none;" />
+            </div>
+            <div class="crop-container" id="artistPhotoCropContainer" style="display: none; margin-top: 16px;">
+              <div style="position: relative; max-width: 500px; margin: 0 auto;">
+                <img id="artistPhotoCropPreview" class="crop-preview" style="max-width: 100%; border-radius: 8px; border: 2px solid var(--border);" />
+                <div style="margin-top: 12px; text-align: center; color: var(--muted); font-size: 12px;">
+                  Image will be cropped to 1:1 ratio and resized to 3000x3000px
+                </div>
+                <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center;">
+                  <button type="button" class="btn-secondary" id="artistPhotoCropCancel" style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-light); color: var(--text); cursor: pointer;">Cancel</button>
+                  <button type="button" class="btn-primary" id="artistPhotoCropConfirm" style="padding: 8px 16px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; cursor: pointer; font-weight: 600;">Confirm Crop</button>
+                </div>
+              </div>
             </div>
             <img id="artistPhotoPreview" class="image-preview" style="display: none;" />
           </div>
           
           <div class="form-group">
-            <label class="form-label">Biography / About Artist</label>
-            <textarea id="artistBio" class="form-textarea" placeholder="Tell us about the artist..." maxlength="1000"></textarea>
+            <label class="form-label">
+              Biography / About Artist
+              <span style="font-size: 12px; font-weight: normal; color: var(--muted); margin-left: 8px;">(Optional - will be added to artist profile)</span>
+            </label>
+            <textarea id="artistBio" class="form-textarea" placeholder="Tell us about the artist... (e.g., musical style, achievements, background)" maxlength="1000" rows="5"></textarea>
             <div class="char-counter">
               <span id="bioCharCount">0</span> / 1000 characters
             </div>
@@ -951,10 +970,16 @@
           const response = await fetch(`${API_BASE_URL}/api/users?name=${encodeURIComponent(artistName)}`);
           const users = await response.json();
           
-          // Find exact or close match
-          const match = users.find(u => 
-            u.name && u.name.toLowerCase().trim() === artistName.toLowerCase().trim()
-          );
+          // Find exact match (case-insensitive, trim whitespace)
+          // Prioritize exact name match, but also check username
+          const normalizedArtistName = artistName.toLowerCase().trim();
+          const match = users.find(u => {
+            if (!u.name) return false;
+            const normalizedName = u.name.toLowerCase().trim();
+            const normalizedUsername = (u.username || '').toLowerCase().trim();
+            // Exact match on name (preferred) or username
+            return normalizedName === normalizedArtistName || normalizedUsername === normalizedArtistName;
+          });
           
           if (match) {
             // Existing artist found
@@ -1034,31 +1059,97 @@
       audioPreview.classList.add('active');
     }
     
-    // Artist photo upload
+    // Artist photo upload with cropping
     const artistPhotoArea = document.getElementById('artistPhotoUploadArea');
     const artistPhotoInput = document.getElementById('artistPhoto');
     const artistPhotoPreview = document.getElementById('artistPhotoPreview');
+    const artistPhotoCropContainer = document.getElementById('artistPhotoCropContainer');
+    const artistPhotoCropPreview = document.getElementById('artistPhotoCropPreview');
+    const artistPhotoCropCancel = document.getElementById('artistPhotoCropCancel');
+    const artistPhotoCropConfirm = document.getElementById('artistPhotoCropConfirm');
+    let artistPhotoBlob = null;
+    let artistPhotoOriginalFile = null;
     
     artistPhotoArea.addEventListener('click', () => artistPhotoInput.click());
     artistPhotoInput.addEventListener('change', (e) => {
       if (e.target.files[0]) {
-        const file = e.target.files[0];
-        if (!file.type.startsWith('image/')) {
-          alert('Please select an image file');
-          return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image too large (max 5MB)');
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          artistPhotoPreview.src = e.target.result;
-          artistPhotoPreview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+        handleArtistPhotoUpload(e.target.files[0]);
       }
+    });
+    
+    function handleArtistPhotoUpload(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image too large (max 5MB)');
+        return;
+      }
+      
+      artistPhotoOriginalFile = file;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Show crop preview
+          artistPhotoCropPreview.src = e.target.result;
+          artistPhotoCropContainer.style.display = 'block';
+          artistPhotoArea.style.display = 'none';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // Cancel crop - reset to upload area
+    artistPhotoCropCancel.addEventListener('click', () => {
+      artistPhotoCropContainer.style.display = 'none';
+      artistPhotoArea.style.display = 'flex';
+      artistPhotoPreview.style.display = 'none';
+      artistPhotoInput.value = '';
+      artistPhotoBlob = null;
+      artistPhotoOriginalFile = null;
+    });
+    
+    // Confirm crop - process to 3000x3000
+    artistPhotoCropConfirm.addEventListener('click', () => {
+      if (!artistPhotoOriginalFile) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas for 3000x3000 crop
+          const canvas = document.createElement('canvas');
+          canvas.width = 3000;
+          canvas.height = 3000;
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate crop (center, 1:1 ratio)
+          const size = Math.min(img.width, img.height);
+          const x = (img.width - size) / 2;
+          const y = (img.height - size) / 2;
+          
+          // Draw cropped and resized image
+          ctx.drawImage(img, x, y, size, size, 0, 0, 3000, 3000);
+          
+          // Convert to blob and update preview
+          canvas.toBlob((blob) => {
+            artistPhotoBlob = blob;
+            const url = URL.createObjectURL(blob);
+            artistPhotoPreview.src = url;
+            artistPhotoPreview.style.display = 'block';
+            artistPhotoCropContainer.style.display = 'none';
+            artistPhotoArea.style.display = 'flex';
+            
+            console.log('✅ Artist photo cropped to 3000x3000, size:', formatFileSize(blob.size));
+          }, 'image/jpeg', 0.92);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(artistPhotoOriginalFile);
     });
     
     // Cover art upload
@@ -1362,10 +1453,15 @@
           const artistResult = await createArtistResponse.json();
           artistId = artistResult.user?.id || artistResult.id;
           
-          // Upload artist photo if provided
-          if (document.getElementById('artistPhoto').files[0]) {
+          // Upload artist photo if provided (use cropped blob if available)
+          if (artistPhotoBlob || document.getElementById('artistPhoto').files[0]) {
             const photoFormData = new FormData();
-            photoFormData.append('profile_picture', document.getElementById('artistPhoto').files[0]);
+            // Use cropped blob if available, otherwise use original file
+            if (artistPhotoBlob) {
+              photoFormData.append('profile_picture', artistPhotoBlob, 'artist-photo-3000x3000.jpg');
+            } else {
+              photoFormData.append('profile_picture', document.getElementById('artistPhoto').files[0]);
+            }
             await fetch(`${API_BASE_URL}/api/users/${artistId}/profile-picture`, {
               method: 'POST',
               body: photoFormData

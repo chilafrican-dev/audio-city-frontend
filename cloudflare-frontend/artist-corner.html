@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artist Corner — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <!-- Professional Fonts Only -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1245,8 +1247,9 @@
       const statusEl = document.getElementById('status');
       
       // Only set up event listeners if elements exist
+      // Note: Upload form has been moved to upload-track.html, so these elements don't exist here anymore
       if (!uploadZone || !audioFile || !uploadForm) {
-        console.warn('Upload form elements not found');
+        // Silently return - upload functionality has been moved to upload-track.html
         return;
       }
       

@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mastering Studio — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <script>
     // Manifest loading disabled - Cloudflare WAF blocks JSON files
     // PWA functionality is optional, app works fine without it
@@ -281,15 +283,42 @@
       font-weight: 600;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
       transition: all 0.3s;
       margin: 20px auto;
+      position: relative;
+    }
+    
+    .master-btn.processing {
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+    }
+    
+    .master-btn-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .master-btn-percentage {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+      animation: pulse-percent 1.5s ease-in-out infinite;
+    }
+    
+    .master-btn-processing-text {
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
     }
 
-    .master-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35); }
+    .master-btn:hover:not(:disabled):not(.processing) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35); }
     .master-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .master-btn.processing { cursor: wait; }
 
     .format-note {
       display: flex;
@@ -605,9 +634,69 @@
       border-color: rgba(239, 68, 68, 0.25);
     }
 
+    .status-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .progress-percentage {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    
+    .progress-percentage span {
+      font-weight: 700;
+      font-size: 16px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: pulse-percent 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-percent {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    
+    .typing-animation {
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid var(--accent);
+      animation: typing 2s steps(40, end), blink-caret 0.75s step-end infinite;
+    }
+    
+    @keyframes blink-caret {
+      from, to { border-color: transparent; }
+      50% { border-color: var(--accent); }
+    }
+    
     .status-bar.processing {
       background: rgba(139, 92, 246, 0.1);
       border-color: rgba(139, 92, 246, 0.25);
+    }
+    
+    .status-bar.processing #statusIcon {
+      animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .status-bar.completed {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
     }
 
     /* Info Panel */
@@ -1013,6 +1102,11 @@
 
     .download-section { 
       margin: 20px 0;
+      display: none; /* Hidden until mastering is complete */
+    }
+    
+    .download-section.show {
+      display: block; /* Show when mastering completes */
     }
 
     .download-ready {
@@ -1042,6 +1136,60 @@
       gap: 10px;
       transition: all 0.3s;
       margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Wave fill animation */
+    .download-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s ease;
+      z-index: 1;
+    }
+    
+    .download-btn.wav::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(124, 58, 237, 0.8));
+      transition: width 0.3s linear;
+      z-index: 0;
+    }
+    
+    .download-btn.mp3::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: var(--progress-width, 0%);
+      height: 100%;
+      background: linear-gradient(90deg, rgba(139, 92, 246, 0.4), rgba(139, 92, 246, 0.6));
+      transition: width 0.2s linear;
+      z-index: 0;
+    }
+    
+    .download-btn.wav::after {
+      width: var(--progress-width, 0%);
+    }
+    
+    .download-btn.downloading::before {
+      left: 100%;
+      animation: wave-sweep 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes wave-sweep {
+      0% { left: -100%; }
+      50% { left: 100%; }
+      100% { left: 100%; }
     }
 
     .download-btn.wav {
@@ -1057,8 +1205,12 @@
 
     .download-btn:hover:not(:disabled) { transform: translateY(-2px); }
     .download-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .download-btn.downloading { opacity: 0.7; cursor: wait; }
+    .download-btn.downloading { cursor: wait; }
     
+    .download-icon, .download-text, .download-progress {
+      position: relative;
+      z-index: 2;
+    }
     .download-icon { font-size: 18px; }
     .download-text { flex: 1; }
     .download-progress {
@@ -1340,7 +1492,11 @@
     </div>
 
     <button class="master-btn" id="masterBtn" disabled>
-      <span>🎛️</span> Master Track
+      <div class="master-btn-content">
+        <span id="masterBtnIcon">🎛️</span>
+        <span id="masterBtnText">Master Track</span>
+      </div>
+      <div class="master-btn-percentage" id="masterBtnPercentage" style="display: none;">0%</div>
     </button>
 
     <div class="ab-toggle">
@@ -1363,8 +1519,13 @@
     </div>
 
     <div class="status-bar" id="statusBar">
-      <span>🎵</span>
-      <span id="statusText">Upload a track to begin mastering</span>
+      <span id="statusIcon">🎵</span>
+      <div class="status-content">
+        <span id="statusText">Upload a track to begin mastering</span>
+        <div class="progress-percentage" id="progressPercentage" style="display: none;">
+          <span id="progressPercent">0%</span>
+        </div>
+      </div>
     </div>
 
     <div class="info-panel" id="infoPanel">
@@ -1673,6 +1834,7 @@ let playbackMode = 'after'; // 'before' or 'after'
 let masteredAudioElement = null; // HTML5 audio element for mastered playback
 let selectedPreset = 'kidandali';
 let downloadUrls = { audioFile: null, mp3: null }; // Changed 'wav' to 'audioFile' to avoid .wav access
+window.downloadUrls = downloadUrls; // Sync to window for mastering.js
 let masterResult = null;
 let startTime = 0;
 let pausedAt = 0;
@@ -1680,11 +1842,13 @@ let pausedAt = 0;
 // Helper function to safely get audio URL (NO .wav property - using 'audioFile' instead)
 function getAudioUrl() {
   try {
-    if (!downloadUrls || typeof downloadUrls !== 'object') {
+    // Check window.downloadUrls first (set by mastering.js), then fall back to local variable
+    const urls = window.downloadUrls || downloadUrls;
+    if (!urls || typeof urls !== 'object') {
       return null;
     }
     // Use 'audioFile' instead of 'wav' to completely avoid .wav access
-    return downloadUrls['preview'] || downloadUrls['mp3'] || downloadUrls['audioFile'] || null;
+    return urls['preview'] || urls['mp3'] || urls['audioFile'] || null;
   } catch (e) {
     console.warn('Error getting audio URL:', e);
     return null;
@@ -1694,11 +1858,13 @@ function getAudioUrl() {
 // Helper function to safely get mastered audio URL (NO .wav property)
 function getWavUrl() {
   try {
-    if (!downloadUrls || typeof downloadUrls !== 'object') {
+    // Check window.downloadUrls first (set by mastering.js), then fall back to local variable
+    const urls = window.downloadUrls || downloadUrls;
+    if (!urls || typeof urls !== 'object') {
       return null;
     }
     // Use 'audioFile' instead of 'wav' to completely avoid .wav access
-    return downloadUrls['audioFile'] || null;
+    return urls['audioFile'] || null;
   } catch (e) {
     console.warn('Error getting mastered audio URL:', e);
     return null;
@@ -1942,6 +2108,10 @@ async function handleFile(file) {
   playBtn.disabled = false;
   rewindBtn.disabled = false;
   forwardBtn.disabled = false;
+  
+  // Hide download section when new file is uploaded
+  const downloadSection = document.querySelector('.download-section');
+  if (downloadSection) downloadSection.classList.remove('show');
   downloadReady.classList.remove('show');
   downloadWav.disabled = true;
   downloadMp3.disabled = true;
@@ -2021,7 +2191,9 @@ function updatePlayhead() {
   if (!isPlaying) return;
   
   // Use correct buffer based on playback mode
-  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  // Check window.masteredBuffer first (set by mastering.js), then fall back to local variable
+  const actualMasteredBuffer = window.masteredBuffer || masteredBuffer;
+  const bufferToUse = (playbackMode === 'before' || !actualMasteredBuffer) ? audioBuffer : actualMasteredBuffer;
   if (!bufferToUse) return;
   
   const elapsed = audioContext.currentTime - startTime + pausedAt;
@@ -2056,11 +2228,13 @@ function updatePlayhead() {
 function startPlayback() {
   // If playing mastered and masteredBuffer is null, use HTML5 audio element instead
   // Prefer preview, then MP3, then mastered file
-  if (playbackMode === 'after' && !masteredBuffer) {
+  // Check window.masteredBuffer first (set by mastering.js), then fall back to local variable
+  const actualMasteredBuffer = window.masteredBuffer || masteredBuffer;
+  if (playbackMode === 'after' && !actualMasteredBuffer) {
     // Use helper function - NO direct .wav access
     const audioUrl = getAudioUrl();
     console.log('Using HTML5 audio for mastered playback:', audioUrl);
-    console.log('Available URLs:', downloadUrls);
+    console.log('Available URLs:', window.downloadUrls || downloadUrls);
     
     if (audioUrl) {
       // Use HTML5 audio element for mastered playback
@@ -2123,7 +2297,8 @@ function startPlayback() {
   }
   
   // Use correct buffer based on playback mode (for original audio)
-  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  // Use the actualMasteredBuffer already declared above
+  const bufferToUse = (playbackMode === 'before' || !actualMasteredBuffer) ? audioBuffer : actualMasteredBuffer;
   if (!bufferToUse) return;
   
   sourceNode = audioContext.createBufferSource();
@@ -2420,7 +2595,9 @@ function stopMasterMeter() {
 
 playBtn.addEventListener('click', () => {
   // Check if we can play (either buffer or HTML5 audio)
-  if (playbackMode === 'after' && !masteredBuffer && getWavUrl() !== null) {
+  // Check window.masteredBuffer first (set by mastering.js), then fall back to local variable
+  const actualMasteredBuffer = window.masteredBuffer || masteredBuffer;
+  if (playbackMode === 'after' && !actualMasteredBuffer && getWavUrl() !== null) {
     // Can use HTML5 audio
     if (isPlaying) {
       stopPlayback();
@@ -2429,7 +2606,8 @@ playBtn.addEventListener('click', () => {
       startPlayback();
     }
   } else {
-    const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+    // Use the actualMasteredBuffer already declared above
+    const bufferToUse = (playbackMode === 'before' || !actualMasteredBuffer) ? audioBuffer : actualMasteredBuffer;
     if (!bufferToUse) return;
     
     if (isPlaying) {
@@ -2444,7 +2622,8 @@ playBtn.addEventListener('click', () => {
 // Skip backward 10 seconds
 rewindBtn.addEventListener('click', () => {
   // Handle HTML5 audio for mastered playback
-  if (playbackMode === 'after' && !masteredBuffer && masteredAudioElement) {
+  const actualMasteredBuffer = window.masteredBuffer || masteredBuffer;
+  if (playbackMode === 'after' && !actualMasteredBuffer && masteredAudioElement) {
     const wasPlaying = isPlaying;
     if (wasPlaying) stopPlayback();
     
@@ -2457,7 +2636,8 @@ rewindBtn.addEventListener('click', () => {
     return;
   }
   
-  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  // Use the actualMasteredBuffer already declared above
+  const bufferToUse = (playbackMode === 'before' || !actualMasteredBuffer) ? audioBuffer : actualMasteredBuffer;
   if (!bufferToUse) return;
   
   const wasPlaying = isPlaying;
@@ -2473,7 +2653,8 @@ rewindBtn.addEventListener('click', () => {
 // Skip forward 10 seconds
 forwardBtn.addEventListener('click', () => {
   // Handle HTML5 audio for mastered playback
-  if (playbackMode === 'after' && !masteredBuffer && masteredAudioElement) {
+  const actualMasteredBuffer3 = window.masteredBuffer || masteredBuffer;
+  if (playbackMode === 'after' && !actualMasteredBuffer3 && masteredAudioElement) {
     const wasPlaying = isPlaying;
     if (wasPlaying) stopPlayback();
     
@@ -2486,7 +2667,8 @@ forwardBtn.addEventListener('click', () => {
     return;
   }
   
-  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  // Use the actualMasteredBuffer3 already declared above
+  const bufferToUse = (playbackMode === 'before' || !actualMasteredBuffer3) ? audioBuffer : actualMasteredBuffer3;
   if (!bufferToUse) return;
   
   const wasPlaying = isPlaying;
@@ -2501,7 +2683,8 @@ forwardBtn.addEventListener('click', () => {
 
 // Progress bar click
 progressBar.addEventListener('click', e => {
-  const bufferToUse = (playbackMode === 'before' || !masteredBuffer) ? audioBuffer : masteredBuffer;
+  const actualMasteredBufferForProgress = window.masteredBuffer || masteredBuffer;
+  const bufferToUse = (playbackMode === 'before' || !actualMasteredBufferForProgress) ? audioBuffer : actualMasteredBufferForProgress;
   if (!bufferToUse) return;
   
   const rect = progressBar.getBoundingClientRect();
@@ -2548,8 +2731,9 @@ afterBtn.addEventListener('click', () => {
   if (currentModeEl) currentModeEl.textContent = 'After (Mastered)';
   
   // Show mastered waveform if available, otherwise original
-  if (masteredBuffer) {
-    drawWaveform(masteredBuffer, '#8b5cf6', '#06b6d4');
+  const actualMasteredBufferForAfter = window.masteredBuffer || masteredBuffer;
+  if (actualMasteredBufferForAfter) {
+    drawWaveform(actualMasteredBufferForAfter, '#8b5cf6', '#06b6d4');
   } else if (audioBuffer) {
     drawWaveform(audioBuffer, '#8b5cf6', '#06b6d4');
   }
@@ -2571,11 +2755,20 @@ console.log("🔥 ACTIVE FILE CONFIRMED - mastering.html loaded");
 
 // Download with progress
 async function downloadFile(url, filename, progressEl, button) {
+  let originalText = '';
   try {
     button.disabled = true;
+    
+    // Change text to "Downloading…"
+    const downloadText = button.querySelector('.download-text');
+    originalText = downloadText ? downloadText.textContent : '';
+    if (downloadText) downloadText.textContent = 'Downloading…';
+    
+    // Start wave fill animation
     button.classList.add('downloading');
-    progressEl.style.display = 'inline';
-    progressEl.textContent = '0%';
+    
+    // Hide progress text initially (we'll use the fill animation instead)
+    progressEl.style.display = 'none';
     
     const response = await fetch(url);
     if (!response.ok) throw new Error('Download failed');
@@ -2587,19 +2780,26 @@ async function downloadFile(url, filename, progressEl, button) {
     const chunks = [];
     let received = 0;
     
+    // Update fill animation based on progress
+    const updateFill = () => {
+      if (total > 0) {
+        const percent = Math.round((received / total) * 100);
+        button.style.setProperty('--fill-percent', `${percent}%`);
+        // Update pseudo-element width via CSS variable
+        const afterEl = button;
+        if (afterEl) {
+          afterEl.style.setProperty('--progress-width', `${percent}%`);
+        }
+      }
+    };
+    
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       
       chunks.push(value);
       received += value.length;
-      
-      if (total > 0) {
-        const percent = Math.round((received / total) * 100);
-        progressEl.textContent = `${percent}%`;
-      } else {
-        progressEl.textContent = '...';
-      }
+      updateFill();
     }
     
     // Combine chunks into blob
@@ -2617,16 +2817,30 @@ async function downloadFile(url, filename, progressEl, button) {
     // Cleanup
     URL.revokeObjectURL(blobUrl);
     
-    progressEl.textContent = '✅';
+    // Restore original text
+    const downloadTextRestore = button.querySelector('.download-text');
+    if (downloadTextRestore && originalText) {
+      downloadTextRestore.textContent = originalText;
+    }
+    
+    // Complete fill animation
+    button.style.setProperty('--progress-width', '100%');
+    
     setTimeout(() => {
-      progressEl.style.display = 'none';
       button.classList.remove('downloading');
+      button.style.removeProperty('--progress-width');
       button.disabled = false;
-    }, 1000);
+    }, 500);
     
   } catch (err) {
-    progressEl.textContent = '❌';
+    // Restore original text on error
+    const downloadTextError = button.querySelector('.download-text');
+    if (downloadTextError && originalText) {
+      downloadTextError.textContent = originalText;
+    }
+    
     button.classList.remove('downloading');
+    button.style.removeProperty('--progress-width');
     button.disabled = false;
     alert('Download failed: ' + err.message);
   }
@@ -2646,10 +2860,20 @@ downloadWav.addEventListener('click', () => {
 });
 
 downloadMp3.addEventListener('click', () => {
-  if (downloadUrls.mp3 && currentFile) {
+  // Check window.downloadUrls first (set by mastering.js), then fall back to local variable
+  const urls = window.downloadUrls || downloadUrls;
+  if (urls && urls.mp3 && currentFile) {
+    // Store original text for restoration
+    const downloadText = downloadMp3.querySelector('.download-text');
+    if (downloadText && !downloadMp3.dataset.originalText) {
+      downloadMp3.dataset.originalText = downloadText.textContent;
+    }
+    
     const filename = currentFile.name.replace(/\.[^.]+$/, '_mastered.mp3');
     const progressEl = document.getElementById('mp3Progress');
-    downloadFile(downloadUrls.mp3, filename, progressEl, downloadMp3);
+    downloadFile(urls.mp3, filename, progressEl, downloadMp3);
+  } else {
+    console.warn('MP3 URL not available yet');
   }
 });
 

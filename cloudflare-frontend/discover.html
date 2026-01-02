@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <script>
     // Only load manifest.json when not using file:// protocol (avoids CORS errors)
     if (window.location.protocol !== 'file:') {
@@ -441,6 +443,89 @@
 
     .main-content {
       width: 100%;
+    }
+
+    /* Big Upload Button Section */
+    .upload-button-section {
+      margin: 32px 0;
+      padding: 0;
+    }
+
+    .big-upload-button {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 32px;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+      border-radius: 16px;
+      text-decoration: none;
+      color: white;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 24px rgba(106, 13, 173, 0.4);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .big-upload-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .big-upload-button:hover::before {
+      left: 100%;
+    }
+
+    .big-upload-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(106, 13, 173, 0.5);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .big-upload-button:active {
+      transform: translateY(0);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .upload-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .upload-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .upload-subtitle {
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .upload-arrow {
+      font-size: 32px;
+      font-weight: 300;
+      transition: transform 0.3s ease;
+    }
+
+    .big-upload-button:hover .upload-arrow {
+      transform: translateX(8px);
     }
 
     /* Hero Section - Featured Tracks */
@@ -1557,6 +1642,27 @@
       .section-title {
         font-size: 22px;
       }
+
+      .big-upload-button {
+        padding: 20px 24px;
+        gap: 16px;
+      }
+
+      .upload-icon {
+        font-size: 40px;
+      }
+
+      .upload-title {
+        font-size: 20px;
+      }
+
+      .upload-subtitle {
+        font-size: 13px;
+      }
+
+      .upload-arrow {
+        font-size: 28px;
+      }
     }
   </style>
 </head>
@@ -1617,6 +1723,18 @@
   
   <div class="discover-container">
     <div class="main-content">
+      <!-- Big Upload Button -->
+      <div class="upload-button-section">
+        <a href="upload-track.html" class="big-upload-button">
+          <span class="upload-icon">🎵</span>
+          <span class="upload-text">
+            <span class="upload-title">Upload Your Music</span>
+            <span class="upload-subtitle">Share your tracks with the world</span>
+          </span>
+          <span class="upload-arrow">→</span>
+        </a>
+      </div>
+      
       <!-- Hero Section - Featured Tracks -->
       <section class="hero-section">
         <h1 class="hero-title">Featured Tracks</h1>
@@ -1731,6 +1849,64 @@
         ? 'http://localhost:3002'
         : 'https://api.audiocity-ug.com';
     }
+    
+    // Global function to normalize image/audio URLs
+    function makeAbsoluteUrl(url) {
+      if (!url) return null;
+      // Leave data URIs untouched
+      if (url.startsWith('data:')) return url;
+      // If it's an R2 public URL (r2.dev), proxy it through /api/media/
+      if (url.includes('.r2.dev/')) {
+        const r2PathMatch = url.match(/\.r2\.dev\/(.+)$/);
+        if (r2PathMatch) {
+          const r2Path = r2PathMatch[1];
+          return `${API_BASE_URL}/api/media/${r2Path}`;
+        }
+      }
+      
+      // Keep other absolute URLs as-is, but fix /media/ URLs that are missing /api/
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Fix URLs that have /media/ but are missing /api/
+        if (url.includes('/media/') && !url.includes('/api/media/')) {
+          try {
+            const urlObj = new URL(url);
+            if (urlObj.pathname.startsWith('/media/')) {
+              urlObj.pathname = '/api' + urlObj.pathname;
+              return urlObj.toString();
+            }
+          } catch (e) {
+            // If URL parsing fails, try string replacement
+            return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+          }
+        }
+        // Fix domain if needed
+        if (url.includes('www.audiocity-ug.com')) {
+          return url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+        }
+        return url; // Leave working URLs alone
+      }
+      
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        // If it's an R2 URL pattern (tracks/, cover-art/, profiles/), proxy through API
+        if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+          return `${API_BASE_URL}/api/media${url}`;
+        }
+        // If URL already has /media/ but missing /api/, fix it
+        if (url.startsWith('/media/')) {
+          return `${API_BASE_URL}/api${url}`;
+        }
+        return `${API_BASE_URL}${url}`;
+      }
+      
+      // If it's a relative path without leading slash, check if it's an R2 path
+      if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/')) {
+        return `${API_BASE_URL}/api/media/${url}`;
+      }
+      
+      return `${API_BASE_URL}/${url.replace(/^\//, '')}`;
+    }
+    
     const SAMPLE_SC_TRACK_URL = 'https://soundcloud.com/forss/flickermood';
     function buildSoundCloudEmbed(url, { visual = false, autoplay = false } = {}) {
       const safeUrl = url || SAMPLE_SC_TRACK_URL;
@@ -2607,7 +2783,9 @@
 
     // Render featured artist card
     function renderFeaturedArtistCard(artist) {
-      const avatar = artist.profile_image_url || null;
+      // Check all possible profile image fields and normalize URL
+      const avatarRaw = artist.profile_image_url || artist.profile_image || artist.avatar_url || null;
+      const avatar = avatarRaw ? makeAbsoluteUrl(avatarRaw) : null;
       const name = artist.name || 'Unknown Artist';
       const genre = artist.genre || artist.primary_genre || null;
       

@@ -13,7 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Audio City" />
   <meta name="description" content="Audio City - Uganda's music community platform. Discover your next obsession, or become someone else's.">
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   
   <!-- Performance: Preconnect to API domain -->
   <link rel="preconnect" href="https://api.audiocity-ug.com" crossorigin>
@@ -720,6 +722,243 @@
       border-color: var(--accent);
     }
 
+    /* Featured Artists Carousel */
+    .featured-artists-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 80px 24px;
+      position: relative;
+    }
+
+    .featured-artists-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .featured-artists-title {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .featured-artists-subtitle {
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .artists-carousel-wrapper {
+      position: relative;
+      overflow: hidden;
+      padding: 20px 0;
+    }
+
+    .artists-carousel-track {
+      display: flex;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+    }
+
+    .artists-carousel-track.paused {
+      transition: none;
+    }
+
+    .artist-card-carousel {
+      flex: 0 0 auto;
+      width: calc(25% - 18px);
+      margin-right: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .artist-card-carousel:hover {
+      transform: translateY(-8px);
+    }
+
+    .artist-card-carousel:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+      border-radius: 16px;
+    }
+
+    .artist-photo-wrapper {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .artist-card-carousel:hover .artist-photo-wrapper {
+      transform: scale(1.1);
+      box-shadow: 0 12px 32px rgba(139, 92, 246, 0.4);
+    }
+
+    .artist-photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .artist-photo-placeholder {
+      font-size: 64px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .artist-name-carousel {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .artist-handle-carousel {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .carousel-nav-buttons {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 20px;
+      transition: all 0.3s ease;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .artists-carousel-wrapper:hover .carousel-nav-buttons {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .carousel-nav-buttons:hover {
+      background: rgba(139, 92, 246, 0.8);
+      border-color: var(--accent);
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-nav-buttons:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .carousel-nav-prev {
+      left: 0;
+    }
+
+    .carousel-nav-next {
+      right: 0;
+    }
+
+    .carousel-nav-buttons:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .artists-carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 32px;
+    }
+
+    .carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      padding: 0;
+    }
+
+    .carousel-dot.active {
+      background: var(--accent);
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    .carousel-dot:hover {
+      background: var(--accent-light);
+    }
+
+    .artists-carousel-loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .artists-carousel-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    /* Responsive - Featured Artists */
+    @media (max-width: 968px) {
+      .artist-card-carousel {
+        width: calc(33.333% - 16px);
+      }
+
+      .featured-artists-title {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .artist-card-carousel {
+        width: calc(50% - 12px);
+        margin-right: 24px;
+      }
+
+      .artist-photo-wrapper {
+        width: 120px;
+        height: 120px;
+      }
+
+      .artist-photo-placeholder {
+        font-size: 48px;
+      }
+
+      .featured-artists-title {
+        font-size: 24px;
+      }
+
+      .featured-artists-section {
+        padding: 60px 16px;
+      }
+
+      .carousel-nav-buttons {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+    }
+
     /* Responsive */
     @media (max-width: 968px) {
       .hero-content {
@@ -961,6 +1200,29 @@
     <a href="artist-corner.html" class="btn-upload">Upload your own</a>
   </section>
 
+  <!-- Featured Artists Carousel -->
+  <section class="featured-artists-section" id="featuredArtistsSection">
+    <div class="featured-artists-header">
+      <h2 class="featured-artists-title">🎤 Featured Artists</h2>
+      <p class="featured-artists-subtitle">Discover talented creators in the Audio City community</p>
+    </div>
+    <div class="artists-carousel-wrapper" id="artistsCarouselWrapper">
+      <button class="carousel-nav-buttons carousel-nav-prev" id="carouselPrev" aria-label="Previous artists" tabindex="0">
+        ‹
+      </button>
+      <button class="carousel-nav-buttons carousel-nav-next" id="carouselNext" aria-label="Next artists" tabindex="0">
+        ›
+      </button>
+      <div class="artists-carousel-track" id="artistsCarouselTrack" role="region" aria-label="Featured artists carousel">
+        <div class="artists-carousel-loading" id="artistsCarouselLoading">
+          <div style="font-size: 24px; margin-bottom: 12px;">⏳</div>
+          <div>Loading featured artists...</div>
+        </div>
+      </div>
+      <div class="artists-carousel-dots" id="artistsCarouselDots" role="tablist" aria-label="Carousel pagination"></div>
+    </div>
+  </section>
+
   <!-- CTA Section -->
   <section class="cta-section">
     <p class="cta-text">Hear what's trending for free in the Audio City community</p>
@@ -1003,6 +1265,333 @@
         setTimeout(() => banner.style.display = 'none', 300);
       }
     }, 5000);
+
+    // Featured Artists Carousel
+    (function() {
+      const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3002'
+        : 'https://api.audiocity-ug.com';
+
+      const carouselTrack = document.getElementById('artistsCarouselTrack');
+      const carouselWrapper = document.getElementById('artistsCarouselWrapper');
+      const carouselLoading = document.getElementById('artistsCarouselLoading');
+      const carouselDots = document.getElementById('artistsCarouselDots');
+      const prevBtn = document.getElementById('carouselPrev');
+      const nextBtn = document.getElementById('carouselNext');
+      const section = document.getElementById('featuredArtistsSection');
+
+      if (!carouselTrack || !carouselWrapper) return;
+
+      let artists = [];
+      let currentSlide = 0;
+      let autoSwipeInterval = null;
+      let isPaused = false;
+      let artistsPerSlide = 4; // Desktop default
+
+      // Determine artists per slide based on screen size
+      function updateArtistsPerSlide() {
+        if (window.innerWidth <= 600) {
+          artistsPerSlide = 2; // Mobile
+        } else if (window.innerWidth <= 968) {
+          artistsPerSlide = 3; // Tablet
+        } else {
+          artistsPerSlide = 4; // Desktop
+        }
+      }
+
+      // Normalize image URL - ensure all media URLs use API_BASE_URL to prevent CORB errors
+      function normalizeImageUrl(url) {
+        if (!url) return null;
+        if (url.startsWith('data:')) return url;
+        
+        // If it's a full URL, ensure it uses the correct API base
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          // Replace www.audiocity-ug.com with api.audiocity-ug.com for media requests
+          if (url.includes('www.audiocity-ug.com')) {
+            url = url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+          }
+          
+          // Ensure /media/ paths use /api/media/
+          if (url.includes('/media/') && !url.includes('/api/media/')) {
+            return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+          }
+          
+          // If it's already pointing to the API base, return as is
+          if (url.includes(API_BASE_URL)) {
+            return url;
+          }
+          
+          // If it's a profile/track/cover image URL from a different domain, convert to API_BASE_URL
+          if (url.includes('/profiles/') || url.includes('/tracks/') || url.includes('/cover-art/') || url.includes('/covers/')) {
+            const pathMatch = url.match(/\/(profiles|tracks|cover-art|covers)\/.+/);
+            if (pathMatch) {
+              return `${API_BASE_URL}/api/media/${pathMatch[0].substring(1)}`;
+            }
+          }
+          
+          return url;
+        }
+        
+        // Handle relative URLs
+        if (url.startsWith('/')) {
+          if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+            return `${API_BASE_URL}/api/media${url}`;
+          }
+          if (url.startsWith('/media/')) {
+            return `${API_BASE_URL}/api${url}`;
+          }
+          if (url.startsWith('/uploads/')) {
+            // Profile images might be stored as /uploads/...
+            return `${API_BASE_URL}/api/media${url}`;
+          }
+          return `${API_BASE_URL}${url}`;
+        }
+        
+        // Handle relative URLs without leading slash
+        if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/') || url.startsWith('uploads/')) {
+          return `${API_BASE_URL}/api/media/${url}`;
+        }
+        
+        return `${API_BASE_URL}/api/media/${url.replace(/^\//, '')}`;
+      }
+
+      // Escape HTML
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+      }
+
+      // Load featured artists
+      async function loadFeaturedArtists() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users?limit=50&_t=${Date.now()}`);
+          if (!response.ok) {
+            throw new Error('Failed to load artists');
+          }
+
+          const artistsData = await response.json();
+          const allArtists = Array.isArray(artistsData) ? artistsData : [];
+
+          // Filter artists with profile pictures
+          artists = allArtists
+            .filter(artist => {
+              const avatar = artist.profile_image_url || artist.profile_image || artist.avatar_url;
+              return avatar && avatar.trim() !== '';
+            })
+            .slice(0, 20); // Limit to 20 artists for carousel
+
+          if (artists.length === 0) {
+            carouselLoading.innerHTML = '<div class="artists-carousel-empty">No featured artists available at the moment</div>';
+            return;
+          }
+
+          renderCarousel();
+          setupAutoSwipe();
+          updateArtistsPerSlide();
+          window.addEventListener('resize', () => {
+            updateArtistsPerSlide();
+            renderCarousel();
+          });
+        } catch (error) {
+          console.error('Error loading featured artists:', error);
+          carouselLoading.innerHTML = '<div class="artists-carousel-empty">Unable to load featured artists. Please try again later.</div>';
+        }
+      }
+
+      // Render carousel
+      function renderCarousel() {
+        if (artists.length === 0) return;
+
+        updateArtistsPerSlide();
+        const totalSlides = Math.ceil(artists.length / artistsPerSlide);
+
+        // Clear loading
+        carouselLoading.style.display = 'none';
+
+        // Render artist cards
+        const cardsHTML = artists.map((artist, index) => {
+          const avatar = normalizeImageUrl(artist.profile_image_url || artist.profile_image || artist.avatar_url);
+          const name = artist.name || artist.full_name || 'Unknown Artist';
+          const handle = artist.username || 'artist';
+          const artistId = artist.id;
+
+          // Determine if image should lazy load (below the fold)
+          const shouldLazyLoad = index >= artistsPerSlide * 2; // Lazy load after first 2 slides
+
+          return `
+            <div class="artist-card-carousel" role="article" aria-label="Artist: ${escapeHtml(name)}" tabindex="0" 
+                 onclick="window.location.href='profile.html?id=${artistId}'"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location.href='profile.html?id=${artistId}'}">
+              <div class="artist-photo-wrapper">
+                ${avatar ? `
+                  <img src="${avatar}" 
+                       alt="${escapeHtml(name)}" 
+                       ${shouldLazyLoad ? 'loading="lazy"' : ''}
+                       onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <div class="artist-photo-placeholder" style="display: none;">🎤</div>
+                ` : `
+                  <div class="artist-photo-placeholder">🎤</div>
+                `}
+              </div>
+              <div class="artist-name-carousel">${escapeHtml(name)}</div>
+              <div class="artist-handle-carousel">@${escapeHtml(handle)}</div>
+            </div>
+          `;
+        }).join('');
+
+        carouselTrack.innerHTML = cardsHTML;
+        carouselTrack.style.width = `${totalSlides * 100}%`;
+
+        // Update dots
+        carouselDots.innerHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+          const dot = document.createElement('button');
+          dot.className = `carousel-dot ${i === 0 ? 'active' : ''}`;
+          dot.setAttribute('role', 'tab');
+          dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+          dot.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+          dot.addEventListener('click', () => goToSlide(i));
+          carouselDots.appendChild(dot);
+        }
+
+        updateCarouselPosition();
+      }
+
+      // Update carousel position
+      function updateCarouselPosition() {
+        const totalSlides = Math.ceil(artists.length / artistsPerSlide);
+        const slideWidth = 100 / totalSlides;
+        carouselTrack.style.transform = `translateX(-${currentSlide * slideWidth}%)`;
+
+        // Update dots
+        const dots = carouselDots.querySelectorAll('.carousel-dot');
+        dots.forEach((dot, index) => {
+          if (index === currentSlide) {
+            dot.classList.add('active');
+            dot.setAttribute('aria-selected', 'true');
+          } else {
+            dot.classList.remove('active');
+            dot.setAttribute('aria-selected', 'false');
+          }
+        });
+
+        // Update nav buttons
+        if (prevBtn) prevBtn.disabled = currentSlide === 0;
+        if (nextBtn) nextBtn.disabled = currentSlide >= totalSlides - 1;
+      }
+
+      // Go to specific slide
+      function goToSlide(slideIndex) {
+        const totalSlides = Math.ceil(artists.length / artistsPerSlide);
+        if (slideIndex < 0 || slideIndex >= totalSlides) return;
+        currentSlide = slideIndex;
+        updateCarouselPosition();
+        resetAutoSwipe();
+      }
+
+      // Next slide
+      function nextSlide() {
+        const totalSlides = Math.ceil(artists.length / artistsPerSlide);
+        if (currentSlide < totalSlides - 1) {
+          currentSlide++;
+        } else {
+          currentSlide = 0; // Loop back to start
+        }
+        updateCarouselPosition();
+      }
+
+      // Previous slide
+      function prevSlide() {
+        const totalSlides = Math.ceil(artists.length / artistsPerSlide);
+        if (currentSlide > 0) {
+          currentSlide--;
+        } else {
+          currentSlide = totalSlides - 1; // Loop to end
+        }
+        updateCarouselPosition();
+      }
+
+      // Setup auto-swipe
+      function setupAutoSwipe() {
+        clearInterval(autoSwipeInterval);
+        if (isPaused) return;
+
+        autoSwipeInterval = setInterval(() => {
+          if (!isPaused && !document.hidden) {
+            nextSlide();
+          }
+        }, 3500); // 3.5 seconds
+      }
+
+      // Reset auto-swipe
+      function resetAutoSwipe() {
+        setupAutoSwipe();
+      }
+
+      // Pause on hover
+      if (carouselWrapper) {
+        carouselWrapper.addEventListener('mouseenter', () => {
+          isPaused = true;
+          carouselTrack.classList.add('paused');
+          clearInterval(autoSwipeInterval);
+        });
+
+        carouselWrapper.addEventListener('mouseleave', () => {
+          isPaused = false;
+          carouselTrack.classList.remove('paused');
+          setupAutoSwipe();
+        });
+      }
+
+      // Pause when tab is hidden
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          isPaused = true;
+          clearInterval(autoSwipeInterval);
+        } else {
+          isPaused = false;
+          setupAutoSwipe();
+        }
+      });
+
+      // Navigation buttons
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          nextSlide();
+          resetAutoSwipe();
+        });
+      }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          prevSlide();
+          resetAutoSwipe();
+        });
+      }
+
+      // Keyboard navigation
+      if (carouselWrapper) {
+        carouselWrapper.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            prevSlide();
+            resetAutoSwipe();
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextSlide();
+            resetAutoSwipe();
+          }
+        });
+      }
+
+      // Load artists when page loads
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadFeaturedArtists);
+      } else {
+        loadFeaturedArtists();
+      }
+    })();
 
     // Hero Carousel Auto-Swipe
     (function() {

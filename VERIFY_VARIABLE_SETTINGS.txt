@@ -1,0 +1,48 @@
+# Verify MASTERING_SERVER_URL is Set to Persistent URL
+
+## ✅ Correct Value (Persistent):
+
+**Variable Name**: `MASTERING_SERVER_URL`  
+**Value**: `https://mastering.audiocity-ug.com`
+
+This is the persistent URL that:
+- ✅ Never changes
+- ✅ Works permanently
+- ✅ Already configured on your server
+- ✅ DNS is already set up
+
+## ❌ Old Values (Temporary - Don't Use):
+
+- `https://xxxx-xxxx.trycloudflare.com` (any trycloudflare.com URL)
+- `https://talks-pointed-mai-complimentary.trycloudflare.com`
+- `https://verification-maintain-info-sell.trycloudflare.com`
+- `http://43.245.227.33:3001` (direct IP - won't work from Workers)
+
+## How to Check Current Value:
+
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1`
+3. Settings → Variables
+4. Look for `MASTERING_SERVER_URL`
+5. Check the value
+
+## If It's Already Set Correctly:
+
+✅ If it's already set to `https://mastering.audiocity-ug.com` → **You're done!** It will work.
+
+## If It's Set to Old/Temporary URL:
+
+❌ Update it to: `https://mastering.audiocity-ug.com`
+
+Steps:
+1. Click edit/pencil icon on the variable
+2. Change value to: `https://mastering.audiocity-ug.com`
+3. Save
+
+## Summary:
+
+- **Persistent URL**: `https://mastering.audiocity-ug.com` ✅
+- **Status**: Already working (we tested it)
+- **Action**: Make sure variable is set to this URL
+- **Result**: Will work forever, no more changes needed
+

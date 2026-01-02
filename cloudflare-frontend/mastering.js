@@ -33,6 +33,7 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
     const masterBtn = document.getElementById('masterBtn');
     const statusBar = document.getElementById('statusBar');
     const statusText = document.getElementById('statusText');
+    const downloadSection = document.querySelector('.download-section');
     const downloadReady = document.getElementById('downloadReady');
     const downloadWav = document.getElementById('downloadWav');
     const downloadMp3 = document.getElementById('downloadMp3');
@@ -104,11 +105,28 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
         state.stopPlayback();
       }
 
-      // Update UI
+      // Update UI - change Master button to show processing message
       masterBtn.disabled = true;
-      masterBtn.innerHTML = '<span>⏳</span> Mastering...';
+      masterBtn.classList.add('processing');
+      
+      const masterBtnIcon = document.getElementById('masterBtnIcon');
+      const masterBtnText = document.getElementById('masterBtnText');
+      const masterBtnPercentage = document.getElementById('masterBtnPercentage');
+      
+      if (masterBtnIcon) masterBtnIcon.textContent = '⏳';
+      if (masterBtnText) masterBtnText.textContent = 'BAMBI GUMIKIRIZAKO..... PLEASE WAIT....';
+      if (masterBtnPercentage) {
+        masterBtnPercentage.style.display = 'block';
+        masterBtnPercentage.textContent = '0%';
+      }
+      
       statusBar.className = 'status-bar processing';
-      statusText.textContent = 'Processing with real FFmpeg loudnorm...';
+      const statusIcon = document.getElementById('statusIcon');
+      if (statusIcon) statusIcon.textContent = '⏳';
+      statusText.innerHTML = '<span>Processing...</span>';
+      
+      // Hide download section while processing
+      if (downloadSection) downloadSection.classList.remove('show');
       if (downloadReady) downloadReady.classList.remove('show');
 
       try {
@@ -129,6 +147,80 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
         const data = await response.json();
         console.log('✅ Mastering response:', data);
 
+        // Check if this is a synchronous completion (immediate result)
+        if (data.success && data.status === 'completed') {
+          // Handle immediate completion - no polling needed
+          console.log('✅ Mastering completed immediately (synchronous)');
+          
+          // Get current state first
+          const state = getState();
+          
+          // Update download URLs
+          setState({ 
+            downloadUrls: {
+              audioFile: data.audioUrl,
+              mp3: data.mp3
+            }
+          });
+          
+          // Play mastered audio
+          if (data.audioUrl && typeof playMasteredAudio === 'function') {
+            playMasteredAudio(data.audioUrl);
+          }
+          
+          // Update UI with completion message
+          statusBar.className = 'status-bar completed';
+          const statusIcon2 = document.getElementById('statusIcon');
+          if (statusIcon2) statusIcon2.textContent = '✅';
+          statusText.innerHTML = '✅ MASTERING DONE EJOY DONATE PLEASE';
+          
+          // Hide progress percentage
+          const progressPercentage2 = document.getElementById('progressPercentage');
+          if (progressPercentage2) progressPercentage2.style.display = 'none';
+          
+          // Show download section and enable buttons
+          if (downloadSection) downloadSection.classList.add('show');
+          if (downloadReady) downloadReady.classList.add('show');
+          if (downloadWav) downloadWav.disabled = false;
+          if (downloadMp3) downloadMp3.disabled = false;
+          
+          // Update meters if available
+          if (data.input && data.input.lufs !== undefined && inputLufs) {
+            inputLufs.textContent = `${data.input.lufs.toFixed(1)}`;
+          }
+          if (data.output && data.output.lufs !== undefined) {
+            if (outputLufs) outputLufs.textContent = `${data.output.lufs.toFixed(1)}`;
+            if (lufsDisplay) lufsDisplay.textContent = `${data.output.lufs.toFixed(1)} LUFS`;
+          }
+          if (data.output && data.output.truePeak !== undefined) {
+            if (peakDisplay) peakDisplay.textContent = `${data.output.truePeak.toFixed(1)} dB`;
+            if (peakBar) {
+              const peakPercent = Math.min(100, Math.max(0, (data.output.truePeak + 10) * 10));
+              peakBar.style.width = `${peakPercent}%`;
+            }
+          }
+          if (data.gain !== undefined && gainDisplay) {
+            gainDisplay.textContent = `${data.gain > 0 ? '+' : ''}${data.gain.toFixed(1)} dB`;
+          }
+          
+          masterBtn.disabled = false;
+          masterBtn.classList.remove('processing');
+          const masterBtnIconSync = document.getElementById('masterBtnIcon');
+          const masterBtnTextSync = document.getElementById('masterBtnText');
+          const masterBtnPercentageSync = document.getElementById('masterBtnPercentage');
+          if (masterBtnIconSync) masterBtnIconSync.textContent = '🎛️';
+          if (masterBtnTextSync) masterBtnTextSync.textContent = 'Master Track';
+          if (masterBtnPercentageSync) masterBtnPercentageSync.style.display = 'none';
+          
+          // Reload usage stats
+          if (state.loadUsageStats) {
+            setTimeout(() => state.loadUsageStats(), 500);
+          }
+          
+          return null; // No job ID for synchronous completion
+        }
+        
+        // Async job pattern - requires polling
         // Server returns 'progressId', but we check for 'jobId' for compatibility
         const jobId = data.jobId || data.progressId;
         
@@ -148,7 +240,13 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
         statusBar.className = 'status-bar error';
         statusText.textContent = `❌ ${err.message || 'Mastering failed'}`;
         masterBtn.disabled = false;
-        masterBtn.innerHTML = '<span>🎛️</span> Master';
+        masterBtn.classList.remove('processing');
+        const masterBtnIconErr = document.getElementById('masterBtnIcon');
+        const masterBtnTextErr = document.getElementById('masterBtnText');
+        const masterBtnPercentageErr = document.getElementById('masterBtnPercentage');
+        if (masterBtnIconErr) masterBtnIconErr.textContent = '🎛️';
+        if (masterBtnTextErr) masterBtnTextErr.textContent = 'Master Track';
+        if (masterBtnPercentageErr) masterBtnPercentageErr.style.display = 'none';
         alert(`❌ Mastering failed: ${err.message}`);
         return null;
       }
@@ -174,7 +272,13 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
         statusBar.className = 'status-bar error';
         statusText.textContent = '❌ Request timeout - mastering service is taking too long. Please try again.';
         masterBtn.disabled = false;
-        masterBtn.innerHTML = '<span>🎛️</span> Master';
+        masterBtn.classList.remove('processing');
+        const masterBtnIconTimeout = document.getElementById('masterBtnIcon');
+        const masterBtnTextTimeout = document.getElementById('masterBtnText');
+        const masterBtnPercentageTimeout = document.getElementById('masterBtnPercentage');
+        if (masterBtnIconTimeout) masterBtnIconTimeout.textContent = '🎛️';
+        if (masterBtnTextTimeout) masterBtnTextTimeout.textContent = 'Master Track';
+        if (masterBtnPercentageTimeout) masterBtnPercentageTimeout.style.display = 'none';
         consecutive503Count = 0;
         return;
       }
@@ -184,13 +288,27 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
         statusBar.className = 'status-bar error';
         statusText.textContent = '❌ Mastering service is currently unavailable. Please try again later.';
         masterBtn.disabled = false;
-        masterBtn.innerHTML = '<span>🎛️</span> Master';
+        masterBtn.classList.remove('processing');
+        const masterBtnIcon503 = document.getElementById('masterBtnIcon');
+        const masterBtnText503 = document.getElementById('masterBtnText');
+        const masterBtnPercentage503 = document.getElementById('masterBtnPercentage');
+        if (masterBtnIcon503) masterBtnIcon503.textContent = '🎛️';
+        if (masterBtnText503) masterBtnText503.textContent = 'Master Track';
+        if (masterBtnPercentage503) masterBtnPercentage503.style.display = 'none';
         consecutive503Count = 0;
         return;
       }
 
       try {
         console.log(`🔄 Polling job status: ${jobId} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        
+        // Update progress percentage on Master button
+        const masterBtnPercentagePoll = document.getElementById('masterBtnPercentage');
+        if (masterBtnPercentagePoll) {
+          // Calculate progress: 20% base + 70% based on retries (up to 90%)
+          const progress = Math.min(90, 20 + Math.floor((retryCount / MAX_RETRIES) * 70));
+          masterBtnPercentagePoll.textContent = `${progress}%`;
+        }
         
         const res = await fetch(`${API}/master-status/${jobId}`);
         
@@ -291,9 +409,18 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
           // Play mastered audio
           playMasteredAudio(audioUrl);
 
-          // Update UI
-          statusBar.className = 'status-bar';
-          statusText.textContent = `✅ Mastered with ${state.selectedPreset} preset`;
+          // Update UI with completion message
+          statusBar.className = 'status-bar completed';
+          const statusIcon = document.getElementById('statusIcon');
+          if (statusIcon) statusIcon.textContent = '✅';
+          statusText.innerHTML = '✅ MASTERING DONE EJOY DONATE PLEASE';
+          
+          // Hide progress percentage
+          const progressPercentage = document.getElementById('progressPercentage');
+          if (progressPercentage) progressPercentage.style.display = 'none';
+          
+          // Show download section and enable buttons
+          if (downloadSection) downloadSection.classList.add('show');
           if (downloadReady) downloadReady.classList.add('show');
           if (downloadWav) downloadWav.disabled = false;
           if (downloadMp3) downloadMp3.disabled = false;
@@ -304,7 +431,13 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
           }
 
           masterBtn.disabled = false;
-          masterBtn.innerHTML = '<span>🎛️</span> Master';
+          masterBtn.classList.remove('processing');
+          const masterBtnIconComplete = document.getElementById('masterBtnIcon');
+          const masterBtnTextComplete = document.getElementById('masterBtnText');
+          const masterBtnPercentageComplete = document.getElementById('masterBtnPercentage');
+          if (masterBtnIconComplete) masterBtnIconComplete.textContent = '🎛️';
+          if (masterBtnTextComplete) masterBtnTextComplete.textContent = 'Master Track';
+          if (masterBtnPercentageComplete) masterBtnPercentageComplete.style.display = 'none';
           
           console.log('✅ Mastering completed successfully');
           return;
@@ -315,13 +448,29 @@ console.log("🔥🔥🔥 NO .wav ACCESS IN THIS FILE - ALL FIXED 🔥🔥🔥")
           statusBar.className = 'status-bar error';
           statusText.textContent = `❌ ${status.error || 'Mastering failed'}`;
           masterBtn.disabled = false;
-          masterBtn.innerHTML = '<span>🎛️</span> Master';
+          masterBtn.classList.remove('processing');
+          const masterBtnIconFailed = document.getElementById('masterBtnIcon');
+          const masterBtnTextFailed = document.getElementById('masterBtnText');
+          const masterBtnPercentageFailed = document.getElementById('masterBtnPercentage');
+          if (masterBtnIconFailed) masterBtnIconFailed.textContent = '🎛️';
+          if (masterBtnTextFailed) masterBtnTextFailed.textContent = 'Master Track';
+          if (masterBtnPercentageFailed) masterBtnPercentageFailed.style.display = 'none';
           alert(`❌ Mastering failed: ${status.error || 'Unknown error'}`);
           return;
         }
 
         // Still processing
-        statusText.textContent = status.message || '🔄 Processing...';
+        statusText.innerHTML = '<span class="typing-animation">BAMBI GUMIKIRIZAKO..... PLEASE WAIT....</span>';
+        
+        // Update progress percentage
+        const progressPercentage3 = document.getElementById('progressPercentage');
+        const progressPercent3 = document.getElementById('progressPercent');
+        if (progressPercentage3 && progressPercent3) {
+          progressPercentage3.style.display = 'flex';
+          const progress = Math.min(90, 20 + Math.floor((retryCount / MAX_RETRIES) * 70));
+          progressPercent3.textContent = `${progress}%`;
+        }
+        
         setTimeout(() => pollMasteringJob(jobId, retryCount + 1), 3000);
 
       } catch (err) {

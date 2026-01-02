@@ -1,0 +1,96 @@
+# Setup Persistent Named Cloudflare Tunnel for Mastering Server
+# This will give you a permanent URL that doesn't change
+
+## Step 1: Create Tunnel in Cloudflare Dashboard
+
+1. Go to: https://dash.cloudflare.com
+2. Select your account
+3. Go to: Zero Trust → Networks → Tunnels
+4. Click: "Create a tunnel"
+5. Choose: "Cloudflared" (not WARP)
+6. Name it: `mastering-server-tunnel` (or any name you like)
+7. Click "Save tunnel"
+
+## Step 2: Get Tunnel Token
+
+After creating the tunnel, you'll see a "Token" field. Copy this token - it looks like:
+```
+eyJhIjoi...very-long-token...xyz123
+```
+
+## Step 3: Configure Tunnel on Server
+
+Run these commands on your server (43.245.227.33):
+
+```bash
+# Create config directory
+mkdir -p /etc/cloudflared
+
+# Create tunnel config file
+cat > /etc/cloudflared/mastering-tunnel-config.yml << 'EOF'
+tunnel: mastering-server-tunnel
+credentials-file: /etc/cloudflared/tunnel-credentials.json
+
+ingress:
+  - hostname: mastering.audiocity-ug.com
+    service: http://localhost:3001
+  - service: http_status:404
+EOF
+
+# Save the tunnel token to credentials file
+# Replace YOUR_TUNNEL_TOKEN with the actual token from Cloudflare dashboard
+cat > /etc/cloudflared/tunnel-credentials.json << 'EOF'
+{"AccountTag":"YOUR_ACCOUNT_TAG","TunnelSecret":"YOUR_TUNNEL_SECRET","TunnelID":"YOUR_TUNNEL_ID"}
+EOF
+
+# Note: The credentials file format above is just a placeholder
+# You'll get the actual credentials from the Cloudflare dashboard
+```
+
+## Step 4: Update Systemd Service
+
+```bash
+# Update the service to use named tunnel
+cat > /etc/systemd/system/mastering-tunnel.service << 'EOF'
+[Unit]
+Description=Cloudflare Tunnel for Mastering Server (Persistent)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel --config /etc/cloudflared/mastering-tunnel-config.yml run
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload and restart
+systemctl daemon-reload
+systemctl restart mastering-tunnel.service
+systemctl enable mastering-tunnel.service
+```
+
+## Step 5: Configure DNS
+
+In Cloudflare Dashboard:
+1. Go to: DNS → Records
+2. Add CNAME record:
+   - Name: `mastering` (or `mastering-api`)
+   - Target: `YOUR_TUNNEL_ID.cfargotunnel.com`
+   - Proxy: ON (orange cloud)
+3. Save
+
+## Step 6: Update Worker
+
+Once DNS is configured and tunnel is running:
+- Set `MASTERING_SERVER_URL` = `https://mastering.audiocity-ug.com` (or your chosen hostname)
+
+## Alternative: Quick Setup Script
+
+I can create a script that does most of this automatically if you provide the tunnel token.
+

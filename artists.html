@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artists — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -336,1119 +338,15 @@
     /* Artists Grid */
     .artists-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 24px;
-    }
-    
-    .artist-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      text-align: center;
-      transition: all 0.3s;
-      cursor: pointer;
-    }
-    
-    .artist-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--accent);
-      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.15);
-    }
-    
-    .artist-avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--cyan));
-      margin: 0 auto 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      overflow: hidden;
-    }
-    
-    .artist-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .artist-name {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    
-    .artist-handle {
-      color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-    
-    .artist-stats {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    
-    .artist-stats span {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    
-    .verified-badge {
-      color: var(--cyan);
-      font-size: 14px;
-    }
-    
-    .artist-actions {
-      display: flex;
-      gap: 8px;
-      width: 100%;
-      margin-top: 16px;
-    }
-    
-    .message-btn-artist {
-      padding: 10px 14px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .message-btn-artist:hover {
-      background: var(--bg-light);
-      border-color: var(--accent);
-      transform: translateY(-2px);
-    }
-    
-    .follow-btn {
-      padding: 10px 24px;
-      background: transparent;
-      border: 1px solid var(--accent);
-      border-radius: 20px;
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      flex: 1;
-    }
-    
-    .follow-btn:hover {
-      background: var(--accent);
-      color: #fff;
-    }
-    
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--muted);
-    }
-    
-    .empty-state .icon {
-      font-size: 64px;
-      margin-bottom: 16px;
-    }
-    
-    .empty-state h3 {
-      font-size: 20px;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    
-    @media (max-width: 768px) {
-      .nav-main { display: none; }
-      .artists-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-    }
-  </style>
-</head>
-<body>
-  <div class="bg-layer"></div>
-  
-  <header>
-    <div class="header-content">
-      <a href="index.html" class="logo-brand">
-        <img src="assets/audio-city-logo.png" alt="Audio City" onerror="this.style.display='none';">
-        <div class="brand-text">AUDIO CITY</div>
-      </a>
-      
-      <nav class="nav-main">
-        <a href="discover.html" class="nav-item">Home</a>
-        <a href="feed.html" class="nav-item">Feed</a>
-        <a href="artists.html" class="nav-item active">Artists</a>
-        <div class="nav-dropdown">
-          <a href="#" class="nav-item">🛠️ Tools</a>
-          <div class="dropdown-menu">
-            <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
-          </div>
-        </div>
-        <a href="inbox.html" class="nav-item" id="inboxNavLink" style="display: none !important;">Inbox</a>
-      </nav>
-      
-      <div class="nav-right">
-        <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
-        <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
-        <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
-        <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
-        <div class="profile-btn" id="profileBtn" style="display: none !important; position: relative;">
-          <a href="profile.html" id="profileLink" style="display: block; width: 100%; height: 100%; text-decoration: none; cursor: pointer; position: relative; z-index: 1;">
-            <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-            <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px; pointer-events: none;">👤</div>
-          </a>
-          <button class="profile-menu-toggle" style="position: absolute; top: -4px; right: -4px; width: 24px; height: 24px; background: var(--accent); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.3); color: white; font-size: 14px; line-height: 1; padding: 0;" onclick="event.stopPropagation(); event.preventDefault(); toggleProfileMenu(event);" title="Open menu">⋯</button>
-          <div class="dropdown-menu" id="profileMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000;">
-            <a href="profile.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">👤 Profile</a>
-            <a href="settings.html" class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; transition: all 0.2s;">⚙️ Settings</a>
-            <div class="dropdown-item" onclick="signOut()" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #ef4444; cursor: pointer; border-radius: 8px; font-size: 14px; transition: all 0.2s; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px;">🚪 Sign out</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-  
-  <main>
-    <div class="page-header">
-      <h1 class="page-title">🎤 Artists</h1>
-      <p class="page-subtitle">Discover talented creators in the Audio City community</p>
-    </div>
-    
-    <div class="search-section">
-      <div class="search-box">
-        <input type="text" id="searchInput" name="searchInput" placeholder="Search artists...">
-      </div>
-      <div class="filter-tabs">
-        <button class="filter-tab active" data-filter="all">All</button>
-        <button class="filter-tab" data-filter="verified">✓ Verified</button>
-        <button class="filter-tab" data-filter="trending">🔥 Trending</button>
-        <button class="filter-tab" data-filter="new">✨ New</button>
-      </div>
-    </div>
-    
-    <div class="artists-grid" id="artistsGrid" style="display: none;">
-      <!-- Content will appear here when available -->
-    </div>
-  </main>
-  
-  <script>
-    // Update header profile picture
-    async function updateHeaderProfilePicture() {
-      const userId = localStorage.getItem('user_id');
-      const headerImg = document.getElementById('headerProfileImg');
-      const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
-      
-      if (!headerImg || !headerPlaceholder) return;
-      
-      let avatar = null;
-      
-      // Try to fetch from backend API first (HTTPS only for production)
-      const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://localhost:3002'
-        : 'https://api.audiocity-ug.com';
-      if (userId) {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
-          if (response.ok) {
-            const userData = await response.json();
-            avatar = userData?.profile_image || userData?.avatar_url;
-            
-            // Force HTTPS on all avatar URLs to prevent mixed content
-            if (avatar) {
-              avatar = avatar.replace(/^http:\/\//i, 'https://');
-              // If avatar URL is relative, make it absolute
-              if (avatar.startsWith('/uploads/')) {
-                avatar = `${API_BASE_URL}${avatar}`;
-              }
-            }
-          }
-        } catch (error) {
-          // Silent fail - don't spam console, avatar will fallback to localStorage
-        }
-      }
-      
-      // Fallback to localStorage if API didn't return an avatar
-      if (!avatar) {
-        avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
-      }
-      
-      // Update header image
-      if (avatar) {
-        headerImg.src = avatar;
-        headerImg.style.display = 'block';
-        headerPlaceholder.style.display = 'none';
-      } else {
-        headerImg.style.display = 'none';
-        headerPlaceholder.style.display = 'flex';
-      }
-    }
-    
-    // Wire donate button
-    function wireDonateButtons() {
-      const donateBtn = document.getElementById('donateBtn');
-      if (donateBtn) {
-        donateBtn.addEventListener('click', () => {
-          window.open('https://app.julypay.net/pay/user/nico-d7oz', '_blank', 'noopener,noreferrer');
-        });
-      }
-    }
-    
-    // Update authentication UI
-    function updateAuthUI() {
-      const authToken = localStorage.getItem('auth_token');
-      const userId = localStorage.getItem('user_id');
-      const signInBtn = document.getElementById('signInBtn');
-      const signUpBtn = document.getElementById('signUpBtn');
-      const profileBtn = document.getElementById('profileBtn');
-      const inboxNavLink = document.getElementById('inboxNavLink');
-      const donateBtn = document.getElementById('donateBtn');
-      
-      // Always ensure donate button is visible
-      if (donateBtn) {
-        donateBtn.style.display = 'inline-flex';
-        donateBtn.style.visibility = 'visible';
-        donateBtn.style.opacity = '1';
-      }
-      
-      if (authToken && userId) {
-        // User is logged in - hide sign in/up, show profile button and inbox
-        if (signInBtn) {
-          signInBtn.style.setProperty('display', 'none', 'important');
-          signInBtn.style.setProperty('visibility', 'hidden', 'important');
-        }
-        if (signUpBtn) {
-          signUpBtn.style.setProperty('display', 'none', 'important');
-          signUpBtn.style.setProperty('visibility', 'hidden', 'important');
-        }
-        if (profileBtn) {
-          profileBtn.style.setProperty('display', 'flex', 'important');
-          profileBtn.style.setProperty('visibility', 'visible', 'important');
-          profileBtn.classList.add('show');
-        }
-        if (inboxNavLink) {
-          inboxNavLink.style.setProperty('display', 'inline-block', 'important');
-          inboxNavLink.style.setProperty('visibility', 'visible', 'important');
-        }
-        // Update profile picture
-        updateHeaderProfilePicture();
-      } else {
-        // User is not logged in - show sign in/up, hide profile button and inbox
-        if (signInBtn) {
-          signInBtn.style.setProperty('display', 'inline-block', 'important');
-          signInBtn.style.setProperty('visibility', 'visible', 'important');
-        }
-        if (signUpBtn) {
-          signUpBtn.style.setProperty('display', 'inline-block', 'important');
-          signUpBtn.style.setProperty('visibility', 'visible', 'important');
-        }
-        if (profileBtn) {
-          profileBtn.style.setProperty('display', 'none', 'important');
-          profileBtn.style.setProperty('visibility', 'hidden', 'important');
-          profileBtn.classList.remove('show');
-        }
-        if (inboxNavLink) {
-          inboxNavLink.style.setProperty('display', 'none', 'important');
-          inboxNavLink.style.setProperty('visibility', 'hidden', 'important');
-        }
-      }
-    }
-    
-    // Set profile link href with user ID
-    function setProfileLink() {
-      const profileLink = document.getElementById('profileLink');
-      if (profileLink) {
-        const userId = localStorage.getItem('user_id');
-        if (userId) {
-          profileLink.href = `profile.html?id=${userId}`;
-        } else {
-          profileLink.href = 'profile.html';
-        }
-      }
-    }
-    
-    // Initialize authentication UI
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        updateAuthUI();
-        updateHeaderProfilePicture();
-        wireDonateButtons();
-        setProfileLink();
-      });
-    } else {
-      updateAuthUI();
-      updateHeaderProfilePicture();
-      wireDonateButtons();
-      setProfileLink();
-    }
-    
-    // Sign out function - make it global
-    window.signOut = function() {
-      if (confirm('Are you sure you want to sign out?')) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_id');
-        localStorage.removeItem('user_name');
-        localStorage.removeItem('username');
-        localStorage.removeItem('user_email');
-        localStorage.removeItem('is_admin');
-        localStorage.removeItem('admin_mode');
-        localStorage.removeItem('profile_image_url');
-        localStorage.removeItem('bio');
-        localStorage.removeItem('location');
-        window.location.href = 'index.html';
-      }
-    };
-    
-    // Toggle profile menu - make it global
-    window.toggleProfileMenu = function(e) {
-      if (e) e.stopPropagation();
-      const menu = document.getElementById('profileMenu');
-      if (menu) {
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-      }
-    };
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      const profileMenu = document.getElementById('profileMenu');
-      const profileBtn = document.getElementById('profileBtn');
-      const profileLink = document.getElementById('profileLink');
-      const menuToggle = document.querySelector('.profile-menu-toggle');
-      
-      // Don't interfere with profile link navigation
-      if (profileLink && profileLink.contains(e.target)) {
-        return; // Allow navigation to profile page
-      }
-      
-      // Don't interfere with menu toggle
-      if (menuToggle && menuToggle.contains(e.target)) {
-        return; // Menu toggle handles its own click
-      }
-      
-      if (profileMenu && profileBtn && !profileBtn.contains(e.target)) {
-        profileMenu.style.display = 'none';
-      }
-    });
-    
-    // Update auth UI periodically
-    // Auth UI updated on page load - no polling needed
-    
-    // Store all artists for filtering
-    let allArtists = [];
-    let currentFilter = 'all';
-    
-    // Filter tabs - implement actual filtering
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentFilter = tab.dataset.filter || 'all';
-        applyFilters();
-      });
-    });
-    
-    // Search and filter function
-    function applyFilters() {
-      const searchQuery = document.getElementById('searchInput')?.value.toLowerCase() || '';
-      const cards = document.querySelectorAll('.artist-card');
-      
-      cards.forEach(card => {
-        const name = card.querySelector('.artist-name')?.textContent.toLowerCase() || '';
-        const handle = card.querySelector('.artist-handle')?.textContent.toLowerCase() || '';
-        const isVerified = card.querySelector('.verified-badge') !== null;
-        const cardData = card.dataset;
-        
-        // Search filter
-        const matchesSearch = !searchQuery || name.includes(searchQuery) || handle.includes(searchQuery);
-        
-        // Category filter
-        let matchesFilter = true;
-        if (currentFilter === 'verified') {
-          matchesFilter = isVerified;
-        } else if (currentFilter === 'trending') {
-          // For trending, we could check if artist has tracks with high views
-          // For now, show all (can be enhanced with API data)
-          matchesFilter = true;
-        } else if (currentFilter === 'new') {
-          // For new, check if artist was created recently (if we have that data)
-          // For now, show all (can be enhanced with API data)
-          matchesFilter = true;
-        }
-        // 'all' filter shows everything
-        
-        // Show/hide card
-        card.style.display = (matchesSearch && matchesFilter) ? 'block' : 'none';
-      });
-    }
-    
-    // Search input handler
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-      searchInput.addEventListener('input', () => {
-        applyFilters();
-      });
-    }
-    
-    // Follow buttons
-    document.querySelectorAll('.follow-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (btn.textContent === 'Follow') {
-          btn.textContent = 'Following';
-          btn.style.background = 'var(--accent)';
-          btn.style.color = '#fff';
-        } else {
-          btn.textContent = 'Follow';
-          btn.style.background = 'transparent';
-          btn.style.color = 'var(--accent)';
-        }
-      });
-    });
-    
-    // Load artists from API and show verification badges
-    async function loadArtists() {
-      try {
-        // Use local API for development, production API for deployed site
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-          ? 'http://localhost:3002'
-          : 'https://api.audiocity-ug.com';
-        // Fetch all users (backend doesn't support select parameter, returns all fields)
-        const response = await fetch(`${API_BASE_URL}/api/users?_t=${Date.now()}`);
-        
-        // Handle 404 or other errors gracefully
-        if (!response.ok) {
-          console.warn('Failed to load artists:', response.status, response.statusText);
-          // Return empty array to prevent errors
-          const artistsGrid = document.getElementById('artistsGrid');
-          if (artistsGrid) {
-            artistsGrid.innerHTML = '';
-            artistsGrid.style.display = 'none';
-          }
-          const mainContent = document.querySelector('main');
-          if (mainContent) {
-            const pageTitle = mainContent.querySelector('.page-title');
-            const searchSection = mainContent.querySelector('.search-filters');
-            if (pageTitle) pageTitle.style.display = 'none';
-            if (searchSection) searchSection.style.display = 'none';
-          }
-          return;
-        }
-        
-        if (response.ok) {
-          const artists = await response.json();
-          const artistsGrid = document.getElementById('artistsGrid');
-          
-          if (artists.length === 0) {
-            if (artistsGrid) {
-              artistsGrid.innerHTML = '';
-              artistsGrid.style.display = 'none';
-            }
-            // Hide the entire artists section
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-              const pageTitle = mainContent.querySelector('.page-title');
-              const searchSection = mainContent.querySelector('.search-filters');
-              if (pageTitle) pageTitle.style.display = 'none';
-              if (searchSection) searchSection.style.display = 'none';
-            }
-            return;
-          }
-          
-          if (artistsGrid && artists.length > 0) {
-            artistsGrid.style.display = '';
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-              const pageTitle = mainContent.querySelector('.page-title');
-              const searchSection = mainContent.querySelector('.search-filters');
-              if (pageTitle) pageTitle.style.display = 'block';
-              if (searchSection) searchSection.style.display = 'block';
-            }
-            // Store artists for filtering
-            allArtists = artists;
-            
-            // Load track counts for each artist
-            const artistsWithStats = await Promise.all(artists.map(async (artist) => {
-              try {
-                // Fetch tracks for this artist
-                const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=${artist.id}`);
-                const tracks = tracksResponse.ok ? await tracksResponse.json() : [];
-                const trackCount = tracks.length || 0;
-                
-                // Calculate total likes across all tracks
-                const totalLikes = tracks.reduce((sum, track) => sum + (track.likes_count || 0), 0);
-                
-                return {
-                  ...artist,
-                  trackCount,
-                  totalLikes
-                };
-              } catch (error) {
-                console.error(`Error loading stats for artist ${artist.id}:`, error);
-                return {
-                  ...artist,
-                  trackCount: 0,
-                  totalLikes: 0
-                };
-              }
-            }));
-            
-            // Check follow status for current user
-            const currentUserId = localStorage.getItem('user_id');
-            const artistsWithFollowStatus = await Promise.all(artistsWithStats.map(async (artist) => {
-              let isFollowing = false;
-              if (currentUserId && artist.id) {
-                try {
-                  const followResponse = await fetch(`${API_BASE_URL}/api/users/${artist.id}/follow-status?user_id=${currentUserId}`);
-                  if (followResponse.ok) {
-                    const followData = await followResponse.json();
-                    isFollowing = followData.is_following || false;
-                  }
-                } catch (error) {
-                  console.error('Error checking follow status:', error);
-                }
-              }
-              return { ...artist, isFollowing };
-            }));
-            
-            artistsGrid.innerHTML = artistsWithFollowStatus.map(artist => {
-              const isVerified = artist.is_verified || artist.verified || false;
-              // Check all possible profile picture fields
-              const avatar = artist.profile_image_url || artist.profile_image || artist.avatar_url || null;
-              const name = artist.name || artist.full_name || 'Unknown Artist';
-              const handle = artist.username || 'artist';
-              const createdAt = artist.created_at || null;
-              const trackCount = artist.trackCount || 0;
-              const totalLikes = artist.totalLikes || 0;
-              const isFollowing = artist.isFollowing || false;
-              
-              return `
-                <div class="artist-card" data-verified="${isVerified}" data-created="${createdAt}" onclick="window.location.href='profile.html?id=${artist.id}'">
-                  <div class="artist-avatar">
-                    ${avatar ? `<img src="${avatar}" alt="${name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
-                    <div style="${avatar ? 'display: none;' : 'display: flex;'}">🎤</div>
-                  </div>
-                  <div class="artist-name">
-                    ${name}
-                    ${isVerified ? '<span class="verified-badge">✓</span>' : ''}
-                  </div>
-                  <div class="artist-handle">@${handle}</div>
-                  <div class="artist-stats">
-                    <span>🎵 ${trackCount} ${trackCount === 1 ? 'track' : 'tracks'}</span>
-                    <span>❤️ ${totalLikes}</span>
-                  </div>
-                  <div class="artist-actions">
-                    ${currentUserId && artist.id && String(currentUserId) !== String(artist.id) ? `<button class="message-btn-artist" data-artist-id="${artist.id}" onclick="event.stopPropagation(); window.location.href='inbox.html?user=${artist.id}';" title="Message">💬</button>` : ''}
-                    <button class="follow-btn" data-artist-id="${artist.id}" data-is-following="${isFollowing}" ${isFollowing ? 'style="background: var(--accent); color: #fff;"' : ''}>${isFollowing ? 'Following' : 'Follow'}</button>
-                  </div>
-                </div>
-              `;
-            }).join('');
-            
-            // Re-attach follow button listeners with API calls
-            // currentUserId is already declared above, reuse it
-            document.querySelectorAll('.follow-btn').forEach(btn => {
-              const artistId = btn.dataset.artistId;
-              const isFollowing = btn.dataset.isFollowing === 'true';
-              
-              // Set initial state
-              if (isFollowing) {
-                btn.textContent = 'Following';
-                btn.style.background = 'var(--accent)';
-                btn.style.color = '#fff';
-              }
-              
-              btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                
-                if (!currentUserId) {
-                  alert('Please log in to follow artists');
-                  return;
-                }
-                
-                if (!artistId) {
-                  console.error('Artist ID not found');
-                  return;
-                }
-                
-                // Disable button during request
-                btn.disabled = true;
-                const originalText = btn.textContent;
-                
-                try {
-                  const response = await fetch(`${API_BASE_URL}/api/users/${artistId}/follow`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ user_id: currentUserId })
-                  });
-                  
-                  if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.is_following) {
-                  btn.textContent = 'Following';
-                  btn.style.background = 'var(--accent)';
-                  btn.style.color = '#fff';
-                      btn.dataset.isFollowing = 'true';
-                } else {
-                  btn.textContent = 'Follow';
-                  btn.style.background = 'transparent';
-                  btn.style.color = 'var(--accent)';
-                      btn.dataset.isFollowing = 'false';
-                    }
-                  } else {
-                    const error = await response.json();
-                    console.error('Follow error:', error);
-                    alert(error.error || 'Failed to follow/unfollow');
-                    btn.textContent = originalText;
-                  }
-                } catch (error) {
-                  console.error('Follow request failed:', error);
-                  alert('Failed to follow/unfollow. Please try again.');
-                  btn.textContent = originalText;
-                } finally {
-                  btn.disabled = false;
-                }
-              });
-            });
-            
-            // Apply initial filters after rendering
-            setTimeout(() => {
-              applyFilters();
-            }, 100);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading artists:', error);
-        const artistsGrid = document.getElementById('artistsGrid');
-        if (artistsGrid) {
-          artistsGrid.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error loading artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
-          artistsGrid.style.display = 'block';
-        }
-      }
-    }
-    
-    // Load artists on page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-    loadArtists();
-      });
-    } else {
-      loadArtists();
-    }
-    
-    // Also load on window load as fallback
-    window.addEventListener('load', () => {
-      if (allArtists.length === 0) {
-        loadArtists();
-      }
-    });
-  </script>
-  
-  <!-- Footer -->
-  <footer style="background: var(--bg); border-top: 1px solid var(--border); padding: 48px 24px 24px; margin-top: 80px; position: relative; z-index: 10; width: 100%;">
-    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 32px;">
-      <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-          <img src="assets/audio-city-logo.png" alt="Audio City" style="height: 32px;" onerror="this.style.display='none';">
-          <div style="font-size: 36px; font-weight: 900; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;">AUDIO CITY</div>
-        </div>
-        <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
-          Discover and share music from Uganda's vibrant music scene. Connect with artists, explore new tracks, and build your music community.
-        </p>
-        <div style="display: flex; gap: 12px;">
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📘</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🐦</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📷</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; font-size: 20px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">▶️</a>
-        </div>
-      </div>
-      <div>
-        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Company</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
-          <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
-          <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
-          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
-          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
-        </div>
-      </div>
-      <div>
-        <h4 style="color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 16px;">Resources</h4>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">For Artists</a>
-          <a href="help.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Help Center</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community</a>
-          <a href="#" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Blog</a>
-        </div>
-      </div>
-    </div>
-    <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
-    </div>
-  </footer>
-  
-</body>
-</html>
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artists — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    :root {
-      --bg-deep: #0a0a0f;
-      --bg: #141420;
-      --bg-light: #1a1a28;
-      --bg-card: rgba(30, 30, 46, 0.6);
-      --text: #ffffff;
-      --muted: #a0a0b8;
-      --accent: #8b5cf6;
-      --accent-light: #a78bfa;
-      --accent-glow: rgba(139, 92, 246, 0.3);
-      --cyan: #06b6d4;
-      --success: #10b981;
-      --border: rgba(255, 255, 255, 0.1);
-      --glass: rgba(255, 255, 255, 0.05);
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg-deep);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    
-    .bg-layer {
-      position: fixed;
-      inset: 0;
-      background: 
-        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.1), transparent 50%),
-        var(--bg-deep);
-      z-index: 0;
-      pointer-events: none;
-    }
-    
-    /* Header */
-    header {
-      position: sticky;
-      top: 0;
-      background: #000000 !important;
-      border-bottom: 1px solid var(--border);
-      padding: 12px 0;
-      z-index: 100;
-    }
-    
-    .header-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .logo-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: var(--text);
-    }
-    
-    .logo-brand img {
-      height: 32px;
-      width: auto;
-      display: block;
-    }
-    
-    .logo-brand .brand-text {
-      font-size: 36px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      color: #ffffff !important;
-      -webkit-text-fill-color: #ffffff !important;
-      display: block;
-      margin-left: 8px;
-    }
-    
-    .nav-main {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-    
-    .nav-item {
-      color: var(--muted);
-      text-decoration: none;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: 500;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-    
-    .nav-item:hover { background: var(--glass); color: var(--text); }
-    .nav-item.active { color: var(--accent); background: var(--glass); }
-    
-    .nav-dropdown { position: relative; }
-    .dropdown-menu {
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px;
-      min-width: 200px;
-      display: none;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-      z-index: 1000;
-    }
-    .nav-dropdown:hover .dropdown-menu { display: block; }
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-    .dropdown-item:hover {
-      background: var(--accent-glow);
-      color: var(--accent);
-    }
-    
-    .nav-right {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    
-    .donate-btn {
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: 1px solid var(--accent);
-      background: linear-gradient(135deg, var(--accent), var(--accent-light));
-      color: white;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px var(--accent-glow);
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-      display: inline-flex !important;
-      align-items: center;
-      gap: 8px;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    
-    .donate-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 18px var(--accent-glow);
-    }
-    
-    .donate-btn:active {
-      transform: translateY(0);
-      opacity: 0.9;
-    }
-    
-    .header-btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-    
-    .btn-signin {
-      color: var(--text);
-      background: transparent;
-    }
-    
-    .btn-signin:hover {
-      background: var(--glass);
-      color: var(--accent);
-    }
-    
-    .btn-create {
-      background: linear-gradient(135deg, var(--accent), var(--accent-light));
-      color: white;
-    }
-    
-    .btn-create:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-    
-    .btn-mastering {
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: all 0.2s;
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
-      color: white !important;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      display: inline-block !important;
-      visibility: visible !important;
-    }
-    
-    .btn-mastering:hover {
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(139, 92, 246, 0.2));
-      border-color: var(--accent);
-      transform: translateY(-1px);
-    }
-    
-    .profile-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      overflow: visible;
-      cursor: pointer;
-      display: none !important; /* Hidden by default, shown only when logged in */
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      font-size: 18px;
-    }
-    
-    .profile-btn.show {
-      display: flex !important;
-    }
-    
-    .profile-btn a {
-      position: relative;
-      z-index: 1;
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-    
-    .profile-btn:hover {
-      border-color: var(--accent);
-      transform: scale(1.05);
-    }
-    
-    /* Main Content */
-    main {
-      position: relative;
-      z-index: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .page-header {
-      margin-bottom: 32px;
-    }
-    
-    .page-title {
-      font-size: 32px;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-    
-    .page-subtitle {
-      color: var(--muted);
-      font-size: 16px;
-    }
-    
-    /* Search & Filters */
-    .search-section {
-      display: flex;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
       gap: 16px;
-      margin-bottom: 32px;
-      flex-wrap: wrap;
-    }
-    
-    .search-box {
-      flex: 1;
-      min-width: 280px;
-      position: relative;
-    }
-    
-    .search-box input {
-      width: 100%;
-      padding: 14px 16px 14px 48px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text);
-      font-size: 15px;
-    }
-    
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    
-    .search-box::before {
-      content: '🔍';
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-    }
-    
-    .filter-tabs {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .filter-tab {
-      padding: 12px 20px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--muted);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .filter-tab:hover { border-color: var(--accent); color: var(--text); }
-    .filter-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    
-    /* Artists Grid */
-    .artists-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 24px;
     }
     
     .artist-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: 12px;
+      padding: 16px;
       text-align: center;
       transition: all 0.3s;
       cursor: pointer;
@@ -1461,16 +359,17 @@
     }
     
     .artist-avatar {
-      width: 100px;
-      height: 100px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--cyan));
-      margin: 0 auto 16px;
+      margin: 0 auto 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 28px;
       overflow: hidden;
+      flex-shrink: 0;
     }
     
     .artist-avatar img {
@@ -1480,23 +379,26 @@
     }
     
     .artist-name {
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 700;
       margin-bottom: 4px;
+      line-height: 1.3;
     }
     
     .artist-handle {
       color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 12px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.3;
     }
     
     .artist-stats {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      font-size: 13px;
+      gap: 12px;
+      font-size: 11px;
       color: var(--muted);
+      margin-bottom: 8px;
     }
     
     .artist-stats span {
@@ -1512,9 +414,9 @@
     
     .artist-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       width: 100%;
-      margin-top: 16px;
+      margin-top: 10px;
     }
     
     .message-btn-artist {
@@ -1540,10 +442,11 @@
     }
     
     .follow-btn {
-      padding: 10px 24px;
+      padding: 6px 16px;
       background: transparent;
       border: 1px solid var(--accent);
-      border-radius: 20px;
+      border-radius: 16px;
+      font-size: 13px;
       color: var(--accent);
       font-size: 13px;
       font-weight: 600;
@@ -1578,6 +481,12 @@
     @media (max-width: 768px) {
       .nav-main { display: none; }
       .artists-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    }
+    
+    /* Skeleton loading animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
     }
   </style>
 </head>
@@ -1643,12 +552,73 @@
       </div>
     </div>
     
-    <div class="artists-grid" id="artistsGrid" style="display: none;">
+    <div class="artists-grid" id="artistsGrid" style="display: grid;">
       <!-- Content will appear here when available -->
     </div>
   </main>
   
   <script>
+    // Use local API for development, production API for deployed site
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://api.audiocity-ug.com';
+    
+    // Normalize image URL - ensure all media URLs use API_BASE_URL to prevent CORB errors
+    function normalizeImageUrl(url) {
+      if (!url) return null;
+      if (url.startsWith('data:')) return url;
+      
+      // If it's a full URL, ensure it uses the correct API base
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Replace www.audiocity-ug.com with api.audiocity-ug.com for media requests
+        if (url.includes('www.audiocity-ug.com')) {
+          url = url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+        }
+        
+        // Ensure /media/ paths use /api/media/
+        if (url.includes('/media/') && !url.includes('/api/media/')) {
+          return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+        }
+        
+        // If it's already pointing to the API base, return as is
+        if (url.includes(API_BASE_URL)) {
+          return url;
+        }
+        
+        // If it's a profile/track/cover image URL from a different domain, convert to API_BASE_URL
+        if (url.includes('/profiles/') || url.includes('/tracks/') || url.includes('/cover-art/') || url.includes('/covers/')) {
+          const pathMatch = url.match(/\/(profiles|tracks|cover-art|covers)\/.+/);
+          if (pathMatch) {
+            return `${API_BASE_URL}/api/media/${pathMatch[0].substring(1)}`;
+          }
+        }
+        
+        return url;
+      }
+      
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+          return `${API_BASE_URL}/api/media${url}`;
+        }
+        if (url.startsWith('/media/')) {
+          return `${API_BASE_URL}/api${url}`;
+        }
+        if (url.startsWith('/uploads/')) {
+          // Profile images might be stored as /uploads/...
+          return `${API_BASE_URL}/api/media${url}`;
+        }
+        return `${API_BASE_URL}${url}`;
+      }
+      
+      // Handle relative URLs without leading slash
+      if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/') || url.startsWith('uploads/')) {
+        return `${API_BASE_URL}/api/media/${url}`;
+      }
+      
+      return `${API_BASE_URL}/api/media/${url.replace(/^\//, '')}`;
+    }
+    
     // Update header profile picture
     async function updateHeaderProfilePicture() {
       const userId = localStorage.getItem('user_id');
@@ -1659,28 +629,16 @@
       
       let avatar = null;
       
-      // Try to fetch from backend API first (HTTPS only for production)
-      const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://localhost:3002'
-        : 'https://api.audiocity-ug.com';
-      if (userId) {
+      // Try to fetch from backend API first
+      if (userId && typeof API_BASE_URL !== 'undefined') {
         try {
           const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
-          if (response.ok) {
+        if (response.ok) {
             const userData = await response.json();
             avatar = userData?.profile_image || userData?.avatar_url;
-            
-            // Force HTTPS on all avatar URLs to prevent mixed content
-            if (avatar) {
-              avatar = avatar.replace(/^http:\/\//i, 'https://');
-              // If avatar URL is relative, make it absolute
-              if (avatar.startsWith('/uploads/')) {
-                avatar = `${API_BASE_URL}${avatar}`;
-              }
-            }
           }
-        } catch (error) {
-          // Silent fail - don't spam console, avatar will fallback to localStorage
+      } catch (error) {
+          console.error('Failed to load profile picture from API:', error);
         }
       }
       
@@ -1688,6 +646,9 @@
       if (!avatar) {
         avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
       }
+      
+      // Normalize avatar URL before using it
+      avatar = normalizeImageUrl(avatar);
       
       // Update header image
       if (avatar) {
@@ -1923,55 +884,112 @@
     
     // Load artists from API and show verification badges
     async function loadArtists() {
+      const artistsGrid = document.getElementById('artistsGrid');
+      // Show grid immediately with skeleton cards (instant display)
+      if (artistsGrid) {
+        artistsGrid.style.display = 'grid';
+        // Show skeleton loaders immediately while data loads
+        artistsGrid.innerHTML = Array(12).fill(0).map(() => `
+          <div class="artist-card" style="opacity: 0.5; animation: pulse 1.5s ease-in-out infinite;">
+            <div class="artist-avatar" style="background: var(--glass); border-radius: 50%; width: 80px; height: 80px;"></div>
+            <div class="artist-name" style="background: var(--glass); height: 20px; border-radius: 4px; width: 80%; margin: 8px 0;"></div>
+            <div class="artist-handle" style="background: var(--glass); height: 16px; border-radius: 4px; width: 60%; margin: 4px 0;"></div>
+            <div class="artist-stats" style="background: var(--glass); height: 16px; border-radius: 4px; width: 90%; margin: 8px 0;"></div>
+            <div class="artist-actions" style="background: var(--glass); height: 32px; border-radius: 6px; width: 100%; margin-top: 8px;"></div>
+          </div>
+        `).join('');
+      }
+      
+      // Normalize image URL - ensure all media URLs use API_BASE_URL to prevent CORB errors
+      function normalizeImageUrl(url) {
+        if (!url) return null;
+        if (url.startsWith('data:')) return url;
+        
+        // If it's a full URL, ensure it uses the correct API base
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          // Replace www.audiocity-ug.com with api.audiocity-ug.com for media requests
+          if (url.includes('www.audiocity-ug.com')) {
+            url = url.replace('www.audiocity-ug.com', 'api.audiocity-ug.com');
+          }
+          
+          // Ensure /media/ paths use /api/media/
+          if (url.includes('/media/') && !url.includes('/api/media/')) {
+            return url.replace(/(https?:\/\/[^\/]+)\/media\//, '$1/api/media/');
+          }
+          
+          // If it's already pointing to the API base, return as is
+          if (url.includes(API_BASE_URL)) {
+            return url;
+          }
+          
+          // If it's a profile/track/cover image URL from a different domain, convert to API_BASE_URL
+          if (url.includes('/profiles/') || url.includes('/tracks/') || url.includes('/cover-art/') || url.includes('/covers/')) {
+            const pathMatch = url.match(/\/(profiles|tracks|cover-art|covers)\/.+/);
+            if (pathMatch) {
+              return `${API_BASE_URL}/api/media/${pathMatch[0].substring(1)}`;
+            }
+          }
+          
+          return url;
+        }
+        
+        // Handle relative URLs
+        if (url.startsWith('/')) {
+          if (url.startsWith('/tracks/') || url.startsWith('/cover-art/') || url.startsWith('/profiles/') || url.startsWith('/covers/')) {
+            return `${API_BASE_URL}/api/media${url}`;
+          }
+          if (url.startsWith('/media/')) {
+            return `${API_BASE_URL}/api${url}`;
+          }
+          if (url.startsWith('/uploads/')) {
+            // Profile images might be stored as /uploads/...
+            return `${API_BASE_URL}/api/media${url}`;
+          }
+          return `${API_BASE_URL}${url}`;
+        }
+        
+        // Handle relative URLs without leading slash
+        if (url.startsWith('tracks/') || url.startsWith('cover-art/') || url.startsWith('profiles/') || url.startsWith('covers/') || url.startsWith('uploads/')) {
+          return `${API_BASE_URL}/api/media/${url}`;
+        }
+        
+        return `${API_BASE_URL}/api/media/${url.replace(/^\//, '')}`;
+      }
+      
       try {
-        // Use local API for development, production API for deployed site
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-          ? 'http://localhost:3002'
-          : 'https://api.audiocity-ug.com';
-        // Fetch all users (backend doesn't support select parameter, returns all fields)
-        const response = await fetch(`${API_BASE_URL}/api/users?_t=${Date.now()}`);
+        
+        // Fetch users with limit (optimize initial load)
+        const limit = 30; // Limit initial load to 30 artists for faster page load
+        const response = await fetch(`${API_BASE_URL}/api/users?limit=${limit}&_t=${Date.now()}`);
         
         // Handle 404 or other errors gracefully
         if (!response.ok) {
           console.warn('Failed to load artists:', response.status, response.statusText);
-          // Return empty array to prevent errors
           const artistsGrid = document.getElementById('artistsGrid');
           if (artistsGrid) {
-            artistsGrid.innerHTML = '';
-            artistsGrid.style.display = 'none';
-          }
-          const mainContent = document.querySelector('main');
-          if (mainContent) {
-            const pageTitle = mainContent.querySelector('.page-title');
-            const searchSection = mainContent.querySelector('.search-filters');
-            if (pageTitle) pageTitle.style.display = 'none';
-            if (searchSection) searchSection.style.display = 'none';
+            artistsGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Failed to load artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
           }
           return;
         }
         
         if (response.ok) {
-          const artists = await response.json();
+          const artistsData = await response.json();
+          // Ensure artists is an array
+          const artists = Array.isArray(artistsData) ? artistsData : [];
           const artistsGrid = document.getElementById('artistsGrid');
           
           if (artists.length === 0) {
             if (artistsGrid) {
-              artistsGrid.innerHTML = '';
-              artistsGrid.style.display = 'none';
-            }
-            // Hide the entire artists section
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-              const pageTitle = mainContent.querySelector('.page-title');
-              const searchSection = mainContent.querySelector('.search-filters');
-              if (pageTitle) pageTitle.style.display = 'none';
-              if (searchSection) searchSection.style.display = 'none';
+              artistsGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">No artists found</p></div>';
             }
             return;
           }
           
           if (artistsGrid && artists.length > 0) {
-            artistsGrid.style.display = '';
+            // Show grid immediately (like home page - instant display)
+            artistsGrid.style.display = 'grid';
+            
+            // Show main content immediately
             const mainContent = document.querySelector('main');
             if (mainContent) {
               const pageTitle = mainContent.querySelector('.page-title');
@@ -1982,54 +1000,26 @@
             // Store artists for filtering
             allArtists = artists;
             
-            // Load track counts for each artist
-            const artistsWithStats = await Promise.all(artists.map(async (artist) => {
-              try {
-                // Fetch tracks for this artist
-                const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=${artist.id}`);
-                const tracks = tracksResponse.ok ? await tracksResponse.json() : [];
-                const trackCount = tracks.length || 0;
-                
-                // Calculate total likes across all tracks
-                const totalLikes = tracks.reduce((sum, track) => sum + (track.likes_count || 0), 0);
-                
-                return {
-                  ...artist,
-                  trackCount,
-                  totalLikes
-                };
-              } catch (error) {
-                console.error(`Error loading stats for artist ${artist.id}:`, error);
-                return {
-                  ...artist,
-                  trackCount: 0,
-                  totalLikes: 0
-                };
-              }
-            }));
-            
-            // Check follow status for current user
+            // OPTIMIZATION: Render immediately without follow status checks
+            // Follow status will be loaded asynchronously after initial render
             const currentUserId = localStorage.getItem('user_id');
-            const artistsWithFollowStatus = await Promise.all(artistsWithStats.map(async (artist) => {
-              let isFollowing = false;
-              if (currentUserId && artist.id) {
-                try {
-                  const followResponse = await fetch(`${API_BASE_URL}/api/users/${artist.id}/follow-status?user_id=${currentUserId}`);
-                  if (followResponse.ok) {
-                    const followData = await followResponse.json();
-                    isFollowing = followData.is_following || false;
-                  }
-                } catch (error) {
-                  console.error('Error checking follow status:', error);
-                }
-              }
-              return { ...artist, isFollowing };
+            
+            // Prepare artists data (no API calls yet - instant render)
+            const artistsWithDefaults = artists.map(artist => ({
+              ...artist,
+              trackCount: 0,
+              totalLikes: 0,
+              isFollowing: false // Default to false, will update async
             }));
             
-            artistsGrid.innerHTML = artistsWithFollowStatus.map(artist => {
+            // Use document fragment for better performance
+            const fragment = document.createDocumentFragment();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = artistsWithDefaults.map(artist => {
               const isVerified = artist.is_verified || artist.verified || false;
-              // Check all possible profile picture fields
-              const avatar = artist.profile_image_url || artist.profile_image || artist.avatar_url || null;
+              // Check all possible profile picture fields and normalize URL
+              const avatarRaw = artist.profile_image_url || artist.profile_image || artist.avatar_url || null;
+              const avatar = normalizeImageUrl(avatarRaw);
               const name = artist.name || artist.full_name || 'Unknown Artist';
               const handle = artist.username || 'artist';
               const createdAt = artist.created_at || null;
@@ -2049,8 +1039,8 @@
                   </div>
                   <div class="artist-handle">@${handle}</div>
                   <div class="artist-stats">
-                    <span>🎵 ${trackCount} ${trackCount === 1 ? 'track' : 'tracks'}</span>
-                    <span>❤️ ${totalLikes}</span>
+                    <span>🎵 ${trackCount || 0} ${(trackCount || 0) === 1 ? 'track' : 'tracks'}</span>
+                    <span>❤️ ${totalLikes || 0}</span>
                   </div>
                   <div class="artist-actions">
                     ${currentUserId && artist.id && String(currentUserId) !== String(artist.id) ? `<button class="message-btn-artist" data-artist-id="${artist.id}" onclick="event.stopPropagation(); window.location.href='inbox.html?user=${artist.id}';" title="Message">💬</button>` : ''}
@@ -2059,6 +1049,22 @@
                 </div>
               `;
             }).join('');
+            
+            // Move all children to fragment
+            while (tempDiv.firstChild) {
+              fragment.appendChild(tempDiv.firstChild);
+            }
+            
+            // Replace content in one operation (no flash)
+            // Use replaceChildren for seamless update
+            artistsGrid.replaceChildren(fragment);
+            
+            // Load follow status asynchronously AFTER rendering (non-blocking)
+            if (currentUserId) {
+              setTimeout(() => {
+                loadFollowStatusAsync(artists, currentUserId);
+              }, 100);
+            }
             
             // Re-attach follow button listeners with API calls
             // currentUserId is already declared above, reuse it
@@ -2139,27 +1145,63 @@
         console.error('Error loading artists:', error);
         const artistsGrid = document.getElementById('artistsGrid');
         if (artistsGrid) {
-          artistsGrid.innerHTML = '<div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error loading artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
-          artistsGrid.style.display = 'block';
+          artistsGrid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);"><p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error loading artists</p><p style="font-size: 14px;">Please check your connection and try again.</p></div>';
+          artistsGrid.style.display = 'grid';
         }
       }
     }
     
-    // Load artists on page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-    loadArtists();
-      });
-    } else {
-      loadArtists();
+    // Load follow status asynchronously (non-blocking)
+    async function loadFollowStatusAsync(artists, currentUserId) {
+      if (!currentUserId || !artists || artists.length === 0) return;
+      
+      // Process in small batches to avoid overwhelming the server
+      const batchSize = 5;
+      for (let i = 0; i < artists.length; i += batchSize) {
+        const batch = artists.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (artist) => {
+          if (!artist.id) return;
+          
+          try {
+            const followResponse = await fetch(`${API_BASE_URL}/api/users/${artist.id}/follow-status?user_id=${currentUserId}`);
+            if (followResponse.ok) {
+              const followData = await followResponse.json();
+              const isFollowing = followData.is_following || false;
+              
+              // Update the button state
+              const followBtn = document.querySelector(`.follow-btn[data-artist-id="${artist.id}"]`);
+              if (followBtn) {
+                followBtn.dataset.isFollowing = isFollowing;
+                if (isFollowing) {
+                  followBtn.textContent = 'Following';
+                  followBtn.style.background = 'var(--accent)';
+                  followBtn.style.color = '#fff';
+                }
+              }
+            }
+          } catch (error) {
+            // Silently fail - don't block UI
+            console.debug('Follow status check failed for artist:', artist.id);
+          }
+        }));
+        
+        // Small delay between batches to avoid rate limiting
+        if (i + batchSize < artists.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
     }
     
-    // Also load on window load as fallback
-    window.addEventListener('load', () => {
-      if (allArtists.length === 0) {
+    // Load artists IMMEDIATELY on DOM ready (instant display)
+    // Don't wait for window.load - start loading as soon as DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
         loadArtists();
-      }
-    });
+      });
+    } else {
+      // DOM already ready - load immediately
+      loadArtists();
+    }
   </script>
   
   <!-- Footer -->
@@ -2201,7 +1243,10 @@
       </div>
     </div>
     <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+      <p style="color: var(--muted); font-size: 14px;">&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </footer>
   

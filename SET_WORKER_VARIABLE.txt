@@ -1,0 +1,63 @@
+# How to Set MASTERING_SERVER_URL in Cloudflare Worker
+
+## Step-by-Step Instructions:
+
+### Step 1: Go to Cloudflare Dashboard
+1. Open: https://dash.cloudflare.com
+2. Log in to your account
+
+### Step 2: Find Your Worker
+1. Click: **"Workers & Pages"** in the left sidebar
+2. Find your worker: **`audio-city-api-d1`** (or check wrangler-d1.toml for the exact name)
+3. Click on the worker name
+
+### Step 3: Go to Settings
+1. Click the **"Settings"** tab (at the top)
+2. Scroll down to **"Variables"** section
+
+### Step 4: Add Environment Variable
+1. Click **"Add variable"** button
+2. Select: **"Environment Variable"** (not Secret, unless you want it encrypted)
+3. Fill in:
+   - **Variable name**: `MASTERING_SERVER_URL`
+   - **Value**: `https://mastering.audiocity-ug.com`
+4. Click **"Save"**
+
+### Step 5: Deploy (if needed)
+- The variable is saved immediately
+- No need to redeploy - variables are applied to the next request
+
+## Alternative: Using Wrangler CLI
+
+If you prefer using command line:
+
+```bash
+# Set the variable
+echo "https://mastering.audiocity-ug.com" | npx wrangler secret put MASTERING_SERVER_URL --name=audio-city-api-d1
+```
+
+**Note**: Using `secret put` stores it as an encrypted secret. For regular variables, use the dashboard method above.
+
+## Verify It's Set
+
+After setting, you can verify by:
+1. Going back to Settings → Variables
+2. You should see `MASTERING_SERVER_URL` listed with the value
+
+## Important Notes:
+
+⚠️ **Before setting the variable:**
+- Make sure DNS is configured first (see PERSISTENT_TUNNEL_SETUP_COMPLETE.txt)
+- The DNS record should point `mastering.audiocity-ug.com` to the tunnel
+- Wait 2-5 minutes for DNS to propagate
+
+✅ **After setting:**
+- The worker will automatically use this URL for mastering requests
+- No code changes needed - the worker code already reads `env.MASTERING_SERVER_URL`
+
+## Current Configuration:
+
+- **Variable Name**: `MASTERING_SERVER_URL`
+- **Value to Set**: `https://mastering.audiocity-ug.com`
+- **Worker Name**: `audio-city-api-d1` (check wrangler-d1.toml to confirm)
+

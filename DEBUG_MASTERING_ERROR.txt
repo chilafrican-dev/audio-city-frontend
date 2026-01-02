@@ -1,0 +1,73 @@
+# Debug Mastering Error: "Mastering request failed"
+
+## Current Error:
+```
+❌ Mastering submission error: Error: Mastering request failed
+```
+
+## Possible Causes:
+
+### 1. Worker Not Deployed (Most Likely)
+- The worker code was updated but not deployed
+- Old code is still running
+- New endpoints don't exist yet
+
+**Solution**: Deploy the worker (see DEPLOY_VIA_DASHBOARD.txt)
+
+### 2. Response Format Mismatch
+- Server returns response but missing `success` field
+- Missing `jobId` or `progressId`
+- Response structure doesn't match expected format
+
+### 3. Environment Variable Not Set
+- `MASTERING_SERVER_URL` not set in worker
+- Falls back to HTTP URL (won't work from Workers)
+
+## How to Debug:
+
+### Check Browser Console
+Open browser DevTools (F12) and check:
+1. **Network tab**: Look for the `/api/quick-master` request
+2. **Response**: What does the actual response look like?
+3. **Status code**: Is it 200, 404, 500, etc.?
+
+### Check Worker Logs
+1. Go to: https://dash.cloudflare.com
+2. Workers & Pages → `audio-city-api-d1`
+3. Logs tab
+4. Look for errors or the actual response
+
+### Test Directly
+```bash
+# Test if endpoint exists
+curl https://api.audiocity-ug.com/api/quick-master -X POST -F "preset=kidandali"
+
+# Should return 404 if worker not deployed, or actual response if deployed
+```
+
+## Expected Response Format:
+
+The frontend expects:
+```json
+{
+  "success": true,
+  "jobId": "..." OR "progressId": "..."
+}
+```
+
+OR for synchronous completion:
+```json
+{
+  "success": true,
+  "status": "completed",
+  "audioUrl": "...",
+  ...
+}
+```
+
+## Quick Fix:
+
+1. **Deploy the worker** (most likely fix)
+2. **Check worker logs** for actual error
+3. **Verify environment variable** is set correctly
+

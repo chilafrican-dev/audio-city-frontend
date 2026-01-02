@@ -1,0 +1,41 @@
+# Caching Implementation for Feed and Artists Pages
+
+## Problem:
+Every page reload hits the database, causing performance issues:
+- `GET /api/tracks` - Feed page queries database on every load
+- `GET /api/users` - Artists page queries database on every load
+
+## Solution Implemented:
+
+### 1. Cache Headers Added
+- **Browser cache**: 60 seconds (`max-age=60`)
+- **CDN cache**: 120 seconds (`s-maxage=120`)
+- **Cloudflare CDN**: Uses `CDN-Cache-Control` header
+
+### 2. Endpoints Cached:
+- ✅ `GET /api/tracks` - Feed data (cached 60s/120s)
+- ✅ `GET /api/users` - Artists list (cached 60s/120s)
+
+### 3. Smart Caching:
+- **Cached**: Public feed/artists lists (no query params or limit only)
+- **Not cached**: Name searches (admin upload form needs fresh data)
+- **Not cached**: User-specific endpoints (profile, inbox, etc.)
+
+## Cache Headers:
+```javascript
+'Cache-Control': 'public, max-age=60, s-maxage=120'
+'CDN-Cache-Control': 'public, s-maxage=120'
+'Vary': 'Accept'
+```
+
+## Benefits:
+- ✅ 60-120 seconds of cache = massive database load reduction
+- ✅ Cloudflare CDN caches at edge = faster global response
+- ✅ Browser cache = instant repeat visits
+- ✅ Still fresh enough for real-time feel
+
+## Next Steps (Optional):
+- Consider Cloudflare KV for longer cache (5-10 minutes)
+- Add cache invalidation on track/user updates
+- Monitor cache hit rates in Cloudflare dashboard
+

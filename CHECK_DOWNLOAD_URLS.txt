@@ -1,0 +1,16 @@
+# Debug: WAV URL not available
+
+## Issue:
+User clicks download button but gets "WAV URL not available yet"
+
+## Check:
+1. Is `window.downloadUrls` being set correctly in mastering.js?
+2. Is `getWavUrl()` checking `window.downloadUrls`?
+3. Are download buttons being enabled at the right time?
+4. Is there a timing issue - buttons enabled before URLs are set?
+
+## Next Steps:
+- Check console logs to see if downloadUrls is set
+- Verify getWavUrl() is checking window.downloadUrls
+- Check if download buttons are enabled before URLs are available
+

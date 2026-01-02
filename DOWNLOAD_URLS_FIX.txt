@@ -1,0 +1,26 @@
+# Fixed: Download URLs Not Showing
+
+## Problem:
+- Mastering was working ✅
+- Audio was loading for preview ✅
+- But download URLs showed as `null` ❌
+- Error: "WAV URL not available yet"
+
+## Root Cause:
+The `getWavUrl()` and `getAudioUrl()` functions in `mastering.html` were reading from the local `downloadUrls` variable, but `mastering.js` was setting `window.downloadUrls`. They weren't synced!
+
+## Fix Applied:
+
+1. ✅ Updated `getWavUrl()` to check `window.downloadUrls` first
+2. ✅ Updated `getAudioUrl()` to check `window.downloadUrls` first  
+3. ✅ Updated console.log to show `window.downloadUrls`
+4. ✅ Synced both mastering.html files
+
+## Result:
+
+Now when `mastering.js` sets `window.downloadUrls`, the helper functions will find it and download buttons will work!
+
+## Test:
+
+After deploying, try mastering again - the download buttons should now work correctly.
+

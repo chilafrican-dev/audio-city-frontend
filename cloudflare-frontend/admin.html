@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * {
       margin: 0;
@@ -258,6 +260,18 @@
     <div id="statsContainer">
       <div class="loading">Loading statistics...</div>
     </div>
+    
+    <!-- Track Review Section -->
+    <div class="container" style="margin-top: 48px;">
+      <div class="page-header">
+        <h2 class="page-title" style="font-size: 28px;">Track Review</h2>
+        <p class="page-subtitle">Review tracks flagged for manual approval</p>
+      </div>
+      
+      <div id="reviewContainer">
+        <div class="loading">Loading pending tracks...</div>
+      </div>
+    </div>
   </div>
   
   <script>
@@ -281,9 +295,11 @@
       `;
     } else {
       loadStats();
+      loadPendingTracks();
       
       // Auto-refresh every 30 seconds
       setInterval(loadStats, 30000);
+      setInterval(loadPendingTracks, 30000);
     }
     
     async function loadStats() {
@@ -410,6 +426,144 @@
           }).join('')}
         </div>
       `;
+    }
+    
+    async function loadPendingTracks() {
+      const container = document.getElementById('reviewContainer');
+      
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        const response = await fetch(`${API_BASE_URL}/api/admin/tracks/pending`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load pending tracks');
+        }
+        
+        const tracks = await response.json();
+        displayPendingTracks(tracks);
+      } catch (error) {
+        console.error('Error loading pending tracks:', error);
+        container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+      }
+    }
+    
+    function displayPendingTracks(tracks) {
+      const container = document.getElementById('reviewContainer');
+      
+      if (!tracks || tracks.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 48px; color: var(--muted);">
+            <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+            <h3 style="font-size: 20px; margin-bottom: 8px;">No Pending Reviews</h3>
+            <p>All tracks have been reviewed.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = `
+        <div style="display: grid; gap: 24px;">
+          ${tracks.map(track => `
+            <div class="stat-card" style="padding: 24px;">
+              <div style="display: flex; gap: 24px; align-items: start;">
+                <div style="flex-shrink: 0;">
+                  <img src="${track.cover_art_url || '/api/media/cover-art/default.png'}" 
+                       alt="Cover" 
+                       style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; background: var(--bg-light);"
+                       onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Crect fill=%22%23141420%22 width=%22120%22 height=%22120%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23a0a0b8%22 font-size=%2232%22%3E🎵%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div style="flex: 1;">
+                  <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">${track.title || 'Untitled'}</h3>
+                  <p style="color: var(--muted); margin-bottom: 12px;">
+                    by ${track.artist_name || track.artist_username || 'Unknown Artist'}
+                  </p>
+                  ${track.flag_reason ? `
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                      <strong style="color: var(--error);">⚠️ Flag Reason:</strong>
+                      <p style="color: var(--muted); margin-top: 4px;">${track.flag_reason}</p>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button onclick="approveTrack('${track.id}')" 
+                            style="background: linear-gradient(135deg, var(--success), #16a34a); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                      ✅ Approve
+                    </button>
+                    <button onclick="rejectTrack('${track.id}')" 
+                            style="background: linear-gradient(135deg, var(--error), #dc2626); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                      ❌ Reject
+                    </button>
+                    <a href="track.html?id=${track.id}" target="_blank" 
+                       style="background: var(--bg-light); color: var(--text); border: 1px solid var(--border); padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">
+                      👁️ View Track
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    async function approveTrack(trackId) {
+      if (!confirm('Approve this track? It will be published and visible to all users.')) {
+        return;
+      }
+      
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        const response = await fetch(`${API_BASE_URL}/api/admin/tracks/${trackId}/approve`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to approve track');
+        }
+        
+        const result = await response.json();
+        alert('Track approved successfully!');
+        loadPendingTracks(); // Refresh the list
+      } catch (error) {
+        console.error('Error approving track:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+    
+    async function rejectTrack(trackId) {
+      const reason = prompt('Enter rejection reason:', 'Violates platform rules');
+      if (!reason) {
+        return;
+      }
+      
+      try {
+        const authToken = localStorage.getItem('auth_token');
+        const response = await fetch(`${API_BASE_URL}/api/admin/tracks/${trackId}/reject`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reason })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to reject track');
+        }
+        
+        const result = await response.json();
+        alert('Track rejected successfully!');
+        loadPendingTracks(); // Refresh the list
+      } catch (error) {
+        console.error('Error rejecting track:', error);
+        alert(`Error: ${error.message}`);
+      }
     }
   </script>
 </body>
