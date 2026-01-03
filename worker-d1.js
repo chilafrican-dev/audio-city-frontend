@@ -86,11 +86,14 @@ export default {
       const adminEmail = (adminEmailHeader || adminEmailFromForm || '').toString().trim().toLowerCase();
       
       // ADMIN BYPASS: If email is chilafrican@gmail.com, grant FULL ACCESS immediately
-      if (adminEmail === 'chilafrican@gmail.com') {
+      const ADMIN_EMAIL = 'chilafrican@gmail.com';
+      const ADMIN_PASSWORD = 'Semakulanico1';
+      
+      if (adminEmail === ADMIN_EMAIL.toLowerCase()) {
         console.log('[Admin Bypass] ✅ Admin email detected - granting full access');
         if (env.DB) {
-          let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
-            .bind('chilafrican@gmail.com').first();
+          let adminUser = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+            .bind(ADMIN_EMAIL.toLowerCase()).first();
           
           if (!adminUser) {
             // Create admin user if doesn't exist
@@ -102,22 +105,23 @@ export default {
             `).bind(
               adminUserId,
               'admin',
-              'chilafrican@gmail.com',
+              ADMIN_EMAIL,
               'Admin',
-              'ssemakulanico1'
+              ADMIN_PASSWORD
             ).run();
             
-            adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
-              .bind('chilafrican@gmail.com').first();
+            adminUser = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+              .bind(ADMIN_EMAIL.toLowerCase()).first();
             console.log('[Admin Bypass] ✅ Created admin user:', adminUser?.id);
           } else {
             // RESET/UPDATE admin account - Always force admin status and verified
-            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ? WHERE email = ?')
-              .bind('admin', 'Admin', 'chilafrican@gmail.com').run();
+            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ?, password = ? WHERE LOWER(email) = ?')
+              .bind('admin', 'Admin', ADMIN_PASSWORD, ADMIN_EMAIL.toLowerCase()).run();
             adminUser.is_admin = 1;
             adminUser.verified = 1;
             adminUser.username = 'admin';
             adminUser.name = 'Admin';
+            adminUser.password = ADMIN_PASSWORD;
             console.log('[Admin Bypass] ✅ Admin account reset/updated - status forced');
           }
           return adminUser;
@@ -2043,15 +2047,19 @@ export default {
         }
         
         const identifier = (body.email || body.identifier || '').toLowerCase();
-        // Use LOWER() for case-insensitive comparison of email and username
-        let user = await env.DB.prepare('SELECT * FROM users WHERE (LOWER(email) = ? OR LOWER(username) = ?) AND password = ?')
-          .bind(identifier, identifier, body.password).first();
+        const ADMIN_EMAIL = 'chilafrican@gmail.com';
+        const ADMIN_PASSWORD = 'Semakulanico1';
         
-        // FORCE ADMIN STATUS for chilafrican@gmail.com
-        if (identifier === 'chilafrican@gmail.com' && body.password === 'ssemakulanico1') {
+        // ADMIN LOGIN: Check for admin credentials first
+        if (identifier === ADMIN_EMAIL.toLowerCase() && body.password === ADMIN_PASSWORD) {
+          console.log('[Login] Admin credentials detected');
+          let user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+            .bind(ADMIN_EMAIL.toLowerCase()).first();
+          
           if (!user) {
             // Create admin user if doesn't exist
             const adminUserId = 'admin_' + Date.now();
+            console.log('[Login] Creating new admin user:', adminUserId);
             await env.DB.prepare(`
               INSERT INTO users (
                 id, username, email, name, password, is_admin, verified, created_at, updated_at
@@ -2059,21 +2067,58 @@ export default {
             `).bind(
               adminUserId,
               'admin',
-              'chilafrican@gmail.com',
+              ADMIN_EMAIL,
               'Admin',
-              'ssemakulanico1'
+              ADMIN_PASSWORD
             ).run();
             
-            user = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
-              .bind('chilafrican@gmail.com').first();
+            user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+              .bind(ADMIN_EMAIL.toLowerCase()).first();
+            console.log('[Login] Admin user created:', user?.id);
           } else {
-            // Force admin status
-            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1 WHERE email = ?')
-              .bind('chilafrican@gmail.com').run();
+            // Reset/update admin account with correct credentials
+            console.log('[Login] Updating existing admin user:', user.id);
+            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ?, password = ? WHERE LOWER(email) = ?')
+              .bind('admin', 'Admin', ADMIN_PASSWORD, ADMIN_EMAIL.toLowerCase()).run();
             user.is_admin = 1;
             user.verified = 1;
+            user.username = 'admin';
+            user.name = 'Admin';
+            user.password = ADMIN_PASSWORD;
+            console.log('[Login] Admin user updated and reset');
           }
+          
+          // Create session for admin
+          const token = 'token_' + Date.now() + '_' + uuid();
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          await env.DB.prepare(`
+            INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+          `).bind(uuid(), user.id, token, expiresAt).run();
+          
+          console.log('[Login] Admin login successful:', user.email, 'is_admin:', user.is_admin);
+          
+          return Response.json({
+            success: true,
+            token,
+            user: {
+              id: user.id,
+              email: user.email,
+              username: user.username,
+              name: user.name,
+              is_admin: true,
+              verified: true,
+              avatar_url: user.avatar_url,
+              profile_image_url: user.profile_image_url,
+              bio: user.bio,
+              location: user.location
+            }
+          }, { headers: corsHeaders });
         }
+        
+        // REGULAR USER LOGIN: Use LOWER() for case-insensitive comparison
+        let user = await env.DB.prepare('SELECT * FROM users WHERE (LOWER(email) = ? OR LOWER(username) = ?) AND password = ?')
+          .bind(identifier, identifier, body.password).first();
         
         if (!user) {
           return Response.json({ error: 'Invalid credentials' }, 
@@ -3713,8 +3758,10 @@ export default {
       try {
         const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
         const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
+        const ADMIN_EMAIL = 'chilafrican@gmail.com';
+        const ADMIN_PASSWORD = 'Semakulanico1';
         
-        if (adminEmail !== 'chilafrican@gmail.com') {
+        if (adminEmail !== ADMIN_EMAIL.toLowerCase()) {
           return Response.json({ error: 'Unauthorized - Admin access required' }, 
             { status: 401, headers: corsHeaders });
         }
@@ -3725,8 +3772,8 @@ export default {
         }
         
         // Reset admin account
-        let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
-          .bind('chilafrican@gmail.com').first();
+        let adminUser = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+          .bind(ADMIN_EMAIL.toLowerCase()).first();
         
         if (!adminUser) {
           // Create admin user if doesn't exist
@@ -3738,18 +3785,18 @@ export default {
           `).bind(
             adminUserId,
             'admin',
-            'chilafrican@gmail.com',
+            ADMIN_EMAIL,
             'Admin',
-            'ssemakulanico1'
+            ADMIN_PASSWORD
           ).run();
-          adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
-            .bind('chilafrican@gmail.com').first();
+          adminUser = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+            .bind(ADMIN_EMAIL.toLowerCase()).first();
         } else {
-          // Reset/update admin account
-          await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ? WHERE email = ?')
-            .bind('admin', 'Admin', 'chilafrican@gmail.com').run();
-          adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
-            .bind('chilafrican@gmail.com').first();
+          // Reset/update admin account with correct password
+          await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ?, password = ? WHERE LOWER(email) = ?')
+            .bind('admin', 'Admin', ADMIN_PASSWORD, ADMIN_EMAIL.toLowerCase()).run();
+          adminUser = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
+            .bind(ADMIN_EMAIL.toLowerCase()).first();
         }
         
         return Response.json({ 

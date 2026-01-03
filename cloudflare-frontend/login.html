@@ -481,43 +481,8 @@
       submitBtn.textContent = 'Signing in...';
       statusEl.className = 'status';
       
-      // Admin login check
-      const ADMIN_EMAIL = 'chilafrican@gmail.com';
-      const ADMIN_PASSWORD = 'ssemakulanico1';
-      
-      if (identifier.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
-        // Admin login - grant admin privileges
-        statusEl.className = 'status success';
-        statusEl.textContent = '✅ Admin login successful! Redirecting...';
-        
-        // Generate a proper admin user ID (not just 'admin')
-        const adminUserId = 'admin_' + Date.now();
-        localStorage.setItem('auth_token', 'admin_token_' + Date.now());
-        localStorage.setItem('user_id', adminUserId);
-        localStorage.setItem('user_name', 'Admin');
-        localStorage.setItem('username', 'admin');
-        localStorage.setItem('user_email', ADMIN_EMAIL);
-        localStorage.setItem('is_admin', 'true');
-        localStorage.setItem('admin_mode', 'true');
-        // Store user_data for compatibility
-        localStorage.setItem('user_data', JSON.stringify({
-          id: adminUserId,
-          name: 'Admin',
-          username: 'admin',
-          email: ADMIN_EMAIL,
-          is_admin: true
-        }));
-        
-        // Check for return URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const returnUrl = urlParams.get('return') || 'feed.html';
-        
-        setTimeout(() => {
-          window.location.href = decodeURIComponent(returnUrl);
-        }, 1000);
-        
-        return;
-      }
+      // Admin login check - REMOVED (now handled by backend)
+      // All authentication goes through the API
       
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -535,6 +500,7 @@
         statusEl.className = 'status success';
         statusEl.textContent = '✅ Login successful! Redirecting...';
         
+        // Store user data
         localStorage.setItem('auth_token', data.token);
         if (data.user.id) localStorage.setItem('user_id', data.user.id);
         if (data.user.name) localStorage.setItem('user_name', data.user.name);
@@ -544,13 +510,20 @@
           localStorage.setItem('profile_image_url', data.user.avatar_url || data.user.profile_image);
         }
         
-        // CHECK IF ADMIN: Either from API response OR by email
-        const loginEmail = (data.user.email || '').toLowerCase().trim();
-        const isAdminUser = data.user.is_admin === true || data.user.is_admin === 1 || loginEmail === 'chilafrican@gmail.com';
+        // Store complete user data for easy access
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+        
+        // CHECK IF ADMIN: From API response ONLY (backend determines this)
+        const isAdminUser = data.user.is_admin === true || data.user.is_admin === 1;
         localStorage.setItem('is_admin', isAdminUser ? 'true' : 'false');
+        
         if (isAdminUser) {
           localStorage.setItem('admin_mode', 'true');
-          console.log('[Login] ✅ Admin user detected:', loginEmail);
+          console.log('[Login] ✅ Admin user detected:', data.user.email);
+          console.log('[Login] Admin user data:', data.user);
+        } else {
+          localStorage.removeItem('admin_mode');
+          console.log('[Login] Regular user login:', data.user.email);
         }
         
         // Check for return URL parameter
