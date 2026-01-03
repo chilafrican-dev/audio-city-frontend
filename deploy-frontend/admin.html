@@ -296,20 +296,14 @@
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
     
-    // Check if user is admin - MULTIPLE METHODS
+    // ADMIN EMAIL - Only this email has admin access (hardcoded for security)
+    const ADMIN_EMAIL = 'chilafrican@gmail.com';
+    
+    // Check if user is admin - ONLY by email (not localStorage - that's insecure)
     const userEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
-    const isAdminEmail = userEmail === 'chilafrican@gmail.com';
-    const isAdminLocal = localStorage.getItem('is_admin') === 'true';
-    const isAdminMode = localStorage.getItem('admin_mode') === 'true';
-    const isAdmin = isAdminEmail || isAdminLocal || isAdminMode;
+    const isAdmin = userEmail === ADMIN_EMAIL;
     
-    console.log('[Admin Check]', { userEmail, isAdminEmail, isAdminLocal, isAdminMode, isAdmin });
-    
-    // If admin by email, also set localStorage for consistency
-    if (isAdminEmail && !isAdminLocal) {
-      localStorage.setItem('is_admin', 'true');
-      console.log('[Admin Check] Set is_admin=true in localStorage');
-    }
+    console.log('[Admin Check]', { userEmail, isAdmin, requiredEmail: ADMIN_EMAIL });
     
     if (!isAdmin) {
       document.body.innerHTML = `
@@ -319,7 +313,8 @@
             <h2 style="font-size: 24px; margin-bottom: 8px;">Access Denied</h2>
             <p style="color: #a0a0b8; margin-bottom: 24px;">You need admin privileges to access this page.</p>
             <p style="color: #666; font-size: 12px; margin-bottom: 16px;">Logged in as: ${userEmail || 'Not logged in'}</p>
-            <a href="feed.html" style="color: #8b5cf6; text-decoration: none;">← Back to Feed</a>
+            <p style="color: #444; font-size: 11px;">Admin email required: ${ADMIN_EMAIL}</p>
+            <a href="login.html" style="color: #8b5cf6; text-decoration: none; margin-top: 16px; display: inline-block;">→ Login with admin account</a>
           </div>
         </div>
       `;
