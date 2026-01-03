@@ -5,6 +5,85 @@
  * No breaking changes for 8M+ users
  */
 
+// JWT SECRET - Change this in production!
+const JWT_SECRET = 'AUDIO_CITY_SUPER_SECRET_CHANGE_THIS_IN_PRODUCTION_2025';
+
+// Helper: Create JWT token
+async function createJWT(payload, secret, expiresIn = '7d') {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  
+  // Calculate expiry
+  const now = Math.floor(Date.now() / 1000);
+  const expiry = now + (expiresIn === '7d' ? 7 * 24 * 60 * 60 : 24 * 60 * 60);
+  
+  const jwtPayload = {
+    ...payload,
+    iat: now,
+    exp: expiry
+  };
+  
+  // Base64 encode
+  const base64Header = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const base64Payload = btoa(JSON.stringify(jwtPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  // Create signature
+  const data = `${base64Header}.${base64Payload}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
+  return `${data}.${base64Signature}`;
+}
+
+// Helper: Verify JWT token
+async function verifyJWT(token, secret) {
+  try {
+    const [header, payload, signature] = token.split('.');
+    if (!header || !payload || !signature) return null;
+    
+    // Verify signature
+    const data = `${header}.${payload}`;
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    
+    // Decode signature
+    const signatureBytes = Uint8Array.from(
+      atob(signature.replace(/-/g, '+').replace(/_/g, '/') + '=='.substring(0, (3 * signature.length) % 4)), 
+      c => c.charCodeAt(0)
+    );
+    
+    const valid = await crypto.subtle.verify('HMAC', key, signatureBytes, encoder.encode(data));
+    if (!valid) return null;
+    
+    // Decode and verify payload
+    const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/') + '=='.substring(0, (3 * payload.length) % 4)));
+    
+    // Check expiry
+    if (decodedPayload.exp && decodedPayload.exp < Math.floor(Date.now() / 1000)) {
+      return null; // Token expired
+    }
+    
+    return decodedPayload;
+  } catch (error) {
+    console.error('[JWT Verify] Error:', error);
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -54,6 +133,47 @@ export default {
     const getAuthToken = (request) => {
       const authHeader = request.headers.get('Authorization');
       if (authHeader?.startsWith('Bearer ')) {
+        return authHeader.substring(7);
+      }
+      return null;
+    };
+
+    // Helper: Verify user from JWT token
+    const verifyUserFromToken = async (request) => {
+      const token = getAuthToken(request);
+      if (!token) return null;
+      
+      const payload = await verifyJWT(token, JWT_SECRET);
+      if (!payload) return null;
+      
+      // Return user data from token
+      return {
+        id: payload.id,
+        email: payload.email,
+        role: payload.role || 'user',
+        is_admin: payload.role === 'admin'
+      };
+    };
+
+    // Middleware: Require authentication
+    const requireAuth = async (request) => {
+      const user = await verifyUserFromToken(request);
+      if (!user) {
+        return { error: 'Authentication required', status: 401 };
+      }
+      return { user };
+    };
+
+    // Middleware: Require admin role
+    const requireAdmin = async (request) => {
+      const authResult = await requireAuth(request);
+      if (authResult.error) return authResult;
+      
+      if (authResult.user.role !== 'admin') {
+        return { error: 'Admin access required', status: 403 };
+      }
+      return { user: authResult.user };
+    };
         return authHeader.substring(7);
       }
       const urlParams = new URL(request.url).searchParams;
@@ -2032,12 +2152,12 @@ export default {
       }
     }
 
-    // POST /api/auth/login
+    // POST /api/auth/login - JWT + Role-based auth
     if (url.pathname === '/api/auth/login' && request.method === 'POST') {
       try {
         const body = await parseBody(request);
         if (!body || (!body.email && !body.identifier) || !body.password) {
-          return Response.json({ error: 'Email/username and password required' }, 
+          return Response.json({ error: 'Email and password required' }, 
             { status: 400, headers: corsHeaders });
         }
         
@@ -2046,20 +2166,21 @@ export default {
             { status: 500, headers: corsHeaders });
         }
         
-        const identifier = (body.email || body.identifier || '').toLowerCase();
+        const identifier = (body.email || body.identifier || '').toLowerCase().trim();
         const ADMIN_EMAIL = 'chilafrican@gmail.com';
         const ADMIN_PASSWORD = 'Semakulanico1';
         
-        // ADMIN LOGIN: Check for admin credentials first
+        // ADMIN LOGIN: Check credentials and create/update admin user
         if (identifier === ADMIN_EMAIL.toLowerCase() && body.password === ADMIN_PASSWORD) {
           console.log('[Login] Admin credentials detected');
+          
+          // Get or create admin user
           let user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
             .bind(ADMIN_EMAIL.toLowerCase()).first();
           
           if (!user) {
-            // Create admin user if doesn't exist
+            // Create admin user
             const adminUserId = 'admin_' + Date.now();
-            console.log('[Login] Creating new admin user:', adminUserId);
             await env.DB.prepare(`
               INSERT INTO users (
                 id, username, email, name, password, is_admin, verified, created_at, updated_at
@@ -2074,29 +2195,22 @@ export default {
             
             user = await env.DB.prepare('SELECT * FROM users WHERE LOWER(email) = ?')
               .bind(ADMIN_EMAIL.toLowerCase()).first();
-            console.log('[Login] Admin user created:', user?.id);
           } else {
-            // Reset/update admin account with correct credentials
-            console.log('[Login] Updating existing admin user:', user.id);
-            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ?, password = ? WHERE LOWER(email) = ?')
-              .bind('admin', 'Admin', ADMIN_PASSWORD, ADMIN_EMAIL.toLowerCase()).run();
+            // Update admin user
+            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, password = ? WHERE LOWER(email) = ?')
+              .bind(ADMIN_PASSWORD, ADMIN_EMAIL.toLowerCase()).run();
             user.is_admin = 1;
             user.verified = 1;
-            user.username = 'admin';
-            user.name = 'Admin';
-            user.password = ADMIN_PASSWORD;
-            console.log('[Login] Admin user updated and reset');
           }
           
-          // Create session for admin
-          const token = 'token_' + Date.now() + '_' + uuid();
-          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-          await env.DB.prepare(`
-            INSERT INTO sessions (id, user_id, token, expires_at, created_at)
-            VALUES (?, ?, ?, ?, datetime('now'))
-          `).bind(uuid(), user.id, token, expiresAt).run();
+          // Create JWT token with role
+          const token = await createJWT({
+            id: user.id,
+            email: user.email,
+            role: 'admin'
+          }, JWT_SECRET, '7d');
           
-          console.log('[Login] Admin login successful:', user.email, 'is_admin:', user.is_admin);
+          console.log('[Login] ✅ Admin login successful');
           
           return Response.json({
             success: true,
@@ -2104,19 +2218,16 @@ export default {
             user: {
               id: user.id,
               email: user.email,
-              username: user.username,
-              name: user.name,
+              username: user.username || 'admin',
+              name: user.name || 'Admin',
+              role: 'admin',
               is_admin: true,
-              verified: true,
-              avatar_url: user.avatar_url,
-              profile_image_url: user.profile_image_url,
-              bio: user.bio,
-              location: user.location
+              verified: true
             }
           }, { headers: corsHeaders });
         }
         
-        // REGULAR USER LOGIN: Use LOWER() for case-insensitive comparison
+        // REGULAR USER LOGIN
         let user = await env.DB.prepare('SELECT * FROM users WHERE (LOWER(email) = ? OR LOWER(username) = ?) AND password = ?')
           .bind(identifier, identifier, body.password).first();
         
@@ -2125,14 +2236,38 @@ export default {
             { status: 401, headers: corsHeaders });
         }
         
-        const token = 'token_' + Date.now() + '_' + uuid();
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-        await env.DB.prepare(`
-          INSERT INTO sessions (id, user_id, token, expires_at, created_at)
-          VALUES (?, ?, ?, ?, datetime('now'))
-        `).bind(uuid(), user.id, token, expiresAt).run();
+        // Determine role from is_admin flag
+        const role = (user.is_admin === 1 || user.is_admin === true) ? 'admin' : 'user';
         
-        user.verified = user.verified === 1;
+        // Create JWT token
+        const token = await createJWT({
+          id: user.id,
+          email: user.email,
+          role: role
+        }, JWT_SECRET, '7d');
+        
+        return Response.json({
+          success: true,
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            name: user.name,
+            role: role,
+            is_admin: role === 'admin',
+            verified: user.verified === 1
+          }
+        }, { headers: corsHeaders });
+        
+      } catch (error) {
+        console.error('[Login] Error:', error);
+        return Response.json({ 
+          error: 'Login failed',
+          details: error.message
+        }, { status: 500, headers: corsHeaders });
+      }
+    }
         user.is_admin = user.is_admin === 1;
         
         return Response.json({
@@ -3667,25 +3802,27 @@ export default {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
-    // GET /api/admin/stats - Get admin statistics (admin only)
+    // GET /api/admin/dashboard - Admin dashboard (JWT + role check)
+    if (url.pathname === '/api/admin/dashboard' && request.method === 'GET') {
+      const authResult = await requireAdmin(request);
+      if (authResult.error) {
+        return Response.json({ error: authResult.error }, 
+          { status: authResult.status, headers: corsHeaders });
+      }
+      
+      return Response.json({ 
+        message: 'Welcome Admin 🔥',
+        user: authResult.user
+      }, { headers: corsHeaders });
+    }
+
+    // GET /api/admin/stats - Get admin statistics (JWT + role check)
     if (url.pathname === '/api/admin/stats' && request.method === 'GET') {
-      try {
-        // Check admin access via email header or token
-        const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
-        const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
-        
-        // Admin bypass for chilafrican@gmail.com
-        if (adminEmail === 'chilafrican@gmail.com') {
-          console.log('[Admin Stats] ✅ Admin email detected - granting access');
-        } else {
-          // Try token-based auth
-          const token = getAuthToken(request);
-          const user = await getUserFromToken(token);
-          if (!user || !user.is_admin) {
-            return Response.json({ error: 'Unauthorized - Admin access required' }, 
-              { status: 401, headers: corsHeaders });
-          }
-        }
+      const authResult = await requireAdmin(request);
+      if (authResult.error) {
+        return Response.json({ error: authResult.error }, 
+          { status: authResult.status, headers: corsHeaders });
+      }
         
         if (!env.DB) {
           return Response.json({

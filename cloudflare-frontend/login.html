@@ -500,24 +500,14 @@
         statusEl.className = 'status success';
         statusEl.textContent = '✅ Login successful! Redirecting...';
         
-        // Store user data
-        localStorage.setItem('auth_token', data.token);
-        if (data.user.id) localStorage.setItem('user_id', data.user.id);
-        if (data.user.name) localStorage.setItem('user_name', data.user.name);
-        if (data.user.username) localStorage.setItem('username', data.user.username);
-        if (data.user.email) localStorage.setItem('user_email', data.user.email);
-        if (data.user.avatar_url || data.user.profile_image) {
-          localStorage.setItem('profile_image_url', data.user.avatar_url || data.user.profile_image);
-        }
+        // Store JWT token and user data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Store complete user data for easy access
-        localStorage.setItem('user_data', JSON.stringify(data.user));
-        
-        // Note: We no longer store is_admin in localStorage
-        // Admin status is verified via API calls only
-        console.log('[Login] User login successful:', data.user.email);
-        if (data.user.is_admin) {
-          console.log('[Login] ✅ User has admin privileges (will be verified via API)');
+        console.log('[Login] ✅ User logged in:', data.user.email);
+        console.log('[Login] Role:', data.user.role);
+        if (data.user.role === 'admin') {
+          console.log('[Login] 🔥 Admin access granted');
         }
         
         // Check for return URL parameter

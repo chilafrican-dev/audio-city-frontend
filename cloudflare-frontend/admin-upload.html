@@ -875,26 +875,30 @@
     // ADMIN EMAIL - Only this email has admin access (hardcoded for security)
     const ADMIN_EMAIL = 'chilafrican@gmail.com';
     
-    // Verify admin access via API - NO localStorage dependency
+    // Verify admin access via JWT token
     async function checkAdminAccess() {
       try {
-        const token = localStorage.getItem('auth_token');
-        const userEmail = localStorage.getItem('user_email');
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         
         if (!token) {
-          console.log('[Admin Check] No auth token');
+          console.log('[Admin Check] No token');
           return false;
         }
         
-        console.log('[Admin Check] Verifying with API...', { userEmail });
+        // Check role from stored user data
+        if (user.role !== 'admin') {
+          console.log('[Admin Check] Not an admin user');
+          return false;
+        }
         
-        // Call API to verify admin status
-        const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+        console.log('[Admin Check] Verifying with API...');
+        
+        // Call admin API to verify token and role
+        const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'X-Admin-Email': userEmail || '',
-            'X-User-Email': userEmail || ''
+            'Authorization': `Bearer ${token}`
           }
         });
         
@@ -932,14 +936,15 @@
       const isAdmin = await checkAdminAccess();
       
       if (!isAdmin) {
-        const userEmail = localStorage.getItem('user_email') || 'Not logged in';
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         document.body.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0f; color: white; font-family: sans-serif;">
             <div style="text-align: center; padding: 40px;">
               <h1 style="font-size: 48px; margin-bottom: 16px;">🔒</h1>
               <h2 style="font-size: 24px; margin-bottom: 8px;">Access Denied</h2>
               <p style="color: #a0a0b8; margin-bottom: 24px;">You need admin privileges to access this page.</p>
-              <p style="color: #666; font-size: 12px; margin-bottom: 16px;">Logged in as: ${userEmail}</p>
+              <p style="color: #666; font-size: 12px; margin-bottom: 16px;">Logged in as: ${user.email || 'Not logged in'}</p>
+              <p style="color: #666; font-size: 12px; margin-bottom: 16px;">Role: ${user.role || 'user'}</p>
               <p style="color: #444; font-size: 11px;">Admin email required: ${ADMIN_EMAIL}</p>
               <a href="login.html" style="color: #8b5cf6; text-decoration: none; margin-top: 16px; display: inline-block;">→ Login with admin account</a>
               <br>
