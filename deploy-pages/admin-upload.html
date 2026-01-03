@@ -924,6 +924,12 @@
       return isAdminEmail || isAdminLocal || adminMode;
     }
     
+    // ============================================
+    // GLOBAL VARIABLES (accessible by all functions)
+    // ============================================
+    let detectedArtistId = null;  // MOVED TO GLOBAL SCOPE so form submit can access it
+    let artistCheckTimeout = null;
+    
     // Wait for DOM to be ready, then check admin access
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', checkAndInit);
@@ -968,8 +974,8 @@
       // ============================================
       // ARTIST DETECTION & REUSE LOGIC
       // ============================================
-      let detectedArtistId = null;
-      let artistCheckTimeout = null;
+      // NOTE: detectedArtistId and artistCheckTimeout are GLOBAL variables
+      // (declared above) so form submission handler can access them
       
       const artistNameInput = document.getElementById('artistName');
       if (!artistNameInput) {
@@ -1014,14 +1020,16 @@
           });
           
           if (match) {
-            // Existing artist found
+            // Existing artist found - UPDATE GLOBAL VARIABLE
             detectedArtistId = match.id;
+            console.log('🎯 [Artist Detection] SET detectedArtistId to:', detectedArtistId);
             statusEl.textContent = `✅ Existing Artist Found: ${match.name || match.username} (ID: ${match.id})`;
             statusEl.className = 'artist-status active existing';
             console.log('✅ Found existing artist:', match);
           } else {
-            // New artist will be created
+            // New artist will be created - CLEAR GLOBAL VARIABLE
             detectedArtistId = null;
+            console.log('🎯 [Artist Detection] CLEARED detectedArtistId (will create new artist)');
             const slug = generateSlug(artistName);
             statusEl.textContent = `✨ New Artist Will Be Created (slug: ${slug})`;
             statusEl.className = 'artist-status active new';
@@ -1732,6 +1740,7 @@
         const authToken = localStorage.getItem('auth_token');
         
         // Step 1: Find or create artist (prevent duplicates)
+        console.log('🎯 [Form Submit] detectedArtistId from global scope:', detectedArtistId);
         let artistId = detectedArtistId;
         
         // Always re-check for existing artist before creating (prevents duplicates)
