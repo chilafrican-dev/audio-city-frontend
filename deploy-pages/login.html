@@ -543,7 +543,15 @@
         if (data.user.avatar_url || data.user.profile_image) {
           localStorage.setItem('profile_image_url', data.user.avatar_url || data.user.profile_image);
         }
-        localStorage.setItem('is_admin', 'false');
+        
+        // CHECK IF ADMIN: Either from API response OR by email
+        const loginEmail = (data.user.email || '').toLowerCase().trim();
+        const isAdminUser = data.user.is_admin === true || data.user.is_admin === 1 || loginEmail === 'chilafrican@gmail.com';
+        localStorage.setItem('is_admin', isAdminUser ? 'true' : 'false');
+        if (isAdminUser) {
+          localStorage.setItem('admin_mode', 'true');
+          console.log('[Login] ✅ Admin user detected:', loginEmail);
+        }
         
         // Check for return URL parameter
         const urlParams = new URLSearchParams(window.location.search);
