@@ -572,6 +572,7 @@
     </div>
     
     <form id="uploadForm">
+      <!-- DEPLOYMENT TEST MARKER - v20250103-2 -->
       <!-- ARTIST PROFILE INFORMATION (FIRST SECTION) -->
       <div class="form-section" style="margin-bottom: 32px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1)); border: 2px solid rgba(139, 92, 246, 0.3);">
         <h2 class="section-title" style="color: var(--accent); margin-bottom: 8px;">
@@ -864,64 +865,24 @@
       ? 'http://localhost:3002'
       : 'https://api.audiocity-ug.com';
     
-    // Check admin access - Server-side verification (localStorage is just for UI, not security)
-    async function checkAdminAccess() {
-      const userEmail = localStorage.getItem('user_email') || '';
+    // ADMIN EMAIL - Only this email has admin access (hardcoded for security)
+    const ADMIN_EMAIL = 'chilafrican@gmail.com';
+    
+    // Check admin access - ONLY by email (secure, not localStorage)
+    function checkAdminAccess() {
+      const userEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
+      const isAdmin = userEmail === ADMIN_EMAIL;
       
-      // PRIMARY: Check if email is admin email (this is what matters)
-      const isAdminEmail = userEmail.toLowerCase() === 'chilafrican@gmail.com';
+      console.log('[Admin Check]', { userEmail, isAdmin, requiredEmail: ADMIN_EMAIL });
       
-      // If admin email, always grant access (server will verify)
-      if (isAdminEmail) {
-        console.log('[Admin Check] ✅ Admin email detected:', userEmail);
-        return true;
-      }
-      
-      // SECONDARY: Try to verify via API (optional, server is source of truth)
-      try {
-        const userId = localStorage.getItem('user_id');
-        const token = localStorage.getItem('auth_token');
-        
-        if (userId && token) {
-          const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? 'http://localhost:3002'
-            : 'https://api.audiocity-ug.com';
-          
-          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'X-Admin-Email': userEmail,
-              'X-User-Email': userEmail
-            }
-          });
-          
-          if (response.ok) {
-            const user = await response.json();
-            if (user.is_admin === true || user.is_admin === 1 || user.email === 'chilafrican@gmail.com') {
-              console.log('[Admin Check] ✅ Admin verified via API');
-              return true;
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('[Admin Check] API verification failed, using email check:', error);
-      }
-      
-      // Fallback: Check localStorage (not secure, but for UI convenience)
-      // Server will always verify anyway
-      const isAdminLocal = localStorage.getItem('is_admin') === 'true';
-      const adminMode = localStorage.getItem('admin_mode') === 'true';
-      
-      console.log('[Admin Check]', {
-        userEmail,
-        isAdminEmail,
-        isAdminLocal,
-        adminMode,
-        result: isAdminEmail || isAdminLocal || adminMode
-      });
-      
-      return isAdminEmail || isAdminLocal || adminMode;
+      return isAdmin;
     }
+    
+    // ============================================
+    // GLOBAL VARIABLES (accessible by all functions)
+    // ============================================
+    let detectedArtistId = null;  // MOVED TO GLOBAL SCOPE so form submit can access it
+    let artistCheckTimeout = null;
     
     // Wait for DOM to be ready, then check admin access
     if (document.readyState === 'loading') {
@@ -967,8 +928,8 @@
       // ============================================
       // ARTIST DETECTION & REUSE LOGIC
       // ============================================
-      let detectedArtistId = null;
-      let artistCheckTimeout = null;
+      // NOTE: detectedArtistId and artistCheckTimeout are GLOBAL variables
+      // (declared above) so form submission handler can access them
       
       const artistNameInput = document.getElementById('artistName');
       if (!artistNameInput) {
@@ -1013,14 +974,16 @@
           });
           
           if (match) {
-            // Existing artist found
+            // Existing artist found - UPDATE GLOBAL VARIABLE
             detectedArtistId = match.id;
+            console.log('🎯 [Artist Detection] SET detectedArtistId to:', detectedArtistId);
             statusEl.textContent = `✅ Existing Artist Found: ${match.name || match.username} (ID: ${match.id})`;
             statusEl.className = 'artist-status active existing';
             console.log('✅ Found existing artist:', match);
           } else {
-            // New artist will be created
+            // New artist will be created - CLEAR GLOBAL VARIABLE
             detectedArtistId = null;
+            console.log('🎯 [Artist Detection] CLEARED detectedArtistId (will create new artist)');
             const slug = generateSlug(artistName);
             statusEl.textContent = `✨ New Artist Will Be Created (slug: ${slug})`;
             statusEl.className = 'artist-status active new';
@@ -1731,6 +1694,7 @@
         const authToken = localStorage.getItem('auth_token');
         
         // Step 1: Find or create artist (prevent duplicates)
+        console.log('🎯 [Form Submit] detectedArtistId from global scope:', detectedArtistId);
         let artistId = detectedArtistId;
         
         // Always re-check for existing artist before creating (prevents duplicates)
