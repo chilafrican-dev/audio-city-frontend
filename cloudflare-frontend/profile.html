@@ -885,7 +885,7 @@
       <div class="section" id="tracksSection" style="display: none;">
         <div class="section-header">
           <h3 class="section-title">🎵 Tracks</h3>
-          <a href="#" class="section-link">View All →</a>
+          <a href="#tracksSection" class="section-link" onclick="event.preventDefault(); document.getElementById('tracksSection').scrollIntoView({ behavior: 'smooth', block: 'start' });">View All →</a>
         </div>
         <div class="tracks-grid" id="tracksGrid"></div>
       </div>
@@ -894,7 +894,7 @@
       <div class="section" id="producersSection" style="display: none;">
         <div class="section-header">
           <h3 class="section-title">🎛️ Producers</h3>
-          <a href="#" class="section-link">View All →</a>
+          <a href="#producersSection" class="section-link" onclick="event.preventDefault(); document.getElementById('producersSection').scrollIntoView({ behavior: 'smooth', block: 'start' });">View All →</a>
         </div>
         <div class="tracks-grid" id="producersGrid"></div>
       </div>
@@ -925,9 +925,20 @@
         <h2 style="font-size: 24px; font-weight: 700;">Edit Profile</h2>
         <button id="closeEditModal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer;">×</button>
       </div>
+      <!-- Profile Editing Tips -->
+      <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: start; gap: 8px; font-size: 13px; color: var(--muted);">
+          <span>💡</span>
+          <div><strong style="color: var(--accent);">Tip:</strong> Complete your profile to help others discover your music. Add a profile picture, bio, and location to stand out!</div>
+        </div>
+      </div>
+      
       <form id="editProfileForm">
         <div style="margin-bottom: 20px;">
-          <label for="editAvatar" style="display: block; margin-bottom: 8px; font-weight: 600;">Profile Picture</label>
+          <label for="editAvatar" style="display: block; margin-bottom: 8px; font-weight: 600;">
+            Profile Picture
+            <span style="font-size: 12px; color: var(--muted); font-weight: normal; margin-left: 6px;">(Will be cropped to 3000x3000px)</span>
+          </label>
           <div style="display: flex; gap: 16px; align-items: center;">
             <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background: var(--glass); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               <img id="avatarPreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
@@ -936,9 +947,40 @@
             <div style="flex: 1;">
               <input type="file" id="editAvatar" name="editAvatar" accept="image/*" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; cursor: pointer;" />
               <input type="url" id="editAvatarUrl" name="editAvatarUrl" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; margin-top: 8px;" placeholder="Or enter image URL (optional)" />
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Upload an image file or paste an image URL</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Upload an image file (min 500x500px, max 10000x10000px) - Manual crop to 3000x3000</p>
             </div>
           </div>
+          
+          <!-- Manual Crop Interface -->
+          <div id="avatarCropContainer" style="display: none; margin-top: 20px; padding: 20px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px;">
+            <div style="text-align: center; margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Crop Your Photo</h3>
+              <p style="font-size: 12px; color: var(--muted);">Drag the corners or edges to adjust the crop area. Image will be resized to 3000x3000px.</p>
+            </div>
+            
+            <div style="position: relative; max-width: 100%; margin: 0 auto; background: #000; border-radius: 8px; overflow: hidden;">
+              <div style="position: relative; width: 100%; padding-bottom: 100%; background: #1a1a1a;">
+                <img id="avatarCropImage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; cursor: move;" />
+                <div id="avatarCropBox" style="position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); cursor: move;">
+                  <div class="crop-handle" data-handle="nw" style="position: absolute; top: -8px; left: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nwse-resize;"></div>
+                  <div class="crop-handle" data-handle="ne" style="position: absolute; top: -8px; right: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nesw-resize;"></div>
+                  <div class="crop-handle" data-handle="sw" style="position: absolute; bottom: -8px; left: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nesw-resize;"></div>
+                  <div class="crop-handle" data-handle="se" style="position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nwse-resize;"></div>
+                  <div class="crop-handle" data-handle="n" style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ns-resize;"></div>
+                  <div class="crop-handle" data-handle="s" style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ns-resize;"></div>
+                  <div class="crop-handle" data-handle="e" style="position: absolute; top: 50%; right: -8px; transform: translateY(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ew-resize;"></div>
+                  <div class="crop-handle" data-handle="w" style="position: absolute; top: 50%; left: -8px; transform: translateY(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ew-resize;"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+              <button type="button" id="avatarCropCancel" style="padding: 10px 20px; background: var(--bg-light); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="button" id="avatarCropConfirm" style="padding: 10px 20px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 8px; font-weight: 600; cursor: pointer;">Apply Crop (3000x3000)</button>
+            </div>
+          </div>
+          
+          <img id="avatarCroppedPreview" style="display: none; max-width: 200px; margin-top: 16px; border-radius: 8px; border: 2px solid var(--border);" />
         </div>
         <div style="margin-bottom: 20px;">
           <label for="editName" style="display: block; margin-bottom: 8px; font-weight: 600;">Display Name</label>
@@ -947,14 +989,17 @@
         <div style="margin-bottom: 20px;">
           <label for="editUsername" style="display: block; margin-bottom: 8px; font-weight: 600;">Username</label>
           <input type="text" id="editUsername" name="editUsername" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Your username" />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">💡 This is how others will find and mention you</div>
         </div>
         <div style="margin-bottom: 20px;">
           <label for="editBio" style="display: block; margin-bottom: 8px; font-weight: 600;">Bio</label>
-          <textarea id="editBio" name="editBio" rows="4" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell us about yourself..."></textarea>
+          <textarea id="editBio" name="editBio" rows="4" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell us about yourself... (e.g., your musical style, achievements, what makes you unique)"></textarea>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">💡 Share your story! A good bio helps fans connect with you</div>
         </div>
         <div style="margin-bottom: 20px;">
           <label for="editLocation" style="display: block; margin-bottom: 8px; font-weight: 600;">Location</label>
           <input type="text" id="editLocation" name="editLocation" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="City, Country" />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">💡 Help local fans discover your music</div>
         </div>
         <div style="margin-bottom: 20px; display: none;" id="phoneNumberField">
           <label for="editPhoneNumber" style="display: block; margin-bottom: 8px; font-weight: 600;">📱 Phone Number (For Producers)</label>
@@ -1141,36 +1186,8 @@
       }
       document.getElementById('editAvatar').value = ''; // Clear file input
       
-      // Setup file upload preview
-      document.getElementById('editAvatar').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          // Check file size (max 5MB)
-          if (file.size > 5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image smaller than 5MB.');
-            e.target.value = '';
-            return;
-          }
-          
-          // Check file type
-          if (!file.type.startsWith('image/')) {
-            alert('Please select a valid image file.');
-            e.target.value = '';
-            return;
-          }
-          
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const dataUrl = e.target.result;
-            document.getElementById('avatarPreview').src = dataUrl;
-            document.getElementById('avatarPreview').style.display = 'block';
-            document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
-            // Clear URL input when file is selected
-            document.getElementById('editAvatarUrl').value = '';
-          };
-          reader.readAsDataURL(file);
-        }
-      });
+      // Note: File upload preview is handled by the cropping handler above
+      // The cropping handler will show the crop interface and also update the preview
       
       // Setup URL input preview
       document.getElementById('editAvatarUrl').addEventListener('input', function(e) {
@@ -1197,6 +1214,339 @@
         document.getElementById('avatarPreview').style.display = 'none';
         document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
       };
+      
+      // ============================================
+      // MANUAL PHOTO CROPPING (3000x3000)
+      // ============================================
+      let avatarCropData = {
+        originalFile: null,
+        originalImage: null,
+        cropBox: { x: 0, y: 0, width: 0, height: 0 },
+        imageScale: 1,
+        imageOffset: { x: 0, y: 0 },
+        isDragging: false,
+        dragStart: { x: 0, y: 0 },
+        isResizing: false,
+        resizeHandle: null,
+        croppedBlob: null
+      };
+      
+      const avatarInput = document.getElementById('editAvatar');
+      const avatarCropContainer = document.getElementById('avatarCropContainer');
+      const avatarCropImage = document.getElementById('avatarCropImage');
+      const avatarCropBox = document.getElementById('avatarCropBox');
+      const avatarCropCancel = document.getElementById('avatarCropCancel');
+      const avatarCropConfirm = document.getElementById('avatarCropConfirm');
+      const avatarCroppedPreview = document.getElementById('avatarCroppedPreview');
+      
+      // Handle file selection for cropping
+      if (avatarInput && avatarCropContainer) {
+        // Remove existing change handler and add new one
+        const originalHandler = avatarInput.onchange;
+        avatarInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          // Validate file type
+          if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            avatarInput.value = '';
+            return;
+          }
+          
+          // Validate file size (max 10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            alert('Image too large (max 10MB)');
+            avatarInput.value = '';
+            return;
+          }
+          
+          // Validate image dimensions
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              // Check min/max dimensions
+              const minSize = 500;
+              const maxSize = 10000;
+              
+              if (img.width < minSize || img.height < minSize) {
+                alert(`Image too small. Minimum size: ${minSize}x${minSize}px. Your image: ${img.width}x${img.height}px`);
+                avatarInput.value = '';
+                return;
+              }
+              
+              if (img.width > maxSize || img.height > maxSize) {
+                alert(`Image too large. Maximum size: ${maxSize}x${maxSize}px. Your image: ${img.width}x${img.height}px`);
+                avatarInput.value = '';
+                return;
+              }
+              
+              // Store original file and image
+              avatarCropData.originalFile = file;
+              avatarCropData.originalImage = img;
+              
+              // Show image in crop container
+              avatarCropImage.src = e.target.result;
+              
+              // Initialize crop interface
+              initializeCropInterface(img);
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+      
+      function initializeCropInterface(img) {
+        const container = avatarCropImage.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        const containerSize = containerRect.width;
+        
+        // Calculate scale to fit image in container (maintain aspect ratio)
+        const maxDimension = Math.max(img.width, img.height);
+        avatarCropData.imageScale = containerSize / maxDimension;
+        
+        // Set image size
+        const displayWidth = img.width * avatarCropData.imageScale;
+        const displayHeight = img.height * avatarCropData.imageScale;
+        avatarCropImage.style.width = displayWidth + 'px';
+        avatarCropImage.style.height = displayHeight + 'px';
+        
+        // Center image
+        avatarCropData.imageOffset.x = (containerSize - displayWidth) / 2;
+        avatarCropData.imageOffset.y = (containerSize - displayHeight) / 2;
+        avatarCropImage.style.left = avatarCropData.imageOffset.x + 'px';
+        avatarCropImage.style.top = avatarCropData.imageOffset.y + 'px';
+        avatarCropImage.style.position = 'absolute';
+        
+        // Initialize crop box (center, square, 70% of container)
+        const cropDisplaySize = containerSize * 0.7;
+        const cropX = (containerSize - cropDisplaySize) / 2;
+        const cropY = (containerSize - cropDisplaySize) / 2;
+        
+        avatarCropData.cropBox = {
+          x: cropX,
+          y: cropY,
+          width: cropDisplaySize,
+          height: cropDisplaySize
+        };
+        
+        updateCropBox();
+        avatarCropContainer.style.display = 'block';
+      }
+      
+      // Update crop box visual position
+      function updateCropBox() {
+        if (!avatarCropBox) return;
+        const box = avatarCropData.cropBox;
+        avatarCropBox.style.left = box.x + 'px';
+        avatarCropBox.style.top = box.y + 'px';
+        avatarCropBox.style.width = box.width + 'px';
+        avatarCropBox.style.height = box.height + 'px';
+      }
+      
+      // Handle crop box dragging
+      if (avatarCropBox) {
+        avatarCropBox.addEventListener('mousedown', (e) => {
+          if (e.target.classList.contains('crop-handle')) {
+            return; // Let resize handles handle their own events
+          }
+          avatarCropData.isDragging = true;
+          const container = avatarCropImage.parentElement;
+          const containerRect = container.getBoundingClientRect();
+          avatarCropData.dragStart = {
+            x: e.clientX - containerRect.left - avatarCropData.cropBox.x,
+            y: e.clientY - containerRect.top - avatarCropData.cropBox.y
+          };
+          e.preventDefault();
+        });
+      }
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!avatarCropData.originalImage) return;
+        
+        const container = avatarCropImage?.parentElement;
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        
+        if (avatarCropData.isDragging) {
+          const newX = e.clientX - containerRect.left - avatarCropData.dragStart.x;
+          const newY = e.clientY - containerRect.top - avatarCropData.dragStart.y;
+          
+          // Constrain to container bounds
+          const maxX = containerRect.width - avatarCropData.cropBox.width;
+          const maxY = containerRect.height - avatarCropData.cropBox.height;
+          
+          avatarCropData.cropBox.x = Math.max(0, Math.min(newX, maxX));
+          avatarCropData.cropBox.y = Math.max(0, Math.min(newY, maxY));
+          updateCropBox();
+        } else if (avatarCropData.isResizing) {
+          const mouseX = e.clientX - containerRect.left;
+          const mouseY = e.clientY - containerRect.top;
+          
+          const handle = avatarCropData.resizeHandle;
+          const box = avatarCropData.cropBox;
+          
+          if (handle.includes('e')) {
+            box.width = Math.max(50, Math.min(mouseX - box.x, containerRect.width - box.x));
+          }
+          if (handle.includes('w')) {
+            const newWidth = box.x - mouseX + box.width;
+            if (newWidth >= 50 && mouseX >= 0) {
+              box.width = newWidth;
+              box.x = mouseX;
+            }
+          }
+          if (handle.includes('s')) {
+            box.height = Math.max(50, Math.min(mouseY - box.y, containerRect.height - box.y));
+          }
+          if (handle.includes('n')) {
+            const newHeight = box.y - mouseY + box.height;
+            if (newHeight >= 50 && mouseY >= 0) {
+              box.height = newHeight;
+              box.y = mouseY;
+            }
+          }
+          
+          // Keep square aspect ratio
+          const size = Math.min(box.width, box.height);
+          if (handle.includes('e') || handle.includes('w')) {
+            const oldWidth = box.width;
+            box.width = size;
+            if (handle.includes('w')) {
+              box.x = box.x + (oldWidth - size);
+            }
+          }
+          if (handle.includes('s') || handle.includes('n')) {
+            const oldHeight = box.height;
+            box.height = size;
+            if (handle.includes('n')) {
+              box.y = box.y + (oldHeight - size);
+            }
+          }
+          
+          // Constrain to container
+          if (box.x < 0) {
+            box.width += box.x;
+            box.x = 0;
+            box.height = box.width;
+          }
+          if (box.y < 0) {
+            box.height += box.y;
+            box.y = 0;
+            box.width = box.height;
+          }
+          if (box.x + box.width > containerRect.width) {
+            box.width = containerRect.width - box.x;
+            box.height = box.width;
+          }
+          if (box.y + box.height > containerRect.height) {
+            box.height = containerRect.height - box.y;
+            box.width = box.height;
+          }
+          
+          updateCropBox();
+        }
+      });
+      
+      document.addEventListener('mouseup', () => {
+        avatarCropData.isDragging = false;
+        avatarCropData.isResizing = false;
+        avatarCropData.resizeHandle = null;
+      });
+      
+      // Handle resize handles
+      if (avatarCropBox) {
+        document.querySelectorAll('.crop-handle').forEach(handle => {
+          handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            avatarCropData.isResizing = true;
+            avatarCropData.resizeHandle = handle.dataset.handle;
+          });
+        });
+      }
+      
+      // Cancel crop
+      if (avatarCropCancel) {
+        avatarCropCancel.addEventListener('click', () => {
+          avatarCropContainer.style.display = 'none';
+          if (avatarInput) avatarInput.value = '';
+          avatarCropData.originalFile = null;
+          avatarCropData.originalImage = null;
+          avatarCropData.croppedBlob = null;
+          if (avatarCroppedPreview) avatarCroppedPreview.style.display = 'none';
+        });
+      }
+      
+      // Confirm crop and process to 3000x3000
+      if (avatarCropConfirm) {
+        avatarCropConfirm.addEventListener('click', () => {
+          if (!avatarCropData.originalImage) {
+            alert('Please select an image first');
+            return;
+          }
+          
+          // Calculate actual crop coordinates in original image space
+          const container = avatarCropImage.parentElement;
+          const containerRect = container.getBoundingClientRect();
+          
+          // Convert crop box from display coordinates to image coordinates
+          const cropX = Math.max(0, (avatarCropData.cropBox.x - avatarCropData.imageOffset.x) / avatarCropData.imageScale);
+          const cropY = Math.max(0, (avatarCropData.cropBox.y - avatarCropData.imageOffset.y) / avatarCropData.imageScale);
+          const cropWidth = avatarCropData.cropBox.width / avatarCropData.imageScale;
+          const cropHeight = avatarCropData.cropBox.height / avatarCropData.imageScale;
+          
+          // Ensure crop is within image bounds
+          const finalCropX = Math.max(0, Math.min(cropX, avatarCropData.originalImage.width));
+          const finalCropY = Math.max(0, Math.min(cropY, avatarCropData.originalImage.height));
+          const finalCropWidth = Math.min(cropWidth, avatarCropData.originalImage.width - finalCropX);
+          const finalCropHeight = Math.min(cropHeight, avatarCropData.originalImage.height - finalCropY);
+          
+          // Create canvas for 3000x3000 output
+          const canvas = document.createElement('canvas');
+          canvas.width = 3000;
+          canvas.height = 3000;
+          const ctx = canvas.getContext('2d');
+          
+          // Draw cropped and resized image
+          ctx.drawImage(
+            avatarCropData.originalImage,
+            finalCropX, finalCropY, finalCropWidth, finalCropHeight,
+            0, 0, 3000, 3000
+          );
+          
+          // Convert to blob
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              alert('Failed to process image. Please try again.');
+              return;
+            }
+            
+            avatarCropData.croppedBlob = blob;
+            
+            // Show preview
+            const url = URL.createObjectURL(blob);
+            if (avatarCroppedPreview) {
+              avatarCroppedPreview.src = url;
+              avatarCroppedPreview.style.display = 'block';
+            }
+            
+            // Update main preview
+            if (document.getElementById('avatarPreview')) {
+              document.getElementById('avatarPreview').src = url;
+              document.getElementById('avatarPreview').style.display = 'block';
+              document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+            }
+            
+            // Hide crop container
+            avatarCropContainer.style.display = 'none';
+            
+            console.log('✅ Photo cropped to 3000x3000, size:', (blob.size / 1024).toFixed(2) + 'KB');
+            alert('Photo cropped successfully! Click "Save Changes" to upload.');
+          }, 'image/jpeg', 0.92);
+        });
+      }
         });
       }
       
@@ -1233,11 +1583,45 @@
           return;
         }
       
-      // Handle avatar - prefer file upload over URL
-      const avatarFile = document.getElementById('editAvatar').files[0];
-        let avatarUrl = null;
+      // Handle avatar - prefer cropped blob, then file upload, then URL
+      let avatarUrl = null;
+      
+      // Use cropped blob if available (from manual crop)
+      if (avatarCropData.croppedBlob) {
+        // Upload cropped profile picture to backend
+        const formData = new FormData();
+        formData.append('profilePicture', avatarCropData.croppedBlob, 'profile-3000x3000.jpg');
+        formData.append('userId', userId);
         
-      if (avatarFile) {
+        const authToken = localStorage.getItem('auth_token');
+        const uploadResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-picture`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: formData
+        });
+        
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          avatarUrl = uploadData.avatar_url || uploadData.profile_image;
+          console.log('✅ Cropped profile picture uploaded successfully:', avatarUrl);
+          if (avatarUrl) {
+            updateProfilePicture(avatarUrl);
+          }
+        } else {
+          const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+          console.error('❌ Profile picture upload failed:', error);
+          alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          return;
+        }
+      } else {
+        // Fallback to file upload if no cropped blob
+        const avatarFile = document.getElementById('editAvatar').files[0];
+        
+        if (avatarFile) {
           // Upload profile picture to backend
           const formData = new FormData();
           formData.append('profilePicture', avatarFile);
@@ -1272,7 +1656,7 @@
             submitBtn.textContent = originalText;
             return;
           }
-      } else {
+        } else {
           // Use URL input
           const avatarUrlInput = document.getElementById('editAvatarUrl').value.trim();
           if (avatarUrlInput) {
@@ -1280,6 +1664,7 @@
             // Don't save to localStorage - data comes from API
           }
         }
+      }
         
         // Update profile (bio, location, etc.)
         const bio = document.getElementById('editBio').value;

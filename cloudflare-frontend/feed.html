@@ -208,6 +208,7 @@
     }
     
     .donate-btn {
+      display: none !important;
       padding: 10px 14px;
       border-radius: 12px;
       border: 1px solid var(--accent);
@@ -832,6 +833,32 @@
       color: #ff3b5c;
     }
     
+    /* Professional Download Button */
+    .action-btn.download-btn {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      font-weight: 600;
+      padding: 8px 16px;
+      border: none;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+    }
+    
+    .action-btn.download-btn:hover {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+    
+    .action-btn.download-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+    }
+    
+    .action-btn.download-btn span:first-child {
+      font-size: 16px;
+    }
+    
     /* Small Activity Cards */
     .post-card.small {
       padding: 16px;
@@ -1124,11 +1151,12 @@
             <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
       </div>
         </div>
+        <a href="contact.html" class="nav-item">Contact</a>
         <a href="inbox.html" class="nav-item" id="inboxNavLink" style="display: none !important;">Inbox</a>
       </nav>
       <div class="nav-right">
         <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
-        <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
+        <button class="donate-btn" id="donateBtn" type="button" style="display: none !important;">💜 Donate</button>
         <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none; padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
         <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none; padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
         <button class="create-btn" id="createBtn" title="Create" style="display: none;">+</button>
@@ -1453,6 +1481,15 @@
         document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         currentFilter = tab.dataset.filter;
+        
+        // Reset lazy loading state when filter changes
+        displayedCount = 20;
+        isLoadingMore = false;
+        if (intersectionObserver) {
+          intersectionObserver.disconnect();
+          intersectionObserver = null;
+        }
+        
         renderFeed();
         
         // Scroll to top of feed
@@ -1547,7 +1584,14 @@
       });
     }
     
-    // Load feed data
+    // Lazy loading state
+    let allFeedData = [];
+    let displayedCount = 20; // Initial load: first 20 items
+    const itemsPerLoad = 20; // Load 20 more items at a time (faster loading)
+    let isLoadingMore = false;
+    let intersectionObserver = null;
+
+    // Load feed data - OPTIMIZED: Combine API calls + Lazy loading
     async function loadFeed() {
       const container = document.getElementById('feedPosts');
       // Show container immediately (instant display like home page)
@@ -1556,17 +1600,20 @@
       }
       
       try {
-        console.log('Loading feed for all users (no authentication required)...');
+        console.log('🚀 Loading feed (optimized: combined API calls)...');
         
-        // Load tracks (music posts) - ordered by popularity for Hot 100
-        // PUBLIC ENDPOINT - works for all users (logged in or not)
+        // ✅ OPTIMIZATION 1: Combine API calls using Promise.all
         let orderParam = 'order=created_at.desc';
         if (currentFilter === 'hot') {
-          // Order by views and likes for hot/trending ranking
           orderParam = 'order=views_count.desc,likes_count.desc';
         }
         
-        const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?${orderParam}&limit=50`);
+        // ✅ OPTIMIZATION: Fetch smaller initial batch (like home page)
+        // Make both API calls in parallel (faster than sequential)
+        const [tracksResponse, artistsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/tracks?${orderParam}&limit=30`), // Reduced from 100 to 30 for faster loading
+          fetch(`${API_BASE_URL}/api/feed/trending-artists`)
+        ]);
         
         if (!tracksResponse.ok) {
           console.error('Failed to fetch tracks:', tracksResponse.status, tracksResponse.statusText);
@@ -1574,33 +1621,9 @@
         }
         
         const tracks = await tracksResponse.json();
-        console.log(`Loaded ${tracks.length} tracks for feed`);
-        
-        // For Hot 100, sort by engagement score (views + likes + recency factor)
-        if (currentFilter === 'hot' && tracks.length > 0) {
-          const now = Date.now();
-          tracks.sort((a, b) => {
-            const aViews = a.views_count || 0;
-            const aLikes = a.likes_count || 0;
-            const aAge = now - new Date(a.created_at).getTime();
-            const aRecency = Math.max(0, (30 * 24 * 60 * 60 * 1000 - aAge) / (30 * 24 * 60 * 60 * 1000)); // Favor tracks less than 30 days old
-            const aScore = aViews + (aLikes * 10) + (aViews * aRecency * 0.5);
-            
-            const bViews = b.views_count || 0;
-            const bLikes = b.likes_count || 0;
-            const bAge = now - new Date(b.created_at).getTime();
-            const bRecency = Math.max(0, (30 * 24 * 60 * 60 * 1000 - bAge) / (30 * 24 * 60 * 60 * 1000));
-            const bScore = bViews + (bLikes * 10) + (bViews * bRecency * 0.5);
-            
-            return bScore - aScore; // Descending order
-          });
-          // Limit to top 50
-          tracks.splice(50);
-        }
-        
-        // Load trending artists for announcements
-        const artistsResponse = await fetch(`${API_BASE_URL}/api/feed/trending-artists`);
         const artists = artistsResponse.ok ? await artistsResponse.json() : [];
+        
+        console.log(`✅ Loaded ${tracks.length} tracks + ${artists.length} artists (combined API calls)`);
         
         // Transform tracks into feed posts with ranking
         const musicPosts = tracks.map((track, index) => {
@@ -1658,14 +1681,19 @@
         ];
         
         // Sort: featured ads at top, then by timestamp
-        feedData = allPosts.sort((a, b) => {
+        allFeedData = allPosts.sort((a, b) => {
           if (a.type === 'ad' && a.isFeatured && b.type !== 'ad') return -1;
           if (b.type === 'ad' && b.isFeatured && a.type !== 'ad') return 1;
           return b.timestamp - a.timestamp;
         });
         
-        renderFeed();
-        console.log('✅ Feed loaded successfully for all users');
+        // Reset lazy loading state
+        displayedCount = 20;
+        feedData = allFeedData; // Keep for filtering
+        
+        // ✅ OPTIMIZATION 2: Lazy load - render first 20 items
+        renderFeedLazy();
+        console.log('✅ Feed loaded successfully (lazy loading enabled)');
       } catch (error) {
         console.error('❌ Error loading feed:', error);
         const container = document.getElementById('feedPosts');
@@ -1795,6 +1823,12 @@
     
     // Render feed
     function renderFeed() {
+      // Use lazy loading version
+      renderFeedLazy();
+    }
+    
+    // ✅ OPTIMIZATION 2: Lazy loading render function
+    function renderFeedLazy() {
       const container = document.getElementById('feedPosts');
       let filteredData = feedData;
       
@@ -1823,25 +1857,150 @@
         container.style.display = 'block';
         return;
       }
-        
+      
+      // ✅ LAZY LOADING: Only render visible items
+      const itemsToRender = filteredData.slice(0, displayedCount);
+      const hasMore = displayedCount < filteredData.length;
+      
       // Use document fragment for better performance
       const fragment = document.createDocumentFragment();
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = filteredData.map(post => renderPost(post)).join('');
+      tempDiv.innerHTML = itemsToRender.map(post => renderPost(post)).join('');
+      
+      // Add loading indicator if there are more items
+      if (hasMore) {
+        tempDiv.innerHTML += '<div id="feedLoader" class="feed-loader" style="text-align: center; padding: 40px 20px; color: var(--muted);"><div style="display: inline-block; width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite;"></div><p style="margin-top: 16px; font-size: 14px;">Loading more...</p></div>';
+      }
       
       // Move all children to fragment
       while (tempDiv.firstChild) {
         fragment.appendChild(tempDiv.firstChild);
       }
       
-      // Show container immediately (like home page - instant display)
+      // Show container immediately
       container.style.display = 'block';
-      
-      // Replace content in one operation (no flash)
-      // Use replaceChildren for seamless update
       container.replaceChildren(fragment);
+      
       attachEventListeners();
       ensureCoverImagesVisible();
+      
+      // Remove loader if all items are displayed
+      if (!hasMore) {
+        const existingLoader = document.getElementById('feedLoader');
+        if (existingLoader) {
+          existingLoader.remove();
+        }
+        // Disconnect observer when all items are loaded
+        if (intersectionObserver) {
+          intersectionObserver.disconnect();
+          intersectionObserver = null;
+        }
+      }
+      
+      // ✅ Setup IntersectionObserver for lazy loading (with delay to ensure DOM is ready)
+      if (hasMore && !isLoadingMore) {
+        // Use setTimeout to ensure loader element is in DOM
+        setTimeout(() => {
+          setupLazyLoading();
+        }, 100);
+      }
+    }
+    
+    // ✅ OPTIMIZATION 2: Setup IntersectionObserver for infinite scroll
+    function setupLazyLoading() {
+      // Clean up existing observer
+      if (intersectionObserver) {
+        intersectionObserver.disconnect();
+        intersectionObserver = null;
+      }
+      
+      const loader = document.getElementById('feedLoader');
+      if (!loader) {
+        console.warn('⚠️ feedLoader element not found');
+        return;
+      }
+      
+      console.log('🔍 Setting up IntersectionObserver for lazy loading');
+      
+      intersectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !isLoadingMore) {
+            console.log('📜 Loader visible, loading more items...');
+            // Add small delay to prevent rapid-fire loading
+            setTimeout(() => {
+              if (!isLoadingMore) {
+                loadMoreFeedItems();
+              }
+            }, 100);
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: '300px', // Increased from 200px for earlier loading
+        threshold: 0.1
+      });
+      
+      intersectionObserver.observe(loader);
+      console.log('✅ IntersectionObserver set up successfully');
+    }
+    
+    // ✅ OPTIMIZATION 2: Load more items on scroll
+    function loadMoreFeedItems() {
+      if (isLoadingMore) {
+        console.log('⏸️ Already loading, skipping...');
+        return;
+      }
+      
+      isLoadingMore = true;
+      console.log('📥 Loading more feed items...');
+      
+      const filteredData = getFilteredData();
+      
+      if (displayedCount >= filteredData.length) {
+        console.log('✅ All items already displayed');
+        // Remove loader and disconnect observer
+        const loader = document.getElementById('feedLoader');
+        if (loader) {
+          loader.remove();
+        }
+        if (intersectionObserver) {
+          intersectionObserver.disconnect();
+          intersectionObserver = null;
+        }
+        isLoadingMore = false;
+        return;
+      }
+      
+      // Load next batch
+      const oldCount = displayedCount;
+      displayedCount = Math.min(displayedCount + itemsPerLoad, filteredData.length);
+      console.log(`📊 Loading items ${oldCount + 1} to ${displayedCount} of ${filteredData.length}`);
+      
+      // Re-render with more items
+      renderFeedLazy();
+      isLoadingMore = false;
+    }
+    
+    // Helper function to get filtered data
+    function getFilteredData() {
+      let filteredData = feedData;
+      switch (currentFilter) {
+        case 'hot':
+          filteredData = feedData.filter(post => post.type === 'music');
+          break;
+        case 'music':
+          filteredData = feedData.filter(post => post.type === 'music');
+          break;
+        case 'community':
+          filteredData = feedData.filter(post => post.type === 'text' || post.type === 'activity');
+          break;
+        case 'ads':
+          filteredData = feedData.filter(post => post.type === 'ad');
+          break;
+        default:
+          filteredData = feedData;
+      }
+      return filteredData;
     }
     
     // Ensure cover images are visible after rendering
@@ -1961,7 +2120,8 @@
                 </button>
                 <button class="action-btn download-btn" data-action="download" data-post-id="${post.id}" data-audio-url="${escapeHtml(post.music.audioUrl || '')}" data-track-title="${escapeHtml(post.music.title)}">
                   <span>📥</span>
-                  <span>${(post.music.downloads_count || 0).toLocaleString()}</span>
+                  <span>Download</span>
+                  <span style="margin-left: 4px; font-size: 12px; opacity: 0.8;">${(post.music.downloads_count || 0).toLocaleString()}</span>
                 </button>
               </div>
             </div>
@@ -3003,8 +3163,8 @@
           <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
           <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
           <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
-          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
-          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy Policy</a>
+          <a href="contact.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact Us</a>
         </div>
       </div>
       <div>

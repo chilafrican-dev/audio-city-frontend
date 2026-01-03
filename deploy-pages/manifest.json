@@ -9,11 +9,6 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "any",
-      "type": "image/x-icon"
-    },
-    {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
@@ -26,7 +21,11 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["music", "entertainment", "social"],
+  "categories": [
+    "music",
+    "entertainment",
+    "social"
+  ],
   "screenshots": [],
   "shortcuts": [
     {
@@ -34,28 +33,26 @@
       "short_name": "Master",
       "description": "Open mastering tool",
       "url": "/mastering.html",
-      "icons": [{ "src": "favicon.ico", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Upload Track",
       "short_name": "Upload",
       "description": "Upload new track",
       "url": "/artist-corner.html",
-      "icons": [{ "src": "favicon.ico", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

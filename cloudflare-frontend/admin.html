@@ -237,7 +237,7 @@
         <div class="brand-text">AUDIO CITY</div>
       </a>
       <div>
-        <a href="admin-upload.html" style="color: var(--accent); text-decoration: none; margin-right: 16px; font-weight: 600;">📤 Upload Track</a>
+        <a href="admin-upload.html?v=20250103" style="color: var(--accent); text-decoration: none; margin-right: 16px; font-weight: 600;">📤 Upload Track</a>
         <a href="settings.html" style="color: var(--muted); text-decoration: none; margin-right: 16px;">Settings</a>
         <a href="feed.html" style="color: var(--muted); text-decoration: none;">Back to Feed</a>
       </div>
@@ -249,7 +249,7 @@
       <h1 class="page-title">Admin Dashboard</h1>
       <p class="page-subtitle">Site statistics and visitor analytics</p>
       <div style="margin-top: 16px;">
-        <a href="admin-upload.html" style="display: inline-block; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
+        <a href="admin-upload.html?v=20250103" style="display: inline-block; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
           📤 Upload Track for Artist
         </a>
       </div>
@@ -270,6 +270,23 @@
       
       <div id="reviewContainer">
         <div class="loading">Loading pending tracks...</div>
+      </div>
+    </div>
+    
+    <!-- User Management Section -->
+    <div class="container" style="margin-top: 48px;">
+      <div class="page-header">
+        <h2 class="page-title" style="font-size: 28px;">User Management</h2>
+        <p class="page-subtitle">Manage user accounts, ban, suspend, or delete users</p>
+      </div>
+      
+      <div style="margin-bottom: 24px;">
+        <input type="text" id="userSearch" placeholder="Search users by name, username, or email..." 
+               style="width: 100%; max-width: 500px; padding: 12px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;">
+      </div>
+      
+      <div id="usersContainer">
+        <div class="loading">Loading users...</div>
       </div>
     </div>
   </div>
@@ -296,10 +313,23 @@
     } else {
       loadStats();
       loadPendingTracks();
+      loadUsers();
       
       // Auto-refresh every 30 seconds
       setInterval(loadStats, 30000);
       setInterval(loadPendingTracks, 30000);
+      
+      // User search
+      const userSearch = document.getElementById('userSearch');
+      if (userSearch) {
+        let searchTimeout;
+        userSearch.addEventListener('input', (e) => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            loadUsers(e.target.value);
+          }, 500);
+        });
+      }
     }
     
     async function loadStats() {
@@ -310,7 +340,15 @@
         container.innerHTML = '<div class="loading">Loading statistics...</div>';
         errorDiv.style.display = 'none';
         
-        const response = await fetch(`${API_BASE_URL}/api/admin/stats`);
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          }
+        });
         
         if (!response.ok) {
           throw new Error('Failed to load statistics');
@@ -432,10 +470,13 @@
       const container = document.getElementById('reviewContainer');
       
       try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
         const authToken = localStorage.getItem('auth_token');
         const response = await fetch(`${API_BASE_URL}/api/admin/tracks/pending`, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
           }
         });
         
@@ -515,11 +556,14 @@
       }
       
       try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
         const authToken = localStorage.getItem('auth_token');
         const response = await fetch(`${API_BASE_URL}/api/admin/tracks/${trackId}/approve`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
           }
         });
         
@@ -543,12 +587,15 @@
       }
       
       try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
         const authToken = localStorage.getItem('auth_token');
         const response = await fetch(`${API_BASE_URL}/api/admin/tracks/${trackId}/reject`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            'Content-Type': 'application/json',
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
           },
           body: JSON.stringify({ reason })
         });
@@ -562,6 +609,335 @@
         loadPendingTracks(); // Refresh the list
       } catch (error) {
         console.error('Error rejecting track:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+    
+    // User Management Functions
+    async function loadUsers(search = '') {
+      const container = document.getElementById('usersContainer');
+      
+      try {
+        container.innerHTML = '<div class="loading">Loading users...</div>';
+        
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        
+        const url = `${API_BASE_URL}/api/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`;
+        const response = await fetch(url, {
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load users');
+        }
+        
+        const users = await response.json();
+        displayUsers(users);
+      } catch (error) {
+        console.error('Error loading users:', error);
+        container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+      }
+    }
+    
+    function displayUsers(users) {
+      const container = document.getElementById('usersContainer');
+      
+      if (!users || users.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 48px; color: var(--muted);">
+            <div style="font-size: 48px; margin-bottom: 16px;">👤</div>
+            <h3 style="font-size: 20px; margin-bottom: 8px;">No Users Found</h3>
+            <p>Try adjusting your search terms.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = `
+        <div style="display: grid; gap: 16px;">
+          ${users.map(user => `
+            <div class="stat-card" style="padding: 20px;">
+              <div style="display: flex; gap: 20px; align-items: start;">
+                <div style="flex-shrink: 0;">
+                  <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-light)); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">
+                    ${user.profile_image_url ? `<img src="${user.profile_image_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.parentElement.innerHTML='👤'">` : '👤'}
+                  </div>
+                </div>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <h3 style="font-size: 18px; font-weight: 700;">${escapeHtml(user.name || user.username || 'Unknown')}</h3>
+                    ${user.is_admin ? '<span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ADMIN</span>' : ''}
+                    ${user.verified ? '<span style="background: var(--success); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">✓ Verified</span>' : ''}
+                    ${user.banned ? '<span style="background: var(--error); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">🚫 Banned</span>' : ''}
+                    ${user.suspended ? '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">⏸ Suspended</span>' : ''}
+                  </div>
+                  <p style="color: var(--muted); margin-bottom: 4px;">@${escapeHtml(user.username || 'unknown')}</p>
+                  <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">${escapeHtml(user.email || 'No email')}</p>
+                  <div style="display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; color: var(--muted);">
+                    <span>🎵 ${user.tracks_count || 0} tracks</span>
+                    <span>👥 ${user.followers_count || 0} followers</span>
+                    <span>📅 Joined ${new Date(user.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="viewUser('${user.id}')" 
+                            style="background: var(--bg-light); color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                      👁️ View
+                    </button>
+                    <button onclick="editUser('${user.id}')" 
+                            style="background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                      ✏️ Edit
+                    </button>
+                    ${!user.banned ? `
+                      <button onclick="banUser('${user.id}')" 
+                              style="background: var(--error); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        🚫 Ban
+                      </button>
+                    ` : `
+                      <button onclick="unbanUser('${user.id}')" 
+                              style="background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        ✅ Unban
+                      </button>
+                    `}
+                    ${!user.suspended ? `
+                      <button onclick="suspendUser('${user.id}')" 
+                              style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        ⏸ Suspend
+                      </button>
+                    ` : ''}
+                    ${!user.is_admin ? `
+                      <button onclick="deleteUser('${user.id}', '${escapeHtml(user.name || user.username)}')" 
+                              style="background: transparent; color: var(--error); border: 1px solid var(--error); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        🗑️ Delete
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function viewUser(userId) {
+      window.open(`profile.html?id=${userId}`, '_blank');
+    }
+    
+    async function editUser(userId) {
+      try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load user');
+        }
+        
+        const user = await response.json();
+        
+        const name = prompt('Name:', user.name || '');
+        if (name === null) return;
+        
+        const username = prompt('Username:', user.username || '');
+        if (username === null) return;
+        
+        const email = prompt('Email:', user.email || '');
+        if (email === null) return;
+        
+        const bio = prompt('Bio:', user.biography || '');
+        if (bio === null) return;
+        
+        const location = prompt('Location:', user.location || '');
+        if (location === null) return;
+        
+        const verified = confirm('Verified?');
+        const isAdmin = confirm('Admin?');
+        
+        const updateResponse = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            'Content-Type': 'application/json',
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          },
+          body: JSON.stringify({
+            name,
+            username,
+            email,
+            bio,
+            location,
+            verified,
+            is_admin: isAdmin
+          })
+        });
+        
+        if (!updateResponse.ok) {
+          throw new Error('Failed to update user');
+        }
+        
+        alert('User updated successfully!');
+        loadUsers();
+      } catch (error) {
+        console.error('Error editing user:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+    
+    async function banUser(userId) {
+      const reason = prompt('Ban reason:', 'Violation of terms of service');
+      if (!reason) return;
+      
+      if (!confirm(`Are you sure you want to ban this user?\n\nReason: ${reason}`)) {
+        return;
+      }
+      
+      try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/ban`, {
+          method: 'POST',
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            'Content-Type': 'application/json',
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          },
+          body: JSON.stringify({ reason })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to ban user');
+        }
+        
+        alert('User banned successfully!');
+        loadUsers();
+      } catch (error) {
+        console.error('Error banning user:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+    
+    async function unbanUser(userId) {
+      if (!confirm('Are you sure you want to unban this user?')) {
+        return;
+      }
+      
+      try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/unban`, {
+          method: 'POST',
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to unban user');
+        }
+        
+        alert('User unbanned successfully!');
+        loadUsers();
+      } catch (error) {
+        console.error('Error unbanning user:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+    
+    async function suspendUser(userId) {
+      const reason = prompt('Suspension reason:', 'Temporary suspension');
+      if (!reason) return;
+      
+      const days = prompt('Suspend for how many days?', '7');
+      if (!days) return;
+      
+      if (!confirm(`Suspend this user for ${days} days?\n\nReason: ${reason}`)) {
+        return;
+      }
+      
+      try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/suspend`, {
+          method: 'POST',
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            'Content-Type': 'application/json',
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          },
+          body: JSON.stringify({ reason, days: parseInt(days) })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to suspend user');
+        }
+        
+        alert('User suspended successfully!');
+        loadUsers();
+      } catch (error) {
+        console.error('Error suspending user:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+    
+    async function deleteUser(userId, userName) {
+      if (!confirm(`⚠️ WARNING: This will permanently delete the user account and all associated data (tracks, comments, etc.)\n\nDelete user: ${userName}?\n\nThis action cannot be undone!`)) {
+        return;
+      }
+      
+      if (!confirm('Are you absolutely sure? This will delete ALL user data permanently!')) {
+        return;
+      }
+      
+      try {
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        const authToken = localStorage.getItem('auth_token');
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail,
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete user');
+        }
+        
+        const result = await response.json();
+        alert(`User deleted successfully!\n\nDeleted: ${result.deletedUser.username}\nAssociated tracks: ${result.associatedData.tracks}\nAssociated comments: ${result.associatedData.comments}`);
+        loadUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
         alert(`Error: ${error.message}`);
       }
     }

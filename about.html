@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * {
       margin: 0;
@@ -446,10 +448,14 @@
       <div class="footer-links">
         <a href="terms.html" class="footer-link">Terms & Conditions</a>
         <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="contact.html" class="footer-link">Contact Us</a>
         <a href="community-guidelines.html" class="footer-link">Community Guidelines</a>
         <a href="discover.html" class="footer-link">Home</a>
       </div>
-      <p style="color: var(--muted); margin-top: 16px;">&copy; 2025 Audio City. All rights reserved.</p>
+      <p style="color: var(--muted); margin-top: 16px;">&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </div>
   

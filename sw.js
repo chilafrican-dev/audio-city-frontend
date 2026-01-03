@@ -1,7 +1,8 @@
 // Audio City Service Worker
 // Handles offline caching and PWA functionality
+// Updated: Network-first strategy for better mobile connectivity
 
-const CACHE_NAME = 'audio-city-v1';
+const CACHE_NAME = 'audio-city-v2'; // Updated version to force cache refresh
 const urlsToCache = [
   '/',
   '/feed.html',
@@ -78,30 +79,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Only handle static HTML/CSS/JS/Image files
+  // Network-first strategy: Try network, fallback to cache
+  // This prevents showing stale content when network is available
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request)
-          .then((response) => {
-            // Don't cache if not a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Only cache static assets (HTML, CSS, JS, images)
-            const contentType = response.headers.get('content-type') || '';
-            if (!contentType.includes('text/html') && 
-                !contentType.includes('text/css') && 
-                !contentType.includes('application/javascript') &&
-                !contentType.includes('image/')) {
-              return response; // Don't cache other types
-            }
-
-            // Clone the response
+        // Network request succeeded - update cache and return response
+        if (response && response.status === 200 && response.type === 'basic') {
+          // Only cache static assets (HTML, CSS, JS, images)
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/html') || 
+              contentType.includes('text/css') || 
+              contentType.includes('application/javascript') ||
+              contentType.includes('image/')) {
+            
+            // Clone the response for caching
             const responseToCache = response.clone();
-
+            
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
@@ -109,16 +103,32 @@ self.addEventListener('fetch', (event) => {
               .catch(() => {
                 // Silently fail cache operations
               });
-
-            return response;
-          })
-          .catch(() => {
-            // If fetch fails, return offline page for navigation requests
+          }
+        }
+        
+        return response;
+      })
+      .catch(() => {
+        // Network failed - try cache as fallback
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            
+            // No cache available - return offline page for navigation requests
             if (event.request.mode === 'navigate') {
               return caches.match('/feed.html') || caches.match('/');
             }
-            return new Response('Offline', { status: 503 });
+            
+            // For other requests, return a proper error
+            return new Response('Network unavailable', { 
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/plain' }
+            });
           });
       })
   );
 });
+

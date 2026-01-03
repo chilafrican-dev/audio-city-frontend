@@ -1,0 +1,174 @@
+═══════════════════════════════════════════════════════════════
+  EMAIL ROUTING TROUBLESHOOTING GUIDE
+  Fix emails not being received at contact@audiocity-ug.com
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: CHECK DNS RECORDS
+═══════════════════════════════════════════════════════════════
+
+1. Go to Cloudflare Dashboard
+   → https://dash.cloudflare.com
+   → Select audiocity-ug.com
+   → DNS → Records
+
+2. Verify these MX records exist:
+   ✅ route1.mx.cloudflare.net (Priority: 41)
+   ✅ route2.mx.cloudflare.net (Priority: 12)
+   ✅ route3.mx.cloudflare.net (Priority: 57)
+
+3. If records are missing:
+   → Go to Email → Email Routing
+   → Click "Add records and enable"
+
+4. Wait 5-10 minutes after adding records for DNS propagation
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: VERIFY DESTINATION EMAIL
+═══════════════════════════════════════════════════════════════
+
+1. Go to Email → Email Routing → Destination addresses
+
+2. Check that chilafrican@gmail.com shows:
+   ✅ Status: Verified (green badge)
+
+3. If NOT verified:
+   → Click "Resend verification email"
+   → Check Gmail inbox (and spam folder)
+   → Click verification link
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: CHECK ROUTING RULES
+═══════════════════════════════════════════════════════════════
+
+1. Go to Email → Email Routing → Routing rules
+
+2. Verify contact@audiocity-ug.com exists:
+   ✅ Custom address: contact@audiocity-ug.com
+   ✅ Action: Send to an email
+   ✅ Destination: chilafrican@gmail.com
+   ✅ Status: Active (green toggle)
+
+3. If missing or inactive:
+   → Click "Create address" or "Edit"
+   → Set destination to chilafrican@gmail.com
+   → Ensure status is "Active"
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: CHECK EMAIL STATISTICS
+═══════════════════════════════════════════════════════════════
+
+1. Go to Email → Email Routing → Overview
+
+2. Check "Email Routing summary" for:
+   - Total received: Should show count if emails arrived
+   - Forwarded: Should match received if working
+   - Dropped: Check if emails are being dropped
+   - Delivery Failed: Check for delivery errors
+
+3. If you see "Delivery Failed":
+   → Destination email might not be verified
+   → Check spam folder in Gmail
+
+═══════════════════════════════════════════════════════════════
+  STEP 5: CHECK GMAIL SPAM FOLDER
+═══════════════════════════════════════════════════════════════
+
+1. Open Gmail: https://mail.google.com
+2. Check Spam/Junk folder
+3. Look for emails from Cloudflare or test emails
+4. If found in spam:
+   → Mark as "Not spam"
+   → Add sender to contacts (optional)
+
+═══════════════════════════════════════════════════════════════
+  STEP 6: TEST WITH DIFFERENT SENDER
+═══════════════════════════════════════════════════════════════
+
+1. Send test email from a different email address
+   (not the same one you're forwarding to)
+
+2. Wait 2-5 minutes
+
+3. Check Gmail inbox and spam folder
+
+4. If still not received:
+   → Check Cloudflare Email Routing → Overview
+   → Look at email statistics
+   → Check for any error messages
+
+═══════════════════════════════════════════════════════════════
+  STEP 7: CHECK DNS PROPAGATION
+═══════════════════════════════════════════════════════════════
+
+1. Use online tool: https://mxtoolbox.com/SuperTool.aspx
+
+2. Enter: audiocity-ug.com
+
+3. Select "MX Lookup"
+
+4. Verify you see:
+   ✅ route1.mx.cloudflare.net
+   ✅ route2.mx.cloudflare.net
+   ✅ route3.mx.cloudflare.net
+
+5. If records not showing:
+   → Wait 10-30 minutes for DNS propagation
+   → Can take up to 24 hours in rare cases
+
+═══════════════════════════════════════════════════════════════
+  COMMON ISSUES & FIXES
+═══════════════════════════════════════════════════════════════
+
+❌ Issue: "DNS records not configured"
+   Fix: Go to Email Routing → Click "Add records and enable"
+
+❌ Issue: "Destination email not verified"
+   Fix: Check Gmail for verification email → Click link
+
+❌ Issue: "Routing rule inactive"
+   Fix: Go to Routing rules → Toggle to "Active"
+
+❌ Issue: "Emails going to spam"
+   Fix: Wait 24-48 hours for email reputation to build
+   Fix: Mark as "Not spam" in Gmail
+
+❌ Issue: "Delivery Failed" in statistics
+   Fix: Re-verify destination email
+   Fix: Check Gmail isn't blocking Cloudflare
+
+❌ Issue: "No emails received" but DNS is correct
+   Fix: Wait 5-10 minutes after setup
+   Fix: Try sending from different email address
+   Fix: Check Cloudflare Email Routing logs
+
+═══════════════════════════════════════════════════════════════
+  QUICK CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+□ MX records added in DNS (route1, route2, route3)
+□ DNS records show "Active" status
+□ Destination email (chilafrican@gmail.com) is verified
+□ Routing rule (contact@audiocity-ug.com) is active
+□ Waited 5-10 minutes after setup
+□ Checked Gmail spam folder
+□ Sent test email from different address
+□ Checked Cloudflare Email Routing statistics
+
+═══════════════════════════════════════════════════════════════
+  STILL NOT WORKING?
+═══════════════════════════════════════════════════════════════
+
+1. Contact Cloudflare Support:
+   → Click "Support" in dashboard
+   → Or use the Chat button
+
+2. Check Cloudflare Status:
+   → https://www.cloudflarestatus.com
+
+3. Verify domain is fully on Cloudflare:
+   → DNS should be "Proxied" (orange cloud)
+   → Or at least DNS nameservers should be Cloudflare's
+
+═══════════════════════════════════════════════════════════════
+

@@ -1,0 +1,198 @@
+═══════════════════════════════════════════════════════════════
+  CLOUDFLARE EMAIL ROUTING SETUP GUIDE
+  Set up custom email addresses for audiocity-ug.com
+═══════════════════════════════════════════════════════════════
+
+✅ FREE - Cloudflare Email Routing is completely free
+✅ Easy setup - Takes about 5-10 minutes
+✅ Custom emails - Use @audiocity-ug.com addresses
+
+═══════════════════════════════════════════════════════════════
+  STEP 1: ACCESS EMAIL ROUTING
+═══════════════════════════════════════════════════════════════
+
+1. Go to Cloudflare Dashboard
+   → https://dash.cloudflare.com
+
+2. Select your domain: audiocity-ug.com
+
+3. In the left sidebar, click "Email" → "Email Routing"
+
+4. Click "Get started" button
+
+═══════════════════════════════════════════════════════════════
+  STEP 2: ENABLE EMAIL ROUTING
+═══════════════════════════════════════════════════════════════
+
+1. Cloudflare will show you DNS records to add
+   - These are MX records for email routing
+   - Cloudflare can add them automatically
+
+2. Click "Add records" or "Enable Email Routing"
+   - Cloudflare will add the required MX records
+
+3. Wait 1-2 minutes for DNS propagation
+
+═══════════════════════════════════════════════════════════════
+  STEP 3: ADD DESTINATION ADDRESS
+═══════════════════════════════════════════════════════════════
+
+1. Go to "Email Routing" → "Destination addresses"
+
+2. Click "Create address"
+
+3. Enter your existing email:
+   → chilafrican@gmail.com
+
+4. Click "Save"
+   - Cloudflare will send a verification email
+
+5. Check your Gmail inbox
+   - Open the verification email from Cloudflare
+   - Click the verification link
+   - Email routing is now active!
+
+═══════════════════════════════════════════════════════════════
+  STEP 4: CREATE CUSTOM EMAIL ADDRESSES
+═══════════════════════════════════════════════════════════════
+
+1. Go to "Email Routing" → "Routing rules"
+
+2. Click "Create address"
+
+3. Create custom email addresses:
+
+   Example addresses you can create:
+   ─────────────────────────────────
+   • contact@audiocity-ug.com
+   • support@audiocity-ug.com
+   • info@audiocity-ug.com
+   • admin@audiocity-ug.com
+   • hello@audiocity-ug.com
+   • nico@audiocity-ug.com
+
+4. For each address:
+   - Enter the custom address (e.g., "contact")
+   - Select destination: chilafrican@gmail.com
+   - Click "Save"
+
+5. Done! Emails sent to these addresses will forward to:
+   → chilafrican@gmail.com
+
+═══════════════════════════════════════════════════════════════
+  STEP 5: UPDATE YOUR CONTACT PAGE
+═══════════════════════════════════════════════════════════════
+
+After setting up email routing, update contact.html:
+
+Current email: chilafrican@gmail.com
+New email: contact@audiocity-ug.com (or your preferred address)
+
+This looks more professional and uses your domain!
+
+═══════════════════════════════════════════════════════════════
+  HOW IT WORKS
+═══════════════════════════════════════════════════════════════
+
+1. Someone sends email to: contact@audiocity-ug.com
+2. Cloudflare receives it
+3. Cloudflare forwards it to: chilafrican@gmail.com
+4. You receive it in your Gmail inbox
+
+✅ You can REPLY from Gmail
+✅ Replies will show as coming from: contact@audiocity-ug.com
+   (if you set up "Send from" feature)
+
+═══════════════════════════════════════════════════════════════
+  SENDING EMAILS (OPTIONAL)
+═══════════════════════════════════════════════════════════════
+
+To send emails FROM your custom address:
+
+1. Go to "Email Routing" → "Send from"
+
+2. Click "Create address"
+
+3. Enter: contact@audiocity-ug.com (or your preferred address)
+
+4. Cloudflare will provide SMTP settings:
+   - SMTP Server: smtp.cloudflare.com
+   - Port: 587 (TLS) or 465 (SSL)
+   - Username: (your Cloudflare email)
+   - Password: (Cloudflare will generate)
+
+5. Configure in your email client (Gmail, Outlook, etc.)
+
+OR use Cloudflare's web interface to send emails directly.
+
+═══════════════════════════════════════════════════════════════
+  RECOMMENDED EMAIL ADDRESSES FOR AUDIO CITY
+═══════════════════════════════════════════════════════════════
+
+Based on your Contact Us page, create these:
+
+1. contact@audiocity-ug.com
+   → For general inquiries (matches your contact page)
+
+2. support@audiocity-ug.com
+   → For user support and help requests
+
+3. info@audiocity-ug.com
+   → For general information requests
+
+4. admin@audiocity-ug.com
+   → For administrative matters
+
+All forward to: chilafrican@gmail.com
+
+═══════════════════════════════════════════════════════════════
+  TESTING
+═══════════════════════════════════════════════════════════════
+
+1. Send a test email to: contact@audiocity-ug.com
+   (from any email address)
+
+2. Check your Gmail inbox (chilafrican@gmail.com)
+
+3. You should receive the forwarded email within 1-2 minutes
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+❌ Email not forwarding?
+   → Check DNS records are correct
+   → Wait 5-10 minutes for DNS propagation
+   → Verify destination email is confirmed
+
+❌ Can't verify destination email?
+   → Check spam folder
+   → Request new verification email
+   → Make sure email address is correct
+
+❌ Emails going to spam?
+   → Set up SPF/DKIM records (Cloudflare does this automatically)
+   → Wait 24-48 hours for email reputation to build
+
+═══════════════════════════════════════════════════════════════
+  QUICK REFERENCE
+═══════════════════════════════════════════════════════════════
+
+Dashboard: https://dash.cloudflare.com
+Domain: audiocity-ug.com
+Destination: chilafrican@gmail.com
+Recommended: contact@audiocity-ug.com
+
+═══════════════════════════════════════════════════════════════
+  NEXT STEPS AFTER SETUP
+═══════════════════════════════════════════════════════════════
+
+1. Update contact.html with new email address
+2. Update Privacy Policy page with new email
+3. Test sending/receiving emails
+4. Update any other places that reference email
+
+═══════════════════════════════════════════════════════════════
+
+✅ That's it! Your custom email addresses are ready to use.
+

@@ -350,18 +350,18 @@ export default {
         // Enrich with accurate counts and normalize profile image URLs
         const enrichedUsers = await Promise.all((users.results || []).map(async (user) => {
           try {
-            const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
-              .bind(user.id).first();
-            const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
-              .bind(user.id).first();
-            const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
-              .bind(user.id).first();
-            
-            user.followers_count = followersCount?.count || 0;
-            user.following_count = followingCount?.count || 0;
-            user.tracks_count = tracksCount?.count || 0;
-            user.verified = user.verified === 1;
-            user.is_admin = user.is_admin === 1;
+          const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE followee_id = ?')
+            .bind(user.id).first();
+          const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
+            .bind(user.id).first();
+          const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+            .bind(user.id).first();
+          
+          user.followers_count = followersCount?.count || 0;
+          user.following_count = followingCount?.count || 0;
+          user.tracks_count = tracksCount?.count || 0;
+          user.verified = user.verified === 1;
+          user.is_admin = user.is_admin === 1;
             
             // Normalize profile image URLs
             const originalImageUrl = user.profile_image_url || user.profile_image || user.avatar_url;
@@ -384,7 +384,7 @@ export default {
               }
             }
             
-            return user;
+          return user;
           } catch (enrichError) {
             console.error(`[Users API] Error enriching user ${user.id}:`, enrichError);
             // Return user with default values if enrichment fails
@@ -1987,16 +1987,16 @@ export default {
           } catch (alterError) {
             // Column might already exist or other error, try insert without bio fields
             console.log('[Signup] Could not add bio columns, inserting without them:', alterError.message);
-            await env.DB.prepare(`
-              INSERT INTO users (id, username, email, name, password, auth_provider, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, 'local', datetime('now'), datetime('now'))
-            `).bind(
-              userId,
-              body.username,
-              body.email.toLowerCase(),
-              body.name || body.username,
+        await env.DB.prepare(`
+          INSERT INTO users (id, username, email, name, password, auth_provider, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, 'local', datetime('now'), datetime('now'))
+        `).bind(
+          userId,
+          body.username,
+          body.email.toLowerCase(),
+          body.name || body.username,
               body.password
-            ).run();
+        ).run();
           }
         }
         
@@ -2310,8 +2310,9 @@ export default {
           return Response.json({ error: 'No file uploaded' }, { status: 400, headers: corsHeaders });
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-          return Response.json({ error: 'File too large (max 5MB)' }, { status: 400, headers: corsHeaders });
+        // Accept larger files for cropped 3000x3000 images (max 15MB)
+        if (file.size > 15 * 1024 * 1024) {
+          return Response.json({ error: 'File too large (max 15MB)' }, { status: 400, headers: corsHeaders });
         }
 
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -2447,8 +2448,41 @@ export default {
         const title = formData.get('title');
         const description = formData.get('description') || '';
         const genre = formData.get('genre') || 'Unknown';
-        const artistId = formData.get('artist_id') || user.id;
+        
+        // CRITICAL: For admin uploads, always use artist_id from formData if provided
+        // Don't fall back to user.id (admin ID) - that would associate track with admin instead of artist
+        const artistIdFromForm = formData.get('artist_id');
+        let artistId = null;
+        
+        // For admin uploads, artist_id MUST be provided - don't fall back to admin's ID
+        if (user.email === 'chilafrican@gmail.com' || user.is_admin === 1 || user.is_admin === true) {
+          // Admin upload - require artist_id from form
+          if (!artistIdFromForm || artistIdFromForm.trim() === '') {
+            console.error('[Track Upload] ❌ Admin upload missing artist_id!', {
+              adminEmail: user.email,
+              adminId: user.id,
+              artistIdFromForm: artistIdFromForm
+            });
+            return Response.json({ 
+              error: 'Artist ID is required for admin uploads',
+              message: 'Please provide artist_id in the form data. The track must be associated with an artist, not the admin account.'
+            }, { status: 400, headers: corsHeaders });
+          }
+          artistId = artistIdFromForm.trim();
+        } else {
+          // Regular user upload - use their own ID or provided artist_id
+          artistId = artistIdFromForm && artistIdFromForm.trim() !== '' ? artistIdFromForm.trim() : user.id;
+        }
+        
         const artistName = formData.get('artist_name') || user.name || user.username;
+        
+        console.log('[Track Upload] Artist ID:', { 
+          fromForm: artistIdFromForm, 
+          final: artistId, 
+          userId: user.id, 
+          isAdmin: user.email === 'chilafrican@gmail.com' || user.is_admin === 1,
+          adminEmail: user.email
+        });
         const coverArtUrl = formData.get('cover_art_url');
         const duration = formData.get('duration') ? parseInt(formData.get('duration')) : null;
 
@@ -2549,7 +2583,7 @@ export default {
         // Get review status and flag reason from form data
         const reviewStatus = formData.get('review_status') || 'approved'; // Default to approved, can be 'pending' if logo detected
         const flagReason = formData.get('flag_reason') || null;
-        
+
         // Create track in database
         // Note: duration column may not exist in all database schemas, so we'll store it separately if needed
         // Try to insert with review_status, fallback if column doesn't exist
@@ -2585,16 +2619,16 @@ export default {
           } catch (alterError) {
             // Column might already exist or other error, try insert without review fields
             console.log('[Track Upload] Could not add review_status column, inserting without it:', alterError.message);
-            await env.DB.prepare(`
-              INSERT INTO tracks (
-                id, artist_id, title, description, audio_url, cover_art_url,
-                genre, views_count, likes_count, shares_count, plays_count,
-                created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
-            `).bind(
-              trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
-              genre
-            ).run();
+        await env.DB.prepare(`
+          INSERT INTO tracks (
+            id, artist_id, title, description, audio_url, cover_art_url,
+            genre, views_count, likes_count, shares_count, plays_count,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, datetime('now'), datetime('now'))
+        `).bind(
+          trackId, artistId, title, description, audioUrl, finalCoverArtUrl,
+          genre
+        ).run();
           }
         }
 
@@ -2955,14 +2989,14 @@ export default {
     if (url.pathname === '/api/stats' && request.method === 'GET') {
       try {
         if (!env.DB) {
-          return Response.json({
+      return Response.json({
             tracksMastered: 0,
-            total_tracks: 0,
-            total_users: 0,
-            total_plays: 0
-          }, { headers: corsHeaders });
-        }
-        
+        total_tracks: 0,
+        total_users: 0,
+        total_plays: 0
+      }, { headers: corsHeaders });
+    }
+
         // Create mastering_stats table if it doesn't exist
         try {
           await env.DB.prepare(`
@@ -3192,9 +3226,9 @@ export default {
               headers: {
                 'Accept': 'application/json',
                 'User-Agent': 'AudioCity-Worker/1.0'
-              },
-              signal: controller.signal
-            });
+            },
+            signal: controller.signal
+          });
           }
           
           clearTimeout(timeoutId);
@@ -3355,13 +3389,13 @@ export default {
           
           // Network errors - return as processing to allow retry
           if (fetchError.message.includes('fetch failed') || fetchError.message.includes('network') || fetchError.message.includes('ECONNREFUSED')) {
-            return Response.json({
-              success: false,
+        return Response.json({
+          success: false,
               status: 'processing',
               error: 'Connection failed',
               message: 'Cannot connect to mastering server. Retrying...',
-              retry: true
-            }, { status: 503, headers: corsHeaders });
+          retry: true
+        }, { status: 503, headers: corsHeaders });
           }
           
           throw fetchError;
@@ -3586,13 +3620,111 @@ export default {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
+    // GET /api/admin/stats - Get admin statistics (admin only)
+    if (url.pathname === '/api/admin/stats' && request.method === 'GET') {
+      try {
+        // Check admin access via email header or token
+        const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+        const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
+        
+        // Admin bypass for chilafrican@gmail.com
+        if (adminEmail === 'chilafrican@gmail.com') {
+          console.log('[Admin Stats] ✅ Admin email detected - granting access');
+        } else {
+          // Try token-based auth
+          const token = getAuthToken(request);
+          const user = await getUserFromToken(token);
+          if (!user || !user.is_admin) {
+            return Response.json({ error: 'Unauthorized - Admin access required' }, 
+              { status: 401, headers: corsHeaders });
+          }
+        }
+        
+        if (!env.DB) {
+          return Response.json({
+            totalVisitors: 0,
+            uniqueVisitors: 0,
+            visitorsByDate: {},
+            tracksMastered: 0,
+            lastUpdated: new Date().toISOString()
+          }, { headers: corsHeaders });
+        }
+        
+        // Get stats from mastering_stats table
+        let tracksMastered = 0;
+        try {
+          const statsResult = await env.DB.prepare('SELECT tracks_mastered FROM mastering_stats ORDER BY id DESC LIMIT 1').first();
+          tracksMastered = statsResult?.tracks_mastered || 0;
+        } catch (e) {
+          console.log('[Admin Stats] mastering_stats table may not exist yet');
+        }
+        
+        // Get total tracks count
+        let totalTracks = 0;
+        try {
+          const tracksResult = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks').first();
+          totalTracks = tracksResult?.count || 0;
+        } catch (e) {
+          console.log('[Admin Stats] Could not get tracks count');
+        }
+        
+        // Get total users count
+        let totalUsers = 0;
+        try {
+          const usersResult = await env.DB.prepare('SELECT COUNT(*) as count FROM users WHERE is_admin = 0 OR is_admin IS NULL').first();
+          totalUsers = usersResult?.count || 0;
+        } catch (e) {
+          console.log('[Admin Stats] Could not get users count');
+        }
+        
+        // Generate last 30 days of visitor data (placeholder - would need analytics table)
+        const visitorsByDate = {};
+        const today = new Date();
+        for (let i = 0; i < 30; i++) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          visitorsByDate[dateStr] = {
+            total: 0,
+            unique: 0
+          };
+        }
+        
+        return Response.json({
+          totalVisitors: 0, // Would need analytics tracking
+          uniqueVisitors: 0, // Would need analytics tracking
+          visitorsByDate: visitorsByDate,
+          tracksMastered: tracksMastered,
+          totalTracks: totalTracks,
+          totalUsers: totalUsers,
+          lastUpdated: new Date().toISOString()
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Stats] Error:', error);
+        return Response.json({ error: 'Failed to load statistics' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+
     // GET /api/admin/tracks/pending - Get tracks pending review (admin only)
     if (url.pathname === '/api/admin/tracks/pending' && request.method === 'GET') {
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
+        // Check admin access via email header or token
+        const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+        const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
         
-        if (!user || !user.is_admin) {
+        let isAdmin = false;
+        if (adminEmail === 'chilafrican@gmail.com') {
+          console.log('[Admin Pending Tracks] ✅ Admin email detected - granting access');
+          isAdmin = true;
+        } else {
+          // Try token-based auth
+          const token = getAuthToken(request);
+          const user = await getUserFromToken(token);
+          isAdmin = user && (user.is_admin === true || user.is_admin === 1);
+        }
+        
+        if (!isAdmin) {
           return Response.json({ error: 'Unauthorized - Admin access required' }, 
             { status: 401, headers: corsHeaders });
         }
@@ -3620,10 +3752,22 @@ export default {
     // POST /api/admin/tracks/:id/approve - Approve track (admin only)
     if (url.pathname.includes('/approve') && request.method === 'POST') {
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
+        // Check admin access via email header or token
+        const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+        const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
         
-        if (!user || !user.is_admin) {
+        let isAdmin = false;
+        if (adminEmail === 'chilafrican@gmail.com') {
+          console.log('[Admin Approve Track] ✅ Admin email detected - granting access');
+          isAdmin = true;
+        } else {
+          // Try token-based auth
+          const token = getAuthToken(request);
+          const user = await getUserFromToken(token);
+          isAdmin = user && (user.is_admin === true || user.is_admin === 1);
+        }
+        
+        if (!isAdmin) {
           return Response.json({ error: 'Unauthorized - Admin access required' }, 
             { status: 401, headers: corsHeaders });
         }
@@ -3678,10 +3822,22 @@ export default {
     // POST /api/admin/tracks/:id/reject - Reject track (admin only)
     if (url.pathname.includes('/reject') && request.method === 'POST') {
       try {
-        const token = getAuthToken(request);
-        const user = await getUserFromToken(token);
+        // Check admin access via email header or token
+        const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+        const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
         
-        if (!user || !user.is_admin) {
+        let isAdmin = false;
+        if (adminEmail === 'chilafrican@gmail.com') {
+          console.log('[Admin Reject Track] ✅ Admin email detected - granting access');
+          isAdmin = true;
+        } else {
+          // Try token-based auth
+          const token = getAuthToken(request);
+          const user = await getUserFromToken(token);
+          isAdmin = user && (user.is_admin === true || user.is_admin === 1);
+        }
+        
+        if (!isAdmin) {
           return Response.json({ error: 'Unauthorized - Admin access required' }, 
             { status: 401, headers: corsHeaders });
         }
@@ -3734,6 +3890,392 @@ export default {
       }
     }
 
+    // ============================================
+    // ADMIN USER MANAGEMENT ENDPOINTS
+    // ============================================
+    
+    // Helper: Check if user is admin
+    const checkAdminAccess = async (request) => {
+      const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+      const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
+      
+      if (adminEmail === 'chilafrican@gmail.com') {
+        return true;
+      }
+      
+      const token = getAuthToken(request);
+      const user = await getUserFromToken(token);
+      return user && (user.is_admin === true || user.is_admin === 1);
+    };
+    
+    // GET /api/admin/users - List all users (admin only)
+    if (url.pathname === '/api/admin/users' && request.method === 'GET') {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        if (!env.DB) {
+          return Response.json([], { headers: corsHeaders });
+        }
+        
+        const limit = parseInt(url.searchParams.get('limit') || '100');
+        const offset = parseInt(url.searchParams.get('offset') || '0');
+        const search = url.searchParams.get('search') || '';
+        
+        let query = 'SELECT * FROM users WHERE 1=1';
+        const params = [];
+        
+        if (search) {
+          query += ' AND (name LIKE ? OR username LIKE ? OR email LIKE ?)';
+          const searchTerm = `%${search}%`;
+          params.push(searchTerm, searchTerm, searchTerm);
+        }
+        
+        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        params.push(limit, offset);
+        
+        const users = await env.DB.prepare(query).bind(...params).all();
+        
+        // Enrich users with stats
+        const enrichedUsers = await Promise.all((users.results || []).map(async (user) => {
+          try {
+            const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+              .bind(user.id).first();
+            const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE following_id = ?')
+              .bind(user.id).first();
+            
+            return {
+              ...user,
+              is_admin: user.is_admin === 1,
+              tracks_count: tracksCount?.count || 0,
+              followers_count: followersCount?.count || 0
+            };
+          } catch (e) {
+            return { ...user, is_admin: user.is_admin === 1, tracks_count: 0, followers_count: 0 };
+          }
+        }));
+        
+        return Response.json(enrichedUsers, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Users] Error:', error);
+        return Response.json({ error: 'Failed to load users' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // GET /api/admin/users/:id - Get user details (admin only)
+    if (url.pathname.startsWith('/api/admin/users/') && request.method === 'GET' && !url.pathname.includes('/ban') && !url.pathname.includes('/suspend') && !url.pathname.includes('/unban')) {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const userId = url.pathname.split('/api/admin/users/')[1]?.split('/')[0];
+        if (!userId || !env.DB) {
+          return Response.json({ error: 'User ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+        if (!user) {
+          return Response.json({ error: 'User not found' }, 
+            { status: 404, headers: corsHeaders });
+        }
+        
+        // Get user stats
+        const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+          .bind(userId).first();
+        const followersCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE following_id = ?')
+          .bind(userId).first();
+        const followingCount = await env.DB.prepare('SELECT COUNT(*) as count FROM follows WHERE follower_id = ?')
+          .bind(userId).first();
+        
+        return Response.json({
+          ...user,
+          is_admin: user.is_admin === 1,
+          tracks_count: tracksCount?.count || 0,
+          followers_count: followersCount?.count || 0,
+          following_count: followingCount?.count || 0
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin User Details] Error:', error);
+        return Response.json({ error: 'Failed to load user' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // PUT /api/admin/users/:id - Update user profile (admin only)
+    if (url.pathname.startsWith('/api/admin/users/') && request.method === 'PUT' && !url.pathname.includes('/ban') && !url.pathname.includes('/suspend') && !url.pathname.includes('/unban')) {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const userId = url.pathname.split('/api/admin/users/')[1]?.split('/')[0];
+        if (!userId || !env.DB) {
+          return Response.json({ error: 'User ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const { name, username, email, bio, location, verified, is_admin } = body || {};
+        
+        const updates = [];
+        const params = [];
+        
+        if (name !== undefined) {
+          updates.push('name = ?');
+          params.push(name);
+        }
+        if (username !== undefined) {
+          updates.push('username = ?');
+          params.push(username);
+        }
+        if (email !== undefined) {
+          updates.push('email = ?');
+          params.push(email);
+        }
+        if (bio !== undefined) {
+          updates.push('biography = ?');
+          params.push(bio || null);
+        }
+        if (location !== undefined) {
+          updates.push('location = ?');
+          params.push(location || null);
+        }
+        if (verified !== undefined) {
+          updates.push('verified = ?');
+          params.push(verified ? 1 : 0);
+        }
+        if (is_admin !== undefined) {
+          updates.push('is_admin = ?');
+          params.push(is_admin ? 1 : 0);
+        }
+        
+        if (updates.length === 0) {
+          return Response.json({ error: 'No fields to update' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        updates.push('updated_at = datetime("now")');
+        params.push(userId);
+        
+        await env.DB.prepare(`
+          UPDATE users SET ${updates.join(', ')}
+          WHERE id = ?
+        `).bind(...params).run();
+        
+        const updatedUser = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+        
+        return Response.json({
+          success: true,
+          user: {
+            ...updatedUser,
+            is_admin: updatedUser.is_admin === 1
+          }
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Update User] Error:', error);
+        return Response.json({ error: 'Failed to update user' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // DELETE /api/admin/users/:id - Delete user account (admin only)
+    if (url.pathname.startsWith('/api/admin/users/') && request.method === 'DELETE') {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const userId = url.pathname.split('/api/admin/users/')[1]?.split('/')[0];
+        if (!userId || !env.DB) {
+          return Response.json({ error: 'User ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        // Prevent deleting admin accounts
+        const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+        if (!user) {
+          return Response.json({ error: 'User not found' }, 
+            { status: 404, headers: corsHeaders });
+        }
+        
+        if (user.is_admin === 1 || user.email === 'chilafrican@gmail.com') {
+          return Response.json({ error: 'Cannot delete admin accounts' }, 
+            { status: 403, headers: corsHeaders });
+        }
+        
+        // Get associated data counts
+        const tracksCount = await env.DB.prepare('SELECT COUNT(*) as count FROM tracks WHERE artist_id = ?')
+          .bind(userId).first();
+        const commentsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM comments WHERE user_id = ?')
+          .bind(userId).first();
+        
+        // Delete user's data
+        await env.DB.prepare('DELETE FROM tracks WHERE artist_id = ?').bind(userId).run();
+        await env.DB.prepare('DELETE FROM track_likes WHERE user_id = ?').bind(userId).run();
+        await env.DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(userId).run();
+        await env.DB.prepare('DELETE FROM follows WHERE follower_id = ? OR following_id = ?').bind(userId, userId).run();
+        await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId).run();
+        
+        // Delete user account
+        await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+        
+        return Response.json({
+          success: true,
+          message: 'User account deleted successfully',
+          deletedUser: {
+            id: user.id,
+            username: user.username,
+            email: user.email
+          },
+          associatedData: {
+            tracks: tracksCount?.count || 0,
+            comments: commentsCount?.count || 0
+          }
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Delete User] Error:', error);
+        return Response.json({ error: 'Failed to delete user' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // POST /api/admin/users/:id/ban - Ban user (admin only)
+    if (url.pathname.includes('/api/admin/users/') && url.pathname.includes('/ban') && request.method === 'POST') {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const userId = url.pathname.split('/api/admin/users/')[1]?.split('/ban')[0];
+        if (!userId || !env.DB) {
+          return Response.json({ error: 'User ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const reason = body?.reason || 'Violation of terms of service';
+        
+        // Add banned column if it doesn't exist
+        try {
+          await env.DB.prepare('ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0').run();
+          await env.DB.prepare('ALTER TABLE users ADD COLUMN ban_reason TEXT').run();
+        } catch (e) {
+          // Column might already exist
+        }
+        
+        await env.DB.prepare(`
+          UPDATE users 
+          SET banned = 1, ban_reason = ?, updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(reason, userId).run();
+        
+        return Response.json({
+          success: true,
+          message: 'User banned successfully',
+          reason: reason
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Ban User] Error:', error);
+        return Response.json({ error: 'Failed to ban user' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // POST /api/admin/users/:id/unban - Unban user (admin only)
+    if (url.pathname.includes('/api/admin/users/') && url.pathname.includes('/unban') && request.method === 'POST') {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const userId = url.pathname.split('/api/admin/users/')[1]?.split('/unban')[0];
+        if (!userId || !env.DB) {
+          return Response.json({ error: 'User ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        await env.DB.prepare(`
+          UPDATE users 
+          SET banned = 0, ban_reason = NULL, updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(userId).run();
+        
+        return Response.json({
+          success: true,
+          message: 'User unbanned successfully'
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Unban User] Error:', error);
+        return Response.json({ error: 'Failed to unban user' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
+    // POST /api/admin/users/:id/suspend - Suspend user temporarily (admin only)
+    if (url.pathname.includes('/api/admin/users/') && url.pathname.includes('/suspend') && request.method === 'POST') {
+      try {
+        const isAdmin = await checkAdminAccess(request);
+        if (!isAdmin) {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        const userId = url.pathname.split('/api/admin/users/')[1]?.split('/suspend')[0];
+        if (!userId || !env.DB) {
+          return Response.json({ error: 'User ID required' }, 
+            { status: 400, headers: corsHeaders });
+        }
+        
+        const body = await parseBody(request);
+        const reason = body?.reason || 'Temporary suspension';
+        const days = parseInt(body?.days || '7');
+        const suspendUntil = new Date();
+        suspendUntil.setDate(suspendUntil.getDate() + days);
+        
+        // Add suspended column if it doesn't exist
+        try {
+          await env.DB.prepare('ALTER TABLE users ADD COLUMN suspended INTEGER DEFAULT 0').run();
+          await env.DB.prepare('ALTER TABLE users ADD COLUMN suspend_reason TEXT').run();
+          await env.DB.prepare('ALTER TABLE users ADD COLUMN suspend_until TEXT').run();
+        } catch (e) {
+          // Column might already exist
+        }
+        
+        await env.DB.prepare(`
+          UPDATE users 
+          SET suspended = 1, suspend_reason = ?, suspend_until = ?, updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(reason, suspendUntil.toISOString(), userId).run();
+        
+        return Response.json({
+          success: true,
+          message: 'User suspended successfully',
+          reason: reason,
+          suspend_until: suspendUntil.toISOString()
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Suspend User] Error:', error);
+        return Response.json({ error: 'Failed to suspend user' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+    
     // GET /media/* or /api/media/* - Proxy audio/media files from R2 (handle CORS and access)
     // Handle both legacy /media/* and new /api/media/* routes
     if ((url.pathname.startsWith('/api/media/') || url.pathname.startsWith('/media/')) && request.method === 'GET') {

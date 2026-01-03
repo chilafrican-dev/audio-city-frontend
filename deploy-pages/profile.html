@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <script>
     // Authentication check - only required for own profile (no ?id param)
     (function() {
@@ -28,6 +30,184 @@
       }
     })();
     
+    // Update header profile picture
+    async function updateHeaderProfilePicture() {
+      const userId = localStorage.getItem('user_id');
+      const headerImg = document.getElementById('headerProfileImg');
+      const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+      
+      if (!headerImg || !headerPlaceholder) return;
+      
+      // Only update if user is logged in
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken || !userId) {
+        // User not logged in - hide profile picture
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+        return;
+      }
+      
+      let avatar = null;
+      
+      // Try to fetch from backend API first
+      if (typeof API_BASE_URL !== 'undefined') {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users/${userId}`);
+          if (response.ok) {
+            const userData = await response.json();
+            avatar = userData?.profile_image || userData?.avatar_url || userData?.profile_image_url;
+            
+            // If avatar URL is relative, make it absolute
+            if (avatar && avatar.startsWith('/media/')) {
+              avatar = `${API_BASE_URL.replace('/api', '')}${avatar}`;
+            } else if (avatar && avatar.startsWith('/uploads/')) {
+              avatar = `${API_BASE_URL}${avatar}`;
+            }
+            // Force HTTPS for any http avatar URLs to avoid mixed-content blocks
+            if (avatar && avatar.startsWith('http://')) {
+              avatar = avatar.replace('http://', 'https://');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load profile picture from API:', error);
+        }
+      }
+      
+      // Update header image
+      if (avatar) {
+        headerImg.src = avatar;
+        headerImg.style.display = 'block';
+        headerPlaceholder.style.display = 'none';
+      } else {
+        headerImg.style.display = 'none';
+        headerPlaceholder.style.display = 'flex';
+      }
+    }
+    
+    // Update header authentication UI based on login status
+    function updateHeaderAuth() {
+      const authToken = localStorage.getItem('auth_token');
+      const userId = localStorage.getItem('user_id');
+      const isLoggedIn = !!(authToken && userId);
+      
+      const signInBtn = document.getElementById('signInBtn');
+      const signUpBtn = document.getElementById('signUpBtn');
+      const signOutBtn = document.getElementById('signOutBtnHeader');
+      const profileBtn = document.getElementById('profileBtn');
+      const masteringBtn = document.getElementById('masteringBtn');
+      const inboxLink = document.getElementById('inboxNavLink');
+      
+      // Get all elements with auth classes
+      const loggedOutElements = document.querySelectorAll('.auth-logged-out');
+      const loggedInElements = document.querySelectorAll('.auth-logged-in');
+      
+      if (isLoggedIn) {
+        // User is logged in - hide sign in/up, show sign out and profile
+        if (signInBtn) {
+          signInBtn.style.display = 'none';
+          signInBtn.style.visibility = 'hidden';
+        }
+        if (signUpBtn) {
+          signUpBtn.style.display = 'none';
+          signUpBtn.style.visibility = 'hidden';
+        }
+        if (signOutBtn) {
+          signOutBtn.style.display = 'inline-block';
+          signOutBtn.style.visibility = 'visible';
+        }
+        if (profileBtn) {
+          profileBtn.style.display = 'flex';
+          profileBtn.style.visibility = 'visible';
+        }
+        if (inboxLink) {
+          inboxLink.style.display = 'inline-block';
+          inboxLink.style.visibility = 'visible';
+        }
+        if (masteringBtn) {
+          masteringBtn.style.display = 'inline-block';
+        }
+        
+        // Hide logged-out elements, show logged-in elements
+        loggedOutElements.forEach(el => {
+          if (el) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+          }
+        });
+        loggedInElements.forEach(el => {
+          if (el && el.id !== 'profileBtn') {
+            el.style.display = 'inline-block';
+            el.style.visibility = 'visible';
+          } else if (el && el.id === 'profileBtn') {
+            el.style.display = 'flex';
+            el.style.visibility = 'visible';
+          }
+        });
+        
+        // Update header profile picture
+        updateHeaderProfilePicture();
+      } else {
+        // User is not logged in - show sign in/up, hide sign out and profile
+        if (signInBtn) {
+          signInBtn.style.display = 'inline-block';
+          signInBtn.style.visibility = 'visible';
+        }
+        if (signUpBtn) {
+          signUpBtn.style.display = 'inline-block';
+          signUpBtn.style.visibility = 'visible';
+        }
+        if (signOutBtn) {
+          signOutBtn.style.display = 'none';
+          signOutBtn.style.visibility = 'hidden';
+        }
+        if (profileBtn) {
+          profileBtn.style.display = 'none';
+          profileBtn.style.visibility = 'hidden';
+        }
+        if (inboxLink) {
+          inboxLink.style.display = 'none';
+          inboxLink.style.visibility = 'hidden';
+        }
+        if (masteringBtn) {
+          masteringBtn.style.display = 'inline-block';
+        }
+        
+        // Show logged-out elements, hide logged-in elements
+        loggedOutElements.forEach(el => {
+          if (el) {
+            el.style.display = 'inline-block';
+            el.style.visibility = 'visible';
+          }
+        });
+        loggedInElements.forEach(el => {
+          if (el) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+          }
+        });
+        
+        // Hide profile picture for guests
+        const headerImg = document.getElementById('headerProfileImg');
+        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
+        if (headerImg) {
+          headerImg.style.display = 'none';
+        }
+        if (headerPlaceholder) {
+          headerPlaceholder.style.display = 'flex';
+        }
+      }
+    }
+    
+    // Run header auth update immediately and on load
+    (function() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateHeaderAuth);
+      } else {
+        updateHeaderAuth();
+      }
+      window.addEventListener('load', updateHeaderAuth);
+    })();
+    
     // Manifest loading disabled - Cloudflare WAF blocks JSON files
   </script>
   <meta name="theme-color" content="#8b5cf6" />
@@ -35,6 +215,27 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Audio City" />
   <style>
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
     * {
       margin: 0;
       padding: 0;
@@ -591,12 +792,14 @@
             <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
           </div>
         </div>
-        <a href="inbox.html" class="nav-item">Inbox</a>
+        <a href="inbox.html" class="nav-item auth-logged-in" id="inboxNavLink" style="display: none;">Inbox</a>
       </nav>
       <div class="nav-right">
         <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1)); color: var(--accent); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.3);">🎛️ Mastering</a>
-        <button id="signOutBtnHeader" onclick="signOut()" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Sign out</button>
-        <div class="profile-btn" id="profileBtn" style="position: relative;" onclick="toggleProfileMenu(event)">
+        <a href="login.html" class="header-btn btn-signin auth-logged-out" id="signInBtn" style="padding: 8px 16px; color: var(--text); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Sign in</a>
+        <a href="signup.html" class="header-btn btn-create auth-logged-out" id="signUpBtn" style="padding: 8px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Create account</a>
+        <button id="signOutBtnHeader" class="auth-logged-in" onclick="signOut()" style="padding: 8px 14px; background: var(--glass); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer; display: none;">Sign out</button>
+        <div class="profile-btn auth-logged-in" id="profileBtn" style="position: relative; display: none;" onclick="toggleProfileMenu(event)">
           <img id="headerProfileImg" src="" alt="Profile" style="display: none; width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
           <div id="headerProfilePlaceholder" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 20px;">👤</div>
           <div class="dropdown-menu" id="profileMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 180px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000;">
@@ -663,6 +866,7 @@
             <span class="stat-label">Total Plays</span>
           </div>
         </div>
+        
       </div>
 
       <div class="sc-embed" id="profileSoundCloudEmbed"></div>
@@ -681,7 +885,7 @@
       <div class="section" id="tracksSection" style="display: none;">
         <div class="section-header">
           <h3 class="section-title">🎵 Tracks</h3>
-          <a href="#" class="section-link">View All →</a>
+          <a href="#tracksSection" class="section-link" onclick="event.preventDefault(); document.getElementById('tracksSection').scrollIntoView({ behavior: 'smooth', block: 'start' });">View All →</a>
         </div>
         <div class="tracks-grid" id="tracksGrid"></div>
       </div>
@@ -690,9 +894,18 @@
       <div class="section" id="producersSection" style="display: none;">
         <div class="section-header">
           <h3 class="section-title">🎛️ Producers</h3>
-          <a href="#" class="section-link">View All →</a>
+          <a href="#producersSection" class="section-link" onclick="event.preventDefault(); document.getElementById('producersSection').scrollIntoView({ behavior: 'smooth', block: 'start' });">View All →</a>
         </div>
         <div class="tracks-grid" id="producersGrid"></div>
+      </div>
+      
+      <!-- Playlists Section -->
+      <div class="section" id="playlistsSection" style="display: none;">
+        <div class="section-header">
+          <h3 class="section-title">📀 Playlists</h3>
+          <button id="createPlaylistBtn" class="section-link" style="background: none; border: none; color: var(--accent) !important; cursor: pointer; font-weight: 600; padding: 0;">+ Create</button>
+        </div>
+        <div class="tracks-grid" id="playlistsGrid"></div>
       </div>
       
       <!-- Activity Section (always visible) -->
@@ -712,9 +925,20 @@
         <h2 style="font-size: 24px; font-weight: 700;">Edit Profile</h2>
         <button id="closeEditModal" style="background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer;">×</button>
       </div>
+      <!-- Profile Editing Tips -->
+      <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: start; gap: 8px; font-size: 13px; color: var(--muted);">
+          <span>💡</span>
+          <div><strong style="color: var(--accent);">Tip:</strong> Complete your profile to help others discover your music. Add a profile picture, bio, and location to stand out!</div>
+        </div>
+      </div>
+      
       <form id="editProfileForm">
         <div style="margin-bottom: 20px;">
-          <label for="editAvatar" style="display: block; margin-bottom: 8px; font-weight: 600;">Profile Picture</label>
+          <label for="editAvatar" style="display: block; margin-bottom: 8px; font-weight: 600;">
+            Profile Picture
+            <span style="font-size: 12px; color: var(--muted); font-weight: normal; margin-left: 6px;">(Will be cropped to 3000x3000px)</span>
+          </label>
           <div style="display: flex; gap: 16px; align-items: center;">
             <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background: var(--glass); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               <img id="avatarPreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
@@ -723,9 +947,40 @@
             <div style="flex: 1;">
               <input type="file" id="editAvatar" name="editAvatar" accept="image/*" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; cursor: pointer;" />
               <input type="url" id="editAvatarUrl" name="editAvatarUrl" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; margin-top: 8px;" placeholder="Or enter image URL (optional)" />
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Upload an image file or paste an image URL</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Upload an image file (min 500x500px, max 10000x10000px) - Manual crop to 3000x3000</p>
             </div>
           </div>
+          
+          <!-- Manual Crop Interface -->
+          <div id="avatarCropContainer" style="display: none; margin-top: 20px; padding: 20px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 12px;">
+            <div style="text-align: center; margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Crop Your Photo</h3>
+              <p style="font-size: 12px; color: var(--muted);">Drag the corners or edges to adjust the crop area. Image will be resized to 3000x3000px.</p>
+            </div>
+            
+            <div style="position: relative; max-width: 100%; margin: 0 auto; background: #000; border-radius: 8px; overflow: hidden;">
+              <div style="position: relative; width: 100%; padding-bottom: 100%; background: #1a1a1a;">
+                <img id="avatarCropImage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; cursor: move;" />
+                <div id="avatarCropBox" style="position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); cursor: move;">
+                  <div class="crop-handle" data-handle="nw" style="position: absolute; top: -8px; left: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nwse-resize;"></div>
+                  <div class="crop-handle" data-handle="ne" style="position: absolute; top: -8px; right: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nesw-resize;"></div>
+                  <div class="crop-handle" data-handle="sw" style="position: absolute; bottom: -8px; left: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nesw-resize;"></div>
+                  <div class="crop-handle" data-handle="se" style="position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: nwse-resize;"></div>
+                  <div class="crop-handle" data-handle="n" style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ns-resize;"></div>
+                  <div class="crop-handle" data-handle="s" style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ns-resize;"></div>
+                  <div class="crop-handle" data-handle="e" style="position: absolute; top: 50%; right: -8px; transform: translateY(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ew-resize;"></div>
+                  <div class="crop-handle" data-handle="w" style="position: absolute; top: 50%; left: -8px; transform: translateY(-50%); width: 16px; height: 16px; background: var(--accent); border: 2px solid white; border-radius: 50%; cursor: ew-resize;"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+              <button type="button" id="avatarCropCancel" style="padding: 10px 20px; background: var(--bg-light); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="button" id="avatarCropConfirm" style="padding: 10px 20px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; border-radius: 8px; font-weight: 600; cursor: pointer;">Apply Crop (3000x3000)</button>
+            </div>
+          </div>
+          
+          <img id="avatarCroppedPreview" style="display: none; max-width: 200px; margin-top: 16px; border-radius: 8px; border: 2px solid var(--border);" />
         </div>
         <div style="margin-bottom: 20px;">
           <label for="editName" style="display: block; margin-bottom: 8px; font-weight: 600;">Display Name</label>
@@ -734,14 +989,17 @@
         <div style="margin-bottom: 20px;">
           <label for="editUsername" style="display: block; margin-bottom: 8px; font-weight: 600;">Username</label>
           <input type="text" id="editUsername" name="editUsername" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="Your username" />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">💡 This is how others will find and mention you</div>
         </div>
         <div style="margin-bottom: 20px;">
           <label for="editBio" style="display: block; margin-bottom: 8px; font-weight: 600;">Bio</label>
-          <textarea id="editBio" name="editBio" rows="4" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell us about yourself..."></textarea>
+          <textarea id="editBio" name="editBio" rows="4" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px; resize: vertical;" placeholder="Tell us about yourself... (e.g., your musical style, achievements, what makes you unique)"></textarea>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">💡 Share your story! A good bio helps fans connect with you</div>
         </div>
         <div style="margin-bottom: 20px;">
           <label for="editLocation" style="display: block; margin-bottom: 8px; font-weight: 600;">Location</label>
           <input type="text" id="editLocation" name="editLocation" style="width: 100%; padding: 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 14px;" placeholder="City, Country" />
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">💡 Help local fans discover your music</div>
         </div>
         <div style="margin-bottom: 20px; display: none;" id="phoneNumberField">
           <label for="editPhoneNumber" style="display: block; margin-bottom: 8px; font-weight: 600;">📱 Phone Number (For Producers)</label>
@@ -794,7 +1052,15 @@
       var urlParams = new URLSearchParams(window.location.search);
     }
     if (typeof profileUserId === 'undefined') {
-      var profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
+      // Always prioritize URL parameter - if ?id= exists in URL, use it (even if empty)
+      const urlId = urlParams.get('id');
+      if (urlId !== null) {
+        // URL has ?id= parameter (could be empty string)
+        profileUserId = urlId || null;
+      } else {
+        // No ?id= parameter in URL, use logged-in user
+        profileUserId = localStorage.getItem('user_id');
+      }
     }
     
     // Initialize buttons and UI when DOM is ready
@@ -881,16 +1147,16 @@
       if (editProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
           document.getElementById('editProfileModal').style.display = 'flex';
-      // Load current values
-      const currentName = document.getElementById('profileName')?.textContent?.trim() || localStorage.getItem('user_name') || '';
-      const currentUsername = document.getElementById('profileHandle')?.textContent?.replace('@', '') || localStorage.getItem('username') || '';
-      const currentBio = document.getElementById('profileBio')?.textContent?.trim() || localStorage.getItem('bio') || '';
-      const currentLocation = document.getElementById('locationText')?.textContent?.trim() || localStorage.getItem('location') || '';
-      const currentPhone = localStorage.getItem('phone_number') || '';
+      // Load current values from DOM (already loaded from API)
+      const currentName = document.getElementById('profileName')?.textContent?.trim() || '';
+      const currentUsername = document.getElementById('profileHandle')?.textContent?.replace('@', '') || '';
+      const currentBio = document.getElementById('profileBio')?.textContent?.trim() || '';
+      const currentLocation = document.getElementById('locationText')?.textContent?.trim() || '';
+      const currentPhone = document.getElementById('phoneNumber')?.textContent?.trim() || '';
       
-      // Check if user is a producer
-      const userType = localStorage.getItem('user_type') || '';
-      const isProducer = userType === 'producer' || userType === 'Producer';
+      // Check if user is a producer - fetch from API if needed
+      // For now, show phone field if phone number exists
+      const isProducer = !!currentPhone;
       const phoneField = document.getElementById('phoneNumberField');
       if (phoneField) {
         phoneField.style.display = isProducer ? 'block' : 'none';
@@ -903,21 +1169,15 @@
       if (document.getElementById('editLocation')) document.getElementById('editLocation').value = currentLocation;
       if (document.getElementById('editPhoneNumber')) document.getElementById('editPhoneNumber').value = currentPhone;
       
-      const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || '';
+      // Get existing avatar from DOM (already loaded from API)
+      const avatarImg = document.querySelector('#profileAvatar img');
+      const existingAvatar = avatarImg?.src || '';
       if (existingAvatar) {
-        if (existingAvatar.startsWith('data:image')) {
-          // It's a data URL (uploaded image) - show in preview
-          document.getElementById('avatarPreview').src = existingAvatar;
-          document.getElementById('avatarPreview').style.display = 'block';
-          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
-          document.getElementById('editAvatarUrl').value = '';
-        } else {
-          // It's a URL
-          document.getElementById('editAvatarUrl').value = existingAvatar;
-          document.getElementById('avatarPreview').src = existingAvatar;
-          document.getElementById('avatarPreview').style.display = 'block';
-          document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
-        }
+        // Show in preview
+        document.getElementById('avatarPreview').src = existingAvatar;
+        document.getElementById('avatarPreview').style.display = 'block';
+        document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+        document.getElementById('editAvatarUrl').value = existingAvatar;
       } else {
         // No avatar - reset preview
         document.getElementById('avatarPreview').style.display = 'none';
@@ -926,36 +1186,8 @@
       }
       document.getElementById('editAvatar').value = ''; // Clear file input
       
-      // Setup file upload preview
-      document.getElementById('editAvatar').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          // Check file size (max 5MB)
-          if (file.size > 5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image smaller than 5MB.');
-            e.target.value = '';
-            return;
-          }
-          
-          // Check file type
-          if (!file.type.startsWith('image/')) {
-            alert('Please select a valid image file.');
-            e.target.value = '';
-            return;
-          }
-          
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const dataUrl = e.target.result;
-            document.getElementById('avatarPreview').src = dataUrl;
-            document.getElementById('avatarPreview').style.display = 'block';
-            document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
-            // Clear URL input when file is selected
-            document.getElementById('editAvatarUrl').value = '';
-          };
-          reader.readAsDataURL(file);
-        }
-      });
+      // Note: File upload preview is handled by the cropping handler above
+      // The cropping handler will show the crop interface and also update the preview
       
       // Setup URL input preview
       document.getElementById('editAvatarUrl').addEventListener('input', function(e) {
@@ -968,7 +1200,8 @@
           document.getElementById('editAvatar').value = '';
         } else {
           // Clear preview if URL is empty
-          const existingAvatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url');
+          const avatarImg = document.querySelector('#profileAvatar img');
+          const existingAvatar = avatarImg?.src || '';
           if (!existingAvatar) {
             document.getElementById('avatarPreview').style.display = 'none';
             document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
@@ -981,6 +1214,339 @@
         document.getElementById('avatarPreview').style.display = 'none';
         document.getElementById('avatarPreviewPlaceholder').style.display = 'flex';
       };
+      
+      // ============================================
+      // MANUAL PHOTO CROPPING (3000x3000)
+      // ============================================
+      let avatarCropData = {
+        originalFile: null,
+        originalImage: null,
+        cropBox: { x: 0, y: 0, width: 0, height: 0 },
+        imageScale: 1,
+        imageOffset: { x: 0, y: 0 },
+        isDragging: false,
+        dragStart: { x: 0, y: 0 },
+        isResizing: false,
+        resizeHandle: null,
+        croppedBlob: null
+      };
+      
+      const avatarInput = document.getElementById('editAvatar');
+      const avatarCropContainer = document.getElementById('avatarCropContainer');
+      const avatarCropImage = document.getElementById('avatarCropImage');
+      const avatarCropBox = document.getElementById('avatarCropBox');
+      const avatarCropCancel = document.getElementById('avatarCropCancel');
+      const avatarCropConfirm = document.getElementById('avatarCropConfirm');
+      const avatarCroppedPreview = document.getElementById('avatarCroppedPreview');
+      
+      // Handle file selection for cropping
+      if (avatarInput && avatarCropContainer) {
+        // Remove existing change handler and add new one
+        const originalHandler = avatarInput.onchange;
+        avatarInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          // Validate file type
+          if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            avatarInput.value = '';
+            return;
+          }
+          
+          // Validate file size (max 10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            alert('Image too large (max 10MB)');
+            avatarInput.value = '';
+            return;
+          }
+          
+          // Validate image dimensions
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              // Check min/max dimensions
+              const minSize = 500;
+              const maxSize = 10000;
+              
+              if (img.width < minSize || img.height < minSize) {
+                alert(`Image too small. Minimum size: ${minSize}x${minSize}px. Your image: ${img.width}x${img.height}px`);
+                avatarInput.value = '';
+                return;
+              }
+              
+              if (img.width > maxSize || img.height > maxSize) {
+                alert(`Image too large. Maximum size: ${maxSize}x${maxSize}px. Your image: ${img.width}x${img.height}px`);
+                avatarInput.value = '';
+                return;
+              }
+              
+              // Store original file and image
+              avatarCropData.originalFile = file;
+              avatarCropData.originalImage = img;
+              
+              // Show image in crop container
+              avatarCropImage.src = e.target.result;
+              
+              // Initialize crop interface
+              initializeCropInterface(img);
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+      
+      function initializeCropInterface(img) {
+        const container = avatarCropImage.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        const containerSize = containerRect.width;
+        
+        // Calculate scale to fit image in container (maintain aspect ratio)
+        const maxDimension = Math.max(img.width, img.height);
+        avatarCropData.imageScale = containerSize / maxDimension;
+        
+        // Set image size
+        const displayWidth = img.width * avatarCropData.imageScale;
+        const displayHeight = img.height * avatarCropData.imageScale;
+        avatarCropImage.style.width = displayWidth + 'px';
+        avatarCropImage.style.height = displayHeight + 'px';
+        
+        // Center image
+        avatarCropData.imageOffset.x = (containerSize - displayWidth) / 2;
+        avatarCropData.imageOffset.y = (containerSize - displayHeight) / 2;
+        avatarCropImage.style.left = avatarCropData.imageOffset.x + 'px';
+        avatarCropImage.style.top = avatarCropData.imageOffset.y + 'px';
+        avatarCropImage.style.position = 'absolute';
+        
+        // Initialize crop box (center, square, 70% of container)
+        const cropDisplaySize = containerSize * 0.7;
+        const cropX = (containerSize - cropDisplaySize) / 2;
+        const cropY = (containerSize - cropDisplaySize) / 2;
+        
+        avatarCropData.cropBox = {
+          x: cropX,
+          y: cropY,
+          width: cropDisplaySize,
+          height: cropDisplaySize
+        };
+        
+        updateCropBox();
+        avatarCropContainer.style.display = 'block';
+      }
+      
+      // Update crop box visual position
+      function updateCropBox() {
+        if (!avatarCropBox) return;
+        const box = avatarCropData.cropBox;
+        avatarCropBox.style.left = box.x + 'px';
+        avatarCropBox.style.top = box.y + 'px';
+        avatarCropBox.style.width = box.width + 'px';
+        avatarCropBox.style.height = box.height + 'px';
+      }
+      
+      // Handle crop box dragging
+      if (avatarCropBox) {
+        avatarCropBox.addEventListener('mousedown', (e) => {
+          if (e.target.classList.contains('crop-handle')) {
+            return; // Let resize handles handle their own events
+          }
+          avatarCropData.isDragging = true;
+          const container = avatarCropImage.parentElement;
+          const containerRect = container.getBoundingClientRect();
+          avatarCropData.dragStart = {
+            x: e.clientX - containerRect.left - avatarCropData.cropBox.x,
+            y: e.clientY - containerRect.top - avatarCropData.cropBox.y
+          };
+          e.preventDefault();
+        });
+      }
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!avatarCropData.originalImage) return;
+        
+        const container = avatarCropImage?.parentElement;
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        
+        if (avatarCropData.isDragging) {
+          const newX = e.clientX - containerRect.left - avatarCropData.dragStart.x;
+          const newY = e.clientY - containerRect.top - avatarCropData.dragStart.y;
+          
+          // Constrain to container bounds
+          const maxX = containerRect.width - avatarCropData.cropBox.width;
+          const maxY = containerRect.height - avatarCropData.cropBox.height;
+          
+          avatarCropData.cropBox.x = Math.max(0, Math.min(newX, maxX));
+          avatarCropData.cropBox.y = Math.max(0, Math.min(newY, maxY));
+          updateCropBox();
+        } else if (avatarCropData.isResizing) {
+          const mouseX = e.clientX - containerRect.left;
+          const mouseY = e.clientY - containerRect.top;
+          
+          const handle = avatarCropData.resizeHandle;
+          const box = avatarCropData.cropBox;
+          
+          if (handle.includes('e')) {
+            box.width = Math.max(50, Math.min(mouseX - box.x, containerRect.width - box.x));
+          }
+          if (handle.includes('w')) {
+            const newWidth = box.x - mouseX + box.width;
+            if (newWidth >= 50 && mouseX >= 0) {
+              box.width = newWidth;
+              box.x = mouseX;
+            }
+          }
+          if (handle.includes('s')) {
+            box.height = Math.max(50, Math.min(mouseY - box.y, containerRect.height - box.y));
+          }
+          if (handle.includes('n')) {
+            const newHeight = box.y - mouseY + box.height;
+            if (newHeight >= 50 && mouseY >= 0) {
+              box.height = newHeight;
+              box.y = mouseY;
+            }
+          }
+          
+          // Keep square aspect ratio
+          const size = Math.min(box.width, box.height);
+          if (handle.includes('e') || handle.includes('w')) {
+            const oldWidth = box.width;
+            box.width = size;
+            if (handle.includes('w')) {
+              box.x = box.x + (oldWidth - size);
+            }
+          }
+          if (handle.includes('s') || handle.includes('n')) {
+            const oldHeight = box.height;
+            box.height = size;
+            if (handle.includes('n')) {
+              box.y = box.y + (oldHeight - size);
+            }
+          }
+          
+          // Constrain to container
+          if (box.x < 0) {
+            box.width += box.x;
+            box.x = 0;
+            box.height = box.width;
+          }
+          if (box.y < 0) {
+            box.height += box.y;
+            box.y = 0;
+            box.width = box.height;
+          }
+          if (box.x + box.width > containerRect.width) {
+            box.width = containerRect.width - box.x;
+            box.height = box.width;
+          }
+          if (box.y + box.height > containerRect.height) {
+            box.height = containerRect.height - box.y;
+            box.width = box.height;
+          }
+          
+          updateCropBox();
+        }
+      });
+      
+      document.addEventListener('mouseup', () => {
+        avatarCropData.isDragging = false;
+        avatarCropData.isResizing = false;
+        avatarCropData.resizeHandle = null;
+      });
+      
+      // Handle resize handles
+      if (avatarCropBox) {
+        document.querySelectorAll('.crop-handle').forEach(handle => {
+          handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            avatarCropData.isResizing = true;
+            avatarCropData.resizeHandle = handle.dataset.handle;
+          });
+        });
+      }
+      
+      // Cancel crop
+      if (avatarCropCancel) {
+        avatarCropCancel.addEventListener('click', () => {
+          avatarCropContainer.style.display = 'none';
+          if (avatarInput) avatarInput.value = '';
+          avatarCropData.originalFile = null;
+          avatarCropData.originalImage = null;
+          avatarCropData.croppedBlob = null;
+          if (avatarCroppedPreview) avatarCroppedPreview.style.display = 'none';
+        });
+      }
+      
+      // Confirm crop and process to 3000x3000
+      if (avatarCropConfirm) {
+        avatarCropConfirm.addEventListener('click', () => {
+          if (!avatarCropData.originalImage) {
+            alert('Please select an image first');
+            return;
+          }
+          
+          // Calculate actual crop coordinates in original image space
+          const container = avatarCropImage.parentElement;
+          const containerRect = container.getBoundingClientRect();
+          
+          // Convert crop box from display coordinates to image coordinates
+          const cropX = Math.max(0, (avatarCropData.cropBox.x - avatarCropData.imageOffset.x) / avatarCropData.imageScale);
+          const cropY = Math.max(0, (avatarCropData.cropBox.y - avatarCropData.imageOffset.y) / avatarCropData.imageScale);
+          const cropWidth = avatarCropData.cropBox.width / avatarCropData.imageScale;
+          const cropHeight = avatarCropData.cropBox.height / avatarCropData.imageScale;
+          
+          // Ensure crop is within image bounds
+          const finalCropX = Math.max(0, Math.min(cropX, avatarCropData.originalImage.width));
+          const finalCropY = Math.max(0, Math.min(cropY, avatarCropData.originalImage.height));
+          const finalCropWidth = Math.min(cropWidth, avatarCropData.originalImage.width - finalCropX);
+          const finalCropHeight = Math.min(cropHeight, avatarCropData.originalImage.height - finalCropY);
+          
+          // Create canvas for 3000x3000 output
+          const canvas = document.createElement('canvas');
+          canvas.width = 3000;
+          canvas.height = 3000;
+          const ctx = canvas.getContext('2d');
+          
+          // Draw cropped and resized image
+          ctx.drawImage(
+            avatarCropData.originalImage,
+            finalCropX, finalCropY, finalCropWidth, finalCropHeight,
+            0, 0, 3000, 3000
+          );
+          
+          // Convert to blob
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              alert('Failed to process image. Please try again.');
+              return;
+            }
+            
+            avatarCropData.croppedBlob = blob;
+            
+            // Show preview
+            const url = URL.createObjectURL(blob);
+            if (avatarCroppedPreview) {
+              avatarCroppedPreview.src = url;
+              avatarCroppedPreview.style.display = 'block';
+            }
+            
+            // Update main preview
+            if (document.getElementById('avatarPreview')) {
+              document.getElementById('avatarPreview').src = url;
+              document.getElementById('avatarPreview').style.display = 'block';
+              document.getElementById('avatarPreviewPlaceholder').style.display = 'none';
+            }
+            
+            // Hide crop container
+            avatarCropContainer.style.display = 'none';
+            
+            console.log('✅ Photo cropped to 3000x3000, size:', (blob.size / 1024).toFixed(2) + 'KB');
+            alert('Photo cropped successfully! Click "Save Changes" to upload.');
+          }, 'image/jpeg', 0.92);
+        });
+      }
         });
       }
       
@@ -1017,18 +1583,56 @@
           return;
         }
       
-      // Handle avatar - prefer file upload over URL
-      const avatarFile = document.getElementById('editAvatar').files[0];
-        let avatarUrl = null;
+      // Handle avatar - prefer cropped blob, then file upload, then URL
+      let avatarUrl = null;
+      
+      // Use cropped blob if available (from manual crop)
+      if (avatarCropData.croppedBlob) {
+        // Upload cropped profile picture to backend
+        const formData = new FormData();
+        formData.append('profilePicture', avatarCropData.croppedBlob, 'profile-3000x3000.jpg');
+        formData.append('userId', userId);
         
-      if (avatarFile) {
+        const authToken = localStorage.getItem('auth_token');
+        const uploadResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-picture`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: formData
+        });
+        
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          avatarUrl = uploadData.avatar_url || uploadData.profile_image;
+          console.log('✅ Cropped profile picture uploaded successfully:', avatarUrl);
+          if (avatarUrl) {
+            updateProfilePicture(avatarUrl);
+          }
+        } else {
+          const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+          console.error('❌ Profile picture upload failed:', error);
+          alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+          return;
+        }
+      } else {
+        // Fallback to file upload if no cropped blob
+        const avatarFile = document.getElementById('editAvatar').files[0];
+        
+        if (avatarFile) {
           // Upload profile picture to backend
           const formData = new FormData();
           formData.append('profilePicture', avatarFile);
           formData.append('userId', userId);
           
+          const authToken = localStorage.getItem('auth_token');
           const uploadResponse = await fetch(`${API_BASE_URL}/api/users/${userId}/profile-picture`, {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            },
             body: formData
           });
           
@@ -1036,19 +1640,31 @@
             const uploadData = await uploadResponse.json();
             avatarUrl = uploadData.avatar_url || uploadData.profile_image;
             // Also save to localStorage as backup
-            localStorage.setItem('profile_image_url', avatarUrl);
-      } else {
-            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
-            alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
-          }
+            if (avatarUrl) {
+              // Don't save to localStorage - data comes from API
+            }
+            console.log('✅ Profile picture uploaded successfully:', avatarUrl);
+            // Immediately update the profile picture display
+            if (avatarUrl) {
+              updateProfilePicture(avatarUrl);
+            }
           } else {
+            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+            console.error('❌ Profile picture upload failed:', error);
+            alert('Failed to upload profile picture: ' + (error.error || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+          }
+        } else {
           // Use URL input
           const avatarUrlInput = document.getElementById('editAvatarUrl').value.trim();
           if (avatarUrlInput) {
             avatarUrl = avatarUrlInput;
-            localStorage.setItem('profile_image_url', avatarUrl);
+            // Don't save to localStorage - data comes from API
           }
         }
+      }
         
         // Update profile (bio, location, etc.)
         const bio = document.getElementById('editBio').value;
@@ -1064,7 +1680,7 @@
         if (username) profileData.username = username;
         if (phoneNumber) {
           profileData.phone_number = phoneNumber;
-          localStorage.setItem('phone_number', phoneNumber);
+          // Don't save to localStorage - data comes from API
         }
         
         if (Object.keys(profileData).length > 0) {
@@ -1078,30 +1694,25 @@
           });
           
           if (updateResponse.ok) {
-            // Persist returned user details so they show up after reload and across tabs
+            // Reload profile from API to get fresh data
             const updated = await updateResponse.json().catch(() => null);
             const updatedUser = updated?.user;
             if (updatedUser) {
-              if (updatedUser.name) localStorage.setItem('user_name', updatedUser.name);
-              if (updatedUser.username) localStorage.setItem('username', updatedUser.username);
-              if (updatedUser.bio) localStorage.setItem('bio', updatedUser.bio);
-              if (updatedUser.location) localStorage.setItem('location', updatedUser.location);
-              if (updatedUser.avatar_url || updatedUser.profile_image) {
-                const avatarPersisted = updatedUser.avatar_url || updatedUser.profile_image;
-                localStorage.setItem('profile_image_url', avatarPersisted);
+              // Update profile picture if avatar was updated
+              if (updatedUser.profile_image_url || updatedUser.avatar_url || updatedUser.profile_image) {
+                const avatarPersisted = updatedUser.profile_image_url || updatedUser.avatar_url || updatedUser.profile_image;
                 updateProfilePicture(avatarPersisted);
               }
+              // Reload profile to get all fresh data from API
+              await loadProfile();
             }
           } else {
             console.warn('Profile update failed, but continuing...');
           }
         }
         
-        // Save to localStorage as backup
-        if (bio) localStorage.setItem('bio', bio);
-        if (location) localStorage.setItem('location', location);
-        
-          // Close modal and reload
+        // Don't save to localStorage - reload profile from API to get fresh data
+        // Close modal and reload
           document.getElementById('editProfileModal').style.display = 'none';
           loadProfile();
         } catch (error) {
@@ -1208,13 +1819,13 @@
       }
     });
     
-    // Helper function to update profile picture display
+    // Helper function to update profile picture display (only for the profile being viewed, not header)
     function updateProfilePicture(imageSrc) {
       if (imageSrc) {
         // Force HTTPS to avoid mixed-content blocks
         imageSrc = imageSrc.replace(/^http:\/\//i, 'https://');
         
-        // Update main profile avatar
+        // Update main profile avatar (the profile being viewed)
         const avatarEl = document.querySelector('#profileAvatar img');
         const placeholder = document.querySelector('#profileAvatar > div');
         if (avatarEl) {
@@ -1225,15 +1836,10 @@
           }
         }
         
-        // Update header profile button
-        const headerImg = document.getElementById('headerProfileImg');
-        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
-        if (headerImg) {
-          headerImg.src = imageSrc;
-          headerImg.style.display = 'block';
-        }
-        if (headerPlaceholder) {
-          headerPlaceholder.style.display = 'none';
+        // Only update header profile picture if viewing own profile
+        const currentUserId = localStorage.getItem('user_id');
+        if (profileUserId === currentUserId) {
+          updateHeaderProfilePicture();
         }
       } else {
         // Hide image if no avatar
@@ -1246,24 +1852,30 @@
           placeholder.style.display = 'flex';
         }
         
-        // Update header profile button
-        const headerImg = document.getElementById('headerProfileImg');
-        const headerPlaceholder = document.getElementById('headerProfilePlaceholder');
-        if (headerImg) {
-          headerImg.style.display = 'none';
-        }
-        if (headerPlaceholder) {
-          headerPlaceholder.style.display = 'flex';
+        // Only update header if viewing own profile
+        const currentUserId = localStorage.getItem('user_id');
+        if (profileUserId === currentUserId) {
+          updateHeaderProfilePicture();
         }
       }
     }
     
     // Load profile
     async function loadProfile() {
+      // Determine if this is own profile (needed throughout the function, even if errors occur)
+      const currentUserId = localStorage.getItem('user_id');
+      let isOwnProfile = false;
+      
       try {
-        if (!profileUserId) {
-          console.error('No profile user ID found');
-          // Try to get from localStorage
+        // Always get profileUserId from URL first, don't fallback to localStorage if viewing another user
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('id');
+        
+        // If URL has an id parameter, use it (even if empty string, we'll handle that)
+        if (urlUserId !== null) {
+          profileUserId = urlUserId;
+        } else if (!profileUserId) {
+          // Only fallback to localStorage if no URL param AND profileUserId not set
           const storedUserId = localStorage.getItem('user_id');
           if (storedUserId) {
             profileUserId = storedUserId;
@@ -1273,6 +1885,19 @@
             return;
           }
         }
+        
+        // Validate profileUserId
+        if (!profileUserId || profileUserId.trim() === '') {
+          console.error('Invalid profile user ID');
+          document.getElementById('profileName').textContent = 'User not found';
+          document.getElementById('profileHandle').textContent = '@unknown';
+          return;
+        }
+        
+        // Update isOwnProfile now that we have profileUserId
+        isOwnProfile = profileUserId === currentUserId;
+        
+        console.log('Loading profile for user ID:', profileUserId);
         
         // Try to fetch user data from API
         let userData = null;
@@ -1292,30 +1917,33 @@
           }
         }
         
-        // Load user data (from API or localStorage)
-        const userName = userData?.name || userData?.full_name || localStorage.getItem('user_name') || 'User';
-        const username = userData?.username || userData?.handle || localStorage.getItem('username') || 'user';
+        // Load user data from API ONLY - no localStorage fallbacks when online
+        if (!userData) {
+          console.error('Failed to load user data from API');
+          document.getElementById('profileName').textContent = 'User not found';
+          document.getElementById('profileHandle').textContent = '@unknown';
+          return;
+        }
+        const userName = userData?.name || userData?.full_name || 'User';
+        const username = userData?.username || userData?.handle || 'user';
         
         console.log('Setting profile name:', userName, 'username:', username);
-        // Get avatar from API response first, then fallback to localStorage
-        let avatar = userData?.profile_image || userData?.avatar_url || null;
+        // Get avatar from API response only
+        let avatar = userData?.profile_image_url || userData?.profile_image || userData?.avatar_url || null;
         
         // If avatar URL is relative, make it absolute
-        if (avatar && avatar.startsWith('/uploads/')) {
+        if (avatar && avatar.startsWith('/media/')) {
+          avatar = `${API_BASE_URL.replace('/api', '')}${avatar}`;
+        } else if (avatar && avatar.startsWith('/uploads/')) {
           avatar = `${API_BASE_URL}${avatar}`;
         }
         
-        // Fallback to localStorage if no avatar from API
-        if (!avatar) {
-          avatar = localStorage.getItem('profile_image_data') || localStorage.getItem('profile_image_url') || null;
-        }
-        const bio = userData?.bio || userData?.description || localStorage.getItem('bio') || 'No bio yet.';
-        const location = userData?.location || localStorage.getItem('location') || null;
+        const bio = userData?.bio || userData?.description || 'No bio yet.';
+        const location = userData?.location || null;
         const phoneNumber = userData?.phone_number || '';
         const isVerified = userData?.is_verified || userData?.verified || false;
         
-        // Store phone number for edit form
-        if (phoneNumber) localStorage.setItem('phone_number', phoneNumber);
+        // Don't store in localStorage - data comes from API
         
         // Preserve admin status - don't overwrite if user is admin
         // Check if user ID starts with 'admin_' to maintain admin status
@@ -1326,10 +1954,7 @@
           console.log('Admin status preserved for admin user');
         }
         
-        // Update localStorage with profile data (but preserve admin status)
-        localStorage.setItem('name', userName);
-        localStorage.setItem('user_name', userName);
-        localStorage.setItem('username', username);
+        // Don't save to localStorage - data comes from API
         
         document.getElementById('profileName').textContent = userName;
         document.getElementById('profileHandle').textContent = `@${username}`;
@@ -1355,11 +1980,19 @@
         
         // Load tracks
         const tracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${profileUserId}&order=created_at.desc&limit=12`);
-        const tracks = tracksResponse.ok ? await tracksResponse.json() : [];
+        let tracks = [];
+        if (tracksResponse.ok) {
+          const tracksData = await tracksResponse.json();
+          tracks = Array.isArray(tracksData) ? tracksData : [];
+        }
         
         // Get total tracks count (not just the 12 we fetched for display)
         const allTracksResponse = await fetch(`${API_BASE_URL}/api/tracks?artist_id=eq.${profileUserId}`);
-        const allTracks = allTracksResponse.ok ? await allTracksResponse.json() : [];
+        let allTracks = [];
+        if (allTracksResponse.ok) {
+          const allTracksData = await allTracksResponse.json();
+          allTracks = Array.isArray(allTracksData) ? allTracksData : [];
+        }
         const tracksCountEl = document.getElementById('tracksCount');
         if (tracksCountEl) {
           tracksCountEl.textContent = allTracks.length.toLocaleString();
@@ -1406,6 +2039,9 @@
         
         // Load stats (followers, following)
         loadUserStats(profileUserId);
+        
+        // Load playlists
+        await loadPlaylists(profileUserId);
 
         // SoundCloud playlist embed (only if user has a playlist URL)
         const scEmbedContainer = document.getElementById('profileSoundCloudEmbed');
@@ -1433,7 +2069,25 @@
       } catch (error) {
         console.error('Error loading profile:', error);
       }
+      
     }
+    
+    // Helper: Escape HTML
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Wire up payment verification button
+    document.addEventListener('DOMContentLoaded', () => {
+      const verifyBtn = document.getElementById('verifyPaymentBtn');
+      if (verifyBtn) {
+        verifyBtn.addEventListener('click', async () => {
+        });
+      }
+    });
     
     // Delete track function (for admins and track creators)
     async function deleteTrack(trackId, isAdmin) {
@@ -1452,11 +2106,16 @@
           return;
         }
         
+        // Get admin email for admin bypass
+        const adminEmail = localStorage.getItem('user_email') || 'chilafrican@gmail.com';
+        
         const response = await fetch(`${API_BASE_URL}/api/tracks/${trackId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Admin-Email': adminEmail,
+            'X-User-Email': adminEmail
           }
         });
         
@@ -1555,6 +2214,73 @@
         if (userPostsContainer) {
           userPostsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">Error loading posts</div>';
         }
+      }
+    }
+    
+    // Open playlist - load first track with playlist context
+    async function openPlaylist(playlistId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/playlists/${playlistId}`);
+        if (!response.ok) {
+          console.error('Failed to load playlist:', response.status);
+          return;
+        }
+        
+        const playlist = await response.json();
+        const tracks = playlist.tracks || [];
+        
+        if (tracks.length === 0) {
+          alert('This playlist is empty');
+          return;
+        }
+        
+        // Navigate to first track with playlist context
+        window.location.href = `track.html?id=${tracks[0].id}&playlist=${playlistId}`;
+      } catch (error) {
+        console.error('Error opening playlist:', error);
+        alert('Failed to load playlist');
+      }
+    }
+    
+    // Load playlists for a user
+    async function loadPlaylists(userId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users/${userId}/playlists`);
+        if (!response.ok) {
+          console.error('Failed to load playlists:', response.status);
+          return;
+        }
+        
+        const playlists = await response.json();
+        const playlistsSection = document.getElementById('playlistsSection');
+        const playlistsGrid = document.getElementById('playlistsGrid');
+        
+        if (!playlistsSection || !playlistsGrid) return;
+        
+        if (playlists.length === 0) {
+          playlistsSection.style.display = 'none';
+          return;
+        }
+        
+        playlistsSection.style.display = 'block';
+        
+        playlistsGrid.innerHTML = playlists.map(playlist => {
+          const coverImage = playlist.cover_image_url || null;
+          return `
+            <div class="track-card" onclick="openPlaylist('${playlist.id}')" style="position: relative;">
+              <div class="track-cover">
+                ${coverImage ? `<img src="${escapeHtml(coverImage)}" alt="${escapeHtml(playlist.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" loading="lazy">` : ''}
+                <div style="${coverImage ? 'display: none;' : 'display: flex;'}">📀</div>
+              </div>
+              <div class="track-info">
+                <div class="track-title">${escapeHtml(playlist.name || 'Untitled Playlist')}</div>
+                <div class="track-stats">🎵 ${(playlist.tracks_count || 0).toLocaleString()} tracks</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading playlists:', error);
       }
     }
     
@@ -1707,6 +2433,9 @@
       // Initialize UI first
       initializeProfileUI();
       
+      // Update header authentication UI
+      updateHeaderAuth();
+      
       // Then load profile data
       loadProfile();
       
@@ -1720,21 +2449,30 @@
       }
     }
     
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializePage);
-    } else {
-      // DOM already loaded
+    // Wait for DOM to be ready - only initialize once
+    let initialized = false;
+    function initOnce() {
+      if (initialized) return;
+      initialized = true;
       initializePage();
     }
     
-    // Also listen for window load as backup
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initOnce);
+    } else {
+      // DOM already loaded
+      initOnce();
+    }
+    
+    // Also listen for window load as backup - but only if not already initialized
     window.addEventListener('load', () => {
-      if (!profileUserId) {
+      if (!initialized && !profileUserId) {
         // Retry loading if profileUserId wasn't set yet
-        profileUserId = urlParams.get('id') || localStorage.getItem('user_id');
+        // Always prioritize URL parameter
+        const urlId = urlParams.get('id');
+        profileUserId = (urlId !== null) ? urlId : localStorage.getItem('user_id');
         if (profileUserId) {
-          loadProfile();
+          initOnce();
         }
       }
     });

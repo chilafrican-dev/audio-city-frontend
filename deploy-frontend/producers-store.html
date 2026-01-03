@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Producers Store — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -343,7 +345,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Producers Store — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -682,7 +686,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Producers Store — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -1025,346 +1031,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Producers Store — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    :root {
-      --bg-deep: #0a0a0f;
-      --bg: #141420;
-      --bg-card: rgba(30, 30, 46, 0.6);
-      --text: #ffffff;
-      --muted: #a0a0b8;
-      --accent: #8b5cf6;
-      --accent-light: #a78bfa;
-      --accent-glow: rgba(139, 92, 246, 0.3);
-      --cyan: #06b6d4;
-      --success: #10b981;
-      --border: rgba(255, 255, 255, 0.1);
-      --glass: rgba(255, 255, 255, 0.05);
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg-deep);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    
-    .bg-layer {
-      position: fixed;
-      inset: 0;
-      background: 
-        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
-        radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.1), transparent 50%),
-        var(--bg-deep);
-      z-index: 0;
-    }
-    
-    header {
-      position: sticky;
-      top: 0;
-      background: rgba(20, 20, 32, 0.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 0;
-      z-index: 100;
-    }
-    
-    .header-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .logo-brand {
-      text-decoration: none;
-      font-size: 36px;
-      font-weight: 900;
-      color: #ffffff !important;
-      -webkit-text-fill-color: #ffffff !important;
-      letter-spacing: 1px;
-    }
-    
-    .nav-main { display: flex; gap: 4px; }
-    .nav-item {
-      color: var(--muted);
-      text-decoration: none;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: 500;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-    .nav-item:hover { background: var(--glass); color: var(--text); }
-    .nav-item.active { color: var(--accent); background: var(--glass); }
-    .nav-dropdown { position: relative; }
-    .dropdown-menu {
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px;
-      min-width: 200px;
-      display: none;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-      z-index: 1000;
-    }
-    .nav-dropdown:hover .dropdown-menu { display: block; }
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    .dropdown-item:hover { background: var(--accent-glow); color: var(--accent); }
-    
-    main {
-      position: relative;
-      z-index: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .page-header {
-      margin-bottom: 32px;
-    }
-    
-    .page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
-    .page-subtitle { color: var(--muted); }
-    
-    .search-section {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 32px;
-      flex-wrap: wrap;
-    }
-    
-    .search-box {
-      flex: 1;
-      min-width: 280px;
-      position: relative;
-    }
-    
-    .search-box input {
-      width: 100%;
-      padding: 14px 16px 14px 48px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text);
-      font-size: 15px;
-    }
-    
-    .search-box input:focus { outline: none; border-color: var(--accent); }
-    .search-box::before {
-      content: '🔍';
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    
-    .filter-tabs { display: flex; gap: 8px; }
-    .filter-tab {
-      padding: 12px 20px;
-      background: var(--glass);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--muted);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .filter-tab:hover { border-color: var(--accent); color: var(--text); }
-    .filter-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    
-    .producers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 24px;
-    }
-    
-    .producer-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: all 0.3s;
-    }
-    
-    .producer-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--cyan);
-      box-shadow: 0 12px 40px rgba(6, 182, 212, 0.15);
-    }
-    
-    .producer-banner {
-      height: 100px;
-      background: linear-gradient(135deg, var(--cyan), var(--accent));
-    }
-    
-    .producer-content {
-      padding: 20px;
-      margin-top: -40px;
-    }
-    
-    .producer-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: var(--bg);
-      border: 4px solid var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      margin-bottom: 12px;
-    }
-    
-    .producer-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-    .producer-handle { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
-    
-    .producer-stats {
-      display: flex;
-      gap: 16px;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 16px;
-    }
-    
-    .view-btn {
-      width: 100%;
-      padding: 12px;
-      background: transparent;
-      border: 1px solid var(--cyan);
-      border-radius: 10px;
-      color: var(--cyan);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      display: block;
-      text-align: center;
-    }
-    
-    .view-btn:hover {
-      background: var(--cyan);
-      color: #fff;
-    }
-    
-    @media (max-width: 768px) {
-      .nav-main { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="bg-layer"></div>
-  
-  <header>
-    <div class="header-content">
-      <a href="feed.html" class="logo-brand">Audio City</a>
-      <nav class="nav-main">
-        <a href="feed.html" class="nav-item">Feed</a>
-        <a href="discover.html" class="nav-item">Discover</a>
-        <a href="artists.html" class="nav-item">Artists</a>
-        <div class="nav-dropdown">
-          <a href="#" class="nav-item">🛠️ Tools</a>
-          <div class="dropdown-menu">
-            <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
-          </div>
-        </div>
-        <a href="inbox.html" class="nav-item">Inbox</a>
-      </nav>
-    </div>
-  </header>
-  
-  <main>
-    <div class="page-header">
-      <h1 class="page-title">🎹 Producers Store</h1>
-      <p class="page-subtitle">Find the perfect beat for your next hit</p>
-    </div>
-    
-    <div class="search-section">
-      <div class="search-box">
-        <input type="text" id="searchInput" name="searchInput" placeholder="Search producers or beats...">
-      </div>
-      <div class="filter-tabs">
-        <button class="filter-tab active">All</button>
-        <button class="filter-tab">Afrobeat</button>
-        <button class="filter-tab">Hip-Hop</button>
-        <button class="filter-tab">Amapiano</button>
-      </div>
-    </div>
-    
-    <div class="producers-grid">
-      <div class="producer-card">
-        <div class="producer-banner"></div>
-        <div class="producer-content">
-          <div class="producer-avatar">🎹</div>
-          <div class="producer-name">BeatMaster K</div>
-          <div class="producer-handle">@beatmasterk</div>
-          <div class="producer-stats">
-            <span>🎵 45 beats</span>
-            <span>💰 128 sales</span>
-          </div>
-          <a href="producer-profile.html" class="view-btn">View Store</a>
-        </div>
-      </div>
-      
-      <div class="producer-card">
-        <div class="producer-banner"></div>
-        <div class="producer-content">
-          <div class="producer-avatar">🔥</div>
-          <div class="producer-name">Afro Sounds</div>
-          <div class="producer-handle">@afrosounds</div>
-          <div class="producer-stats">
-            <span>🎵 32 beats</span>
-            <span>💰 89 sales</span>
-          </div>
-          <a href="producer-profile.html" class="view-btn">View Store</a>
-        </div>
-      </div>
-      
-      <div class="producer-card">
-        <div class="producer-banner"></div>
-        <div class="producer-content">
-          <div class="producer-avatar">💎</div>
-          <div class="producer-name">Piano Vibes</div>
-          <div class="producer-handle">@pianovibes</div>
-          <div class="producer-stats">
-            <span>🎵 28 beats</span>
-            <span>💰 156 sales</span>
-          </div>
-          <a href="producer-profile.html" class="view-btn">View Store</a>
-        </div>
-      </div>
-    </div>
-  </main>
-</body>
-</html>
-
-
-
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Producers Store — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -1703,7 +1372,350 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Producers Store — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg: #141420;
+      --bg-card: rgba(30, 30, 46, 0.6);
+      --text: #ffffff;
+      --muted: #a0a0b8;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.3);
+      --cyan: #06b6d4;
+      --success: #10b981;
+      --border: rgba(255, 255, 255, 0.1);
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(6, 182, 212, 0.1), transparent 50%),
+        var(--bg-deep);
+      z-index: 0;
+    }
+    
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(20, 20, 32, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      z-index: 100;
+    }
+    
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo-brand {
+      text-decoration: none;
+      font-size: 36px;
+      font-weight: 900;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      letter-spacing: 1px;
+    }
+    
+    .nav-main { display: flex; gap: 4px; }
+    .nav-item {
+      color: var(--muted);
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .nav-item:hover { background: var(--glass); color: var(--text); }
+    .nav-item.active { color: var(--accent); background: var(--glass); }
+    .nav-dropdown { position: relative; }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+    .nav-dropdown:hover .dropdown-menu { display: block; }
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .dropdown-item:hover { background: var(--accent-glow); color: var(--accent); }
+    
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    
+    .page-header {
+      margin-bottom: 32px;
+    }
+    
+    .page-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-subtitle { color: var(--muted); }
+    
+    .search-section {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 280px;
+      position: relative;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 14px 16px 14px 48px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+    }
+    
+    .search-box input:focus { outline: none; border-color: var(--accent); }
+    .search-box::before {
+      content: '🔍';
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .filter-tabs { display: flex; gap: 8px; }
+    .filter-tab {
+      padding: 12px 20px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-tab:hover { border-color: var(--accent); color: var(--text); }
+    .filter-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    
+    .producers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    
+    .producer-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+    
+    .producer-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--cyan);
+      box-shadow: 0 12px 40px rgba(6, 182, 212, 0.15);
+    }
+    
+    .producer-banner {
+      height: 100px;
+      background: linear-gradient(135deg, var(--cyan), var(--accent));
+    }
+    
+    .producer-content {
+      padding: 20px;
+      margin-top: -40px;
+    }
+    
+    .producer-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 4px solid var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+    
+    .producer-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .producer-handle { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+    
+    .producer-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    
+    .view-btn {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--cyan);
+      border-radius: 10px;
+      color: var(--cyan);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    
+    .view-btn:hover {
+      background: var(--cyan);
+      color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+      .nav-main { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer"></div>
+  
+  <header>
+    <div class="header-content">
+      <a href="feed.html" class="logo-brand">Audio City</a>
+      <nav class="nav-main">
+        <a href="feed.html" class="nav-item">Feed</a>
+        <a href="discover.html" class="nav-item">Discover</a>
+        <a href="artists.html" class="nav-item">Artists</a>
+        <div class="nav-dropdown">
+          <a href="#" class="nav-item">🛠️ Tools</a>
+          <div class="dropdown-menu">
+            <a href="mastering.html" class="dropdown-item">🎛️ Mastering Studio</a>
+          </div>
+        </div>
+        <a href="inbox.html" class="nav-item">Inbox</a>
+      </nav>
+    </div>
+  </header>
+  
+  <main>
+    <div class="page-header">
+      <h1 class="page-title">🎹 Producers Store</h1>
+      <p class="page-subtitle">Find the perfect beat for your next hit</p>
+    </div>
+    
+    <div class="search-section">
+      <div class="search-box">
+        <input type="text" id="searchInput" name="searchInput" placeholder="Search producers or beats...">
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active">All</button>
+        <button class="filter-tab">Afrobeat</button>
+        <button class="filter-tab">Hip-Hop</button>
+        <button class="filter-tab">Amapiano</button>
+      </div>
+    </div>
+    
+    <div class="producers-grid">
+      <div class="producer-card">
+        <div class="producer-banner"></div>
+        <div class="producer-content">
+          <div class="producer-avatar">🎹</div>
+          <div class="producer-name">BeatMaster K</div>
+          <div class="producer-handle">@beatmasterk</div>
+          <div class="producer-stats">
+            <span>🎵 45 beats</span>
+            <span>💰 128 sales</span>
+          </div>
+          <a href="producer-profile.html" class="view-btn">View Store</a>
+        </div>
+      </div>
+      
+      <div class="producer-card">
+        <div class="producer-banner"></div>
+        <div class="producer-content">
+          <div class="producer-avatar">🔥</div>
+          <div class="producer-name">Afro Sounds</div>
+          <div class="producer-handle">@afrosounds</div>
+          <div class="producer-stats">
+            <span>🎵 32 beats</span>
+            <span>💰 89 sales</span>
+          </div>
+          <a href="producer-profile.html" class="view-btn">View Store</a>
+        </div>
+      </div>
+      
+      <div class="producer-card">
+        <div class="producer-banner"></div>
+        <div class="producer-content">
+          <div class="producer-avatar">💎</div>
+          <div class="producer-name">Piano Vibes</div>
+          <div class="producer-handle">@pianovibes</div>
+          <div class="producer-stats">
+            <span>🎵 28 beats</span>
+            <span>💰 156 sales</span>
+          </div>
+          <a href="producer-profile.html" class="view-btn">View Store</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+
+
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Producers Store — Audio City</title>
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     

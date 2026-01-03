@@ -111,6 +111,7 @@
     .nav-link.active { color: var(--accent); background: rgba(139, 92, 246, 0.15); }
     
     .donate-btn {
+      display: none !important;
       padding: 10px 14px;
       border-radius: 12px;
       border: 1px solid var(--accent);
@@ -121,9 +122,12 @@
       cursor: pointer;
       box-shadow: 0 4px 14px var(--accent-glow);
       transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-      display: inline-flex;
       align-items: center;
       gap: 8px;
+    }
+    
+    .donate-btn-header {
+      display: none !important;
     }
     
     .donate-btn:hover {
@@ -283,15 +287,42 @@
       font-weight: 600;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
       transition: all 0.3s;
       margin: 20px auto;
+      position: relative;
+    }
+    
+    .master-btn.processing {
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+    }
+    
+    .master-btn-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .master-btn-percentage {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+      animation: pulse-percent 1.5s ease-in-out infinite;
+    }
+    
+    .master-btn-processing-text {
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
     }
 
-    .master-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35); }
+    .master-btn:hover:not(:disabled):not(.processing) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35); }
     .master-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .master-btn.processing { cursor: wait; }
 
     .format-note {
       display: flex;
@@ -607,9 +638,69 @@
       border-color: rgba(239, 68, 68, 0.25);
     }
 
+    .status-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .progress-percentage {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    
+    .progress-percentage span {
+      font-weight: 700;
+      font-size: 16px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: pulse-percent 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-percent {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    
+    .typing-animation {
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid var(--accent);
+      animation: typing 2s steps(40, end), blink-caret 0.75s step-end infinite;
+    }
+    
+    @keyframes blink-caret {
+      from, to { border-color: transparent; }
+      50% { border-color: var(--accent); }
+    }
+    
     .status-bar.processing {
       background: rgba(139, 92, 246, 0.1);
       border-color: rgba(139, 92, 246, 0.25);
+    }
+    
+    .status-bar.processing #statusIcon {
+      animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .status-bar.completed {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
     }
 
     /* Info Panel */
@@ -1015,6 +1106,11 @@
 
     .download-section { 
       margin: 20px 0;
+      display: none; /* Hidden until mastering is complete */
+    }
+    
+    .download-section.show {
+      display: block; /* Show when mastering completes */
     }
 
     .download-ready {
@@ -1128,6 +1224,7 @@
     }
 
     .donate-btn-download {
+      display: none !important;
       width: 100%;
       padding: 14px;
       margin-top: 12px;
@@ -1213,11 +1310,11 @@
         <span style="color: var(--accent); font-weight: 600;" id="tracksCount">--</span>
         <span>tracks mastered</span>
       </div>
-      <button class="nav-link donate-btn-header" id="donateBtn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); border: none; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: 0 4px 14px var(--accent-glow); display: inline-flex !important; visibility: visible !important; opacity: 1 !important;">💜 Donate</button>
+      <button class="nav-link donate-btn-header" id="donateBtn" style="display: none !important;">💜 Donate</button>
       <a href="profile.html" class="nav-link">Profile</a>
     </nav>
     
-    <button class="donate-btn" id="donateBtnMobile" type="button" style="display: inline-flex !important; visibility: visible !important; opacity: 1 !important;">💜 Donate</button>
+    <button class="donate-btn" id="donateBtnMobile" type="button" style="display: none !important;">💜 Donate</button>
   </div>
 </header>
 
@@ -1400,7 +1497,11 @@
     </div>
 
     <button class="master-btn" id="masterBtn" disabled>
-      <span>🎛️</span> Master Track
+      <div class="master-btn-content">
+        <span id="masterBtnIcon">🎛️</span>
+        <span id="masterBtnText">Master Track</span>
+      </div>
+      <div class="master-btn-percentage" id="masterBtnPercentage" style="display: none;">0%</div>
     </button>
 
     <div class="ab-toggle">
@@ -1423,8 +1524,13 @@
     </div>
 
     <div class="status-bar" id="statusBar">
-      <span>🎵</span>
-      <span id="statusText">Upload a track to begin mastering</span>
+      <span id="statusIcon">🎵</span>
+      <div class="status-content">
+        <span id="statusText">Upload a track to begin mastering</span>
+        <div class="progress-percentage" id="progressPercentage" style="display: none;">
+          <span id="progressPercent">0%</span>
+        </div>
+      </div>
     </div>
 
     <div class="info-panel" id="infoPanel">
@@ -1550,7 +1656,7 @@
         <span class="download-text">MP3 (320kbps)</span>
         <span class="download-progress" id="mp3Progress" style="display: none;">0%</span>
       </button>
-      <button class="donate-btn donate-btn-download" id="donateBtnDownload" type="button">
+      <button class="donate-btn donate-btn-download" id="donateBtnDownload" type="button" style="display: none !important;">
         <span>💜</span>
         <span style="flex: 1; text-align: center; line-height: 1.3;">Support us, donate to keep mastering studio running</span>
       </button>
@@ -1565,7 +1671,7 @@
         </div>
         <div class="contact-item">
           <span class="contact-label">Email:</span>
-          <a href="mailto:chilafrican@gmail.com" class="contact-link">chilafrican@gmail.com</a>
+          <a href="mailto:contact@audiocity-ug.com" class="contact-link">contact@audiocity-ug.com</a>
         </div>
       </div>
     </div>
@@ -2007,6 +2113,10 @@ async function handleFile(file) {
   playBtn.disabled = false;
   rewindBtn.disabled = false;
   forwardBtn.disabled = false;
+  
+  // Hide download section when new file is uploaded
+  const downloadSection = document.querySelector('.download-section');
+  if (downloadSection) downloadSection.classList.remove('show');
   downloadReady.classList.remove('show');
   downloadWav.disabled = true;
   downloadMp3.disabled = true;
@@ -2850,8 +2960,8 @@ checkBackend().then((isAvailable) => {
           <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
           <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
           <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
-          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
-          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy Policy</a>
+          <a href="contact.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact Us</a>
         </div>
       </div>
       <div>

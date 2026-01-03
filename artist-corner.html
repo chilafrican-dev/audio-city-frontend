@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artist Corner — Audio City</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
+  <link rel="apple-touch-icon" href="assets/audio-city-logo.webp" />
   <!-- Professional Fonts Only -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1091,259 +1093,21 @@
     </div>
     
     <div class="upload-card">
-      <div class="upload-card-content">
-        <form id="uploadForm">
-          <div class="upload-zone-wrapper">
-            <input type="file" id="audioFile" name="audioFile" accept="audio/*,.mp3,.wav,.flac" style="display: none;">
-            <label class="upload-zone" id="uploadZone" for="audioFile">
-              <div class="upload-icon-container">
-                <span class="upload-icon">📁⬆️</span>
-              </div>
-              <div class="upload-text">Drop your track or click to browse</div>
-              <div class="upload-hint">MP3, WAV, FLAC supported • Max 50MB</div>
-              <div class="upload-file-name" id="uploadFileName"></div>
-            </label>
-          </div>
-          
-          <!-- Admin: Post on behalf of artist -->
-          <div class="form-group" id="adminArtistSelector" style="display: none;">
-            <label for="postAsArtist">Post as Artist (Admin)</label>
-            <select id="postAsArtist" class="control-select">
-              <option value="">Select artist...</option>
-            </select>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Post this track on behalf of the selected artist</p>
-          </div>
-          
-          <div class="form-group">
-            <label for="trackTitle">Track Title <span class="required">*</span></label>
-            <input type="text" id="trackTitle" name="trackTitle" required placeholder="Enter track title">
-            <div id="violationWarning" style="display: none; padding: 12px; margin-top: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #fca5a5; font-size: 13px;"></div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="genre">Genre</label>
-              <select id="genre" name="genre">
-                <option value="">Select genre</option>
-                <option value="afrobeat">Afrobeat</option>
-                <option value="kidandali">Kidandali</option>
-                <option value="amapiano">Amapiano</option>
-                <option value="hiphop">Hip-Hop</option>
-                <option value="rnb">R&B</option>
-                <option value="gospel">Gospel</option>
-                <option value="dancehall">Dancehall</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="bpm">BPM (optional)</label>
-              <input type="number" id="bpm" name="bpm" placeholder="e.g. 120">
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" placeholder="Tell us about this track..."></textarea>
-          </div>
-          
-          <!-- Integrated Cover Art Maker -->
-          <div class="form-group cover-art-section">
-            <label style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-              <span>Cover Art <span class="required">*</span></span>
-              <div style="display: flex; gap: 8px;">
-                <button type="button" id="generateCoverBtnMain" class="btn-ghost" style="display: none;">Generate Cover Art</button>
-                <button type="button" id="editCoverBtn" class="btn-ghost" style="display: none;">Edit Cover</button>
-              </div>
-            </label>
-            
-            <div id="coverArtMaker" class="cover-art-maker-container" style="display: none;">
-              <div class="cover-art-layout">
-                <!-- Left Panel: Canvas Preview -->
-                <div class="cover-art-canvas-panel">
-                  <div class="canvas-wrapper">
-                    <canvas id="coverCanvas" width="3000" height="3000"></canvas>
-                    <div class="canvas-overlay">
-                      <div class="canvas-info">3000×3000</div>
-                    </div>
-                  </div>
-                  <div class="canvas-upload-controls">
-                    <div class="canvas-button-row">
-                      <button type="button" class="btn-control" id="uploadBgBtn">
-                        <span>📷</span>
-                        <span>Background Photo</span>
-                      </button>
-                      <button type="button" class="btn-control" id="useGradientBtn">
-                        <span>🎨</span>
-                        <span>Use Gradient</span>
-                      </button>
-                      <input type="file" id="bgImageInput" accept="image/*" style="display: none;">
-                    </div>
-                    <div class="canvas-button-row">
-                      <button type="button" class="btn-control" id="uploadArtistPhotoBtn">
-                        <span>👤</span>
-                        <span>Artist Photo</span>
-                      </button>
-                      <button type="button" class="btn-control" id="removeArtistPhotoBtn" style="display: none;">
-                        <span>❌</span>
-                        <span>Remove Artist</span>
-                      </button>
-                      <input type="file" id="artistPhotoInput" accept="image/*" style="display: none;">
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Right Panel: AI Controls -->
-                <div class="cover-art-controls-panel">
-                  <div class="controls-section">
-                    <h3 class="controls-title">🎨 AI Cover Art Generator</h3>
-                  </div>
-                  
-                  <div class="controls-section">
-                    <h3 class="controls-title">Track Information</h3>
-                    <div class="control-row">
-                      <label>Artist Name</label>
-                      <input type="text" id="coverArtistName" class="control-input" placeholder="Enter artist name" value="">
-                    </div>
-                    <div class="control-row">
-                      <label>Track Title</label>
-                      <input type="text" id="coverTrackTitle" class="control-input" placeholder="Enter track title" value="">
-                    </div>
-                  </div>
-                  
-                  <div class="controls-section">
-                    <h3 class="controls-title">Style & Mood</h3>
-                    <div class="control-row">
-                      <label>Mood</label>
-                      <select id="coverMood" class="control-select">
-                        <option value="energetic">⚡ Energetic</option>
-                        <option value="chill">🌊 Chill</option>
-                        <option value="party">🎉 Party</option>
-                        <option value="dramatic">🎭 Dramatic</option>
-                        <option value="futuristic">🚀 Futuristic</option>
-                        <option value="urban">🏙️ Urban</option>
-                        <option value="vibrant">🌈 Vibrant</option>
-                      </select>
-                    </div>
-                    <div class="control-row">
-                      <label>Visual Element</label>
-                      <select id="coverVisualElement" class="control-select">
-                        <option value="city">🏙️ City Skyline</option>
-                        <option value="soundwaves">〰️ Sound Waves</option>
-                        <option value="speakers">🔊 Speakers</option>
-                        <option value="headphones">🎧 Headphones</option>
-                        <option value="vinyl">💿 Vinyl Record</option>
-                        <option value="abstract">✨ Abstract Shapes</option>
-                        <option value="instruments">🎸 Music Instruments</option>
-                      </select>
-                    </div>
-                    <div class="control-row">
-                      <label>Style Notes (Optional)</label>
-                      <input type="text" id="coverStyleNotes" class="control-input" placeholder="e.g., sunset vibe, neon lights, dark theme">
-                    </div>
-                  </div>
-                  
-                  <div class="controls-section">
-                    <h3 class="controls-title">Typography</h3>
-                    <div class="control-row">
-                      <label>Title Font</label>
-                      <select id="titleFont" class="control-select">
-                        <option value="Montserrat">Montserrat (Bold)</option>
-                        <option value="Bebas Neue">Bebas Neue</option>
-                        <option value="Gotham">Gotham</option>
-                      </select>
-                    </div>
-                    <div class="control-row">
-                      <label>Title Size</label>
-                      <input type="range" id="titleSize" min="100" max="250" value="160" class="control-slider">
-                      <span id="titleSizeValue" class="control-value">160px</span>
-                    </div>
-                    <div class="control-row">
-                      <label>Artist Font</label>
-                      <select id="artistFont" class="control-select">
-                        <option value="Open Sans">Open Sans</option>
-                        <option value="Roboto">Roboto</option>
-                        <option value="Lato">Lato</option>
-                      </select>
-                    </div>
-                    <div class="control-row">
-                      <label>Artist Name Size</label>
-                      <input type="range" id="artistNameSize" min="50" max="150" value="80" class="control-slider">
-                      <span id="artistNameSizeValue" class="control-value">80px</span>
-                    </div>
-                    <div class="control-row">
-                      <label>Text Alignment</label>
-                      <div class="alignment-buttons">
-                        <button type="button" class="align-btn active" data-align="left">Left</button>
-                        <button type="button" class="align-btn" data-align="center">Center</button>
-                        <button type="button" class="align-btn" data-align="right">Right</button>
-                      </div>
-                    </div>
-                    <div class="control-row">
-                      <label>Text Vertical Position</label>
-                      <input type="range" id="textVerticalPos" min="0" max="100" value="50" class="control-slider">
-                      <span id="textVerticalPosValue" class="control-value">50%</span>
-                    </div>
-                  </div>
-                  
-                  <div class="controls-section" id="artistPhotoControls" style="display: none;">
-                    <h3 class="controls-title">Artist Photo</h3>
-                    <div class="control-row">
-                      <label>Photo Size</label>
-                      <input type="range" id="artistPhotoSize" min="25" max="60" value="45" class="control-slider">
-                      <span id="artistPhotoSizeValue" class="control-value">45%</span>
-                    </div>
-                    <div class="control-row">
-                      <label>Photo Vertical Position</label>
-                      <input type="range" id="artistPhotoY" min="30" max="60" value="47" class="control-slider">
-                      <span id="artistPhotoYValue" class="control-value">47%</span>
-                    </div>
-                    <div class="control-row">
-                      <label>Photo Horizontal Position</label>
-                      <input type="range" id="artistPhotoX" min="-10" max="10" value="0" class="control-slider">
-                      <span id="artistPhotoXValue" class="control-value">0px</span>
-                    </div>
-                  </div>
-                  
-                  <div class="controls-section">
-                    <h3 class="controls-title">Color Palette</h3>
-                    <div class="preset-gradients" id="gradientPresets"></div>
-                    <div class="control-row" style="margin-top: 12px;">
-                      <label>Neon Glow Intensity</label>
-                      <input type="range" id="glowIntensity" min="0" max="100" value="60" class="control-slider">
-                      <span id="glowIntensityValue" class="control-value">60%</span>
-                    </div>
-                  </div>
-                  
-                  <div class="controls-section">
-                    <button type="button" id="generateCoverBtn" class="btn-primary" style="width: 100%; margin-bottom: 8px;">✨ Generate Cover Art</button>
-                    <button type="button" id="applyCoverBtn" class="btn-primary" style="width: 100%; margin-bottom: 8px;">✅ Apply Cover Art</button>
-                    <button type="button" id="resetCoverBtn" class="btn-ghost" style="width: 100%;">🔄 Reset</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Cover Art Preview/Upload -->
-            <div id="coverArtPreview" class="cover-art-preview">
-              <div class="cover-preview-placeholder">
-                <span>No cover art</span>
-                <button type="button" id="showCoverMakerBtn" class="btn-ghost">Generate Cover Art</button>
-              </div>
-            </div>
-            
-            <input type="hidden" id="coverArtData" name="coverArtData">
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
-              <label for="coverArtUrl" style="font-size: 13px; color: var(--muted);">Or use cover art URL:</label>
-              <input type="url" id="coverArtUrl" name="coverArtUrl" placeholder="https://example.com/cover-art.jpg" style="margin-top: 8px; width: 100%; padding: 10px 12px; background: var(--glass); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px;">
-            </div>
-          </div>
-          
-          <button type="submit" class="btn btn-primary" id="submitBtn">
-            🚀 Upload Track
-          </button>
-        </form>
+      <div class="upload-card-content" style="text-align: center; padding: 60px 40px;">
+        <div style="margin-bottom: 24px;">
+          <div style="font-size: 64px; margin-bottom: 16px;">🎵</div>
+          <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 12px; color: var(--text);">New Upload System</h2>
+          <p style="color: var(--muted); font-size: 16px; margin-bottom: 32px;">We've upgraded to a modern, cinematic upload experience</p>
+        </div>
+        <a href="upload-track.html" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+          🚀 Upload Track →
+        </a>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 24px;">
+          <a href="upload-track.html" style="color: var(--accent); text-decoration: none;">Click here if not redirected automatically</a>
+        </p>
       </div>
     </div>
+
     
     <div class="my-tracks">
       <h2 class="section-title">🎵 My Tracks</h2>
@@ -1483,8 +1247,9 @@
       const statusEl = document.getElementById('status');
       
       // Only set up event listeners if elements exist
+      // Note: Upload form has been moved to upload-track.html, so these elements don't exist here anymore
       if (!uploadZone || !audioFile || !uploadForm) {
-        console.warn('Upload form elements not found');
+        // Silently return - upload functionality has been moved to upload-track.html
         return;
       }
       
@@ -1823,24 +1588,8 @@
               }
             }, 1500);
           } else {
-            // Get error details from response
-            let errorMessage = 'Upload failed';
-            try {
-              const errorData = await uploadResponse.json();
-              errorMessage = errorData.error || errorData.message || `Server returned ${uploadResponse.status}`;
-              console.error('Upload error response:', errorData);
-            } catch (e) {
-              // Response is not JSON, get text instead
-              try {
-                const errorText = await uploadResponse.text();
-                errorMessage = errorText || `Server returned ${uploadResponse.status}: ${uploadResponse.statusText}`;
-                console.error('Upload error (non-JSON):', errorText);
-              } catch (textError) {
-                errorMessage = `Server returned ${uploadResponse.status}: ${uploadResponse.statusText}`;
-                console.error('Upload error (could not read response):', uploadResponse.status, uploadResponse.statusText);
-              }
-            }
-            throw new Error(errorMessage);
+            const error = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+            throw new Error(error.error || 'Failed to upload track');
           }
         } catch (error) {
           console.error('Upload error:', error);
@@ -3223,8 +2972,8 @@
           <a href="about.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">About</a>
           <a href="terms.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
           <a href="community-guidelines.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Community Guidelines</a>
-          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
-          <a href="mailto:chilafrican@gmail.com" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact</a>
+          <a href="privacy.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Privacy Policy</a>
+          <a href="contact.html" style="color: var(--muted); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Contact Us</a>
         </div>
       </div>
       <div>
@@ -3238,17 +2987,15 @@
       </div>
     </div>
     <div style="max-width: 1200px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="color: var(--muted); font-size: 14px;">&copy; 2025 Audio City. All rights reserved.</p>
+      <p style="color: var(--muted); font-size: 14px;">&copy; <span id="copyrightYear"></span> Audio City. All rights reserved.</p>
+      <script>
+        document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      </script>
     </div>
   </footer>
   
   <!-- Moderation System -->
   <script src="js/moderation-system.js"></script>
-  <script src="js/moderation-ui.js"></script>
-  <script src="js/moderation-integration.js"></script>
-</body>
-</html>
-
   <script src="js/moderation-ui.js"></script>
   <script src="js/moderation-integration.js"></script>
 </body>

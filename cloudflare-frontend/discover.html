@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Home — Audio City</title>
   <link rel="icon" type="image/webp" href="assets/audio-city-logo.webp" />
   <link rel="shortcut icon" type="image/webp" href="assets/audio-city-logo.webp" />
@@ -52,7 +52,7 @@
       background: var(--bg-deep);
       color: var(--text);
       line-height: 1.6;
-      padding-bottom: 80px;
+      padding-bottom: 0;
     }
     
     .bg-layer {
@@ -164,6 +164,8 @@
       display: flex;
       gap: 8px;
       align-items: center;
+      flex-wrap: nowrap;
+      min-width: 0;
     }
 
     .header-btn {
@@ -318,6 +320,7 @@
     }
     
     .donate-btn {
+      display: none !important;
       padding: 10px 14px;
       border-radius: 12px;
       border: 1px solid var(--accent-purple);
@@ -644,15 +647,28 @@
     
     /* Hide empty sections by default */
     #hot100Section,
-    #exploreSection,
-    #artistsSection {
-      display: none !important;
+    #exploreSection {
+      display: none;
     }
     
     #hot100Section[style*="block"],
-    #exploreSection[style*="block"],
+    #exploreSection[style*="block"] {
+      display: block !important;
+    }
+    
+    /* Artists section - allow JavaScript to control visibility */
+    #artistsSection {
+      display: none;
+    }
+    
+    /* Override when JavaScript sets display: block */
     #artistsSection[style*="block"] {
       display: block !important;
+    }
+    
+    /* Ensure grid container shows when section is visible */
+    #artistsSection:not([style*="display: none"]) #featuredArtists {
+      display: grid !important;
     }
     
     .section-header {
@@ -1029,27 +1045,38 @@
     .download-btn {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid var(--border);
+      gap: 6px;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border: none;
       border-radius: 8px;
-      color: var(--text);
-      font-size: 11px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
-      font-weight: 500;
+      transition: all 0.3s;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
     }
     
     .download-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: var(--accent);
-      transform: translateY(-1px);
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
     }
     
     .download-btn:active {
       transform: translateY(0);
-      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+    }
+    
+    .download-btn span:first-child {
+      font-size: 14px;
+    }
+    
+    .download-btn span:last-child {
+      font-size: 10px;
+      opacity: 0.9;
+      font-weight: 500;
     }
 
     /* Legacy play button (hidden, kept for compatibility) */
@@ -1202,8 +1229,11 @@
     footer {
       background: var(--bg);
       border-top: 1px solid var(--border);
-      padding: 48px 24px 24px;
+      padding: 48px 24px 100px;
       margin-top: 80px;
+      position: relative;
+      z-index: 50;
+      margin-bottom: 0;
     }
 
     .footer-content {
@@ -1262,14 +1292,19 @@
     }
 
     .footer-links a {
-      color: var(--muted);
+      color: var(--muted) !important;
       text-decoration: none;
       font-size: 14px;
       transition: color 0.2s;
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      position: relative;
+      z-index: 100;
     }
-
+    
     .footer-links a:hover {
-      color: var(--accent-purple);
+      color: var(--accent-purple) !important;
     }
 
     .footer-bottom {
@@ -1619,19 +1654,100 @@
       }
 
       .header-right {
-        flex-wrap: wrap;
         gap: 6px;
+        flex-wrap: nowrap;
+        overflow: visible;
+        justify-content: flex-end;
+      }
+      
+      .header-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        min-width: fit-content;
+      }
+      
+      .btn-mastering {
+        font-size: 11px;
+        padding: 6px 8px;
       }
       
       .donate-btn {
-        font-size: 12px;
-        padding: 8px 12px;
+        font-size: 11px;
+        padding: 6px 10px;
+        flex-shrink: 0;
+      }
+      
+      .profile-btn {
+        width: 32px;
+        height: 32px;
         flex-shrink: 0;
       }
     }
 
     @media (max-width: 600px) {
       .nav-main {
+        display: none;
+      }
+      
+      .header-content {
+        padding: 12px 16px;
+        gap: 12px;
+      }
+      
+      .header-left {
+        gap: 12px;
+      }
+      
+      .logo-brand .brand-text {
+        font-size: 24px;
+      }
+      
+      .header-content {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+        padding: 12px 12px;
+      }
+      
+      .header-left {
+        gap: 8px;
+        min-width: 0;
+      }
+      
+      .logo-brand .brand-text {
+        font-size: 20px;
+      }
+      
+      .header-right {
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow: visible;
+        justify-content: flex-end;
+      }
+      
+      .header-btn {
+        font-size: 11px;
+        padding: 6px 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      
+      .btn-mastering {
+        font-size: 10px;
+        padding: 5px 7px;
+      }
+      
+      .profile-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      
+      /* Hide less important buttons on very small screens, show in menu */
+      .btn-signin,
+      .btn-create {
         display: none;
       }
 
@@ -1690,6 +1806,7 @@
           <a href="feed.html" class="nav-item">Feed</a>
           <a href="artists.html" class="nav-item">Library</a>
           <a href="inbox.html" class="nav-item" id="inboxNavLink" style="display: none !important;">Inbox</a>
+          <a href="contact.html" class="nav-item">Contact</a>
         </nav>
       </div>
       <div class="header-search">
@@ -1698,7 +1815,7 @@
       </div>
       <div class="header-right" id="headerRight">
         <a href="mastering.html" class="header-btn btn-mastering" id="masteringBtn" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">🎛️ Mastering</a>
-        <button class="donate-btn" id="donateBtn" type="button">💜 Donate</button>
+        <button class="donate-btn" id="donateBtn" type="button" style="display: none !important;">💜 Donate</button>
         <a href="login.html" class="header-btn btn-signin" id="signInBtn" style="display: none;">Sign in</a>
         <a href="signup.html" class="header-btn btn-create" id="signUpBtn" style="display: none;">Create account</a>
         <a href="artist-corner.html" class="header-btn btn-upload" id="uploadLink" style="display: none !important; visibility: hidden !important;">Upload <span>⋯</span></a>
@@ -1737,7 +1854,10 @@
       
       <!-- Hero Section - Featured Tracks -->
       <section class="hero-section">
-        <h1 class="hero-title">Featured Tracks</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h1 class="hero-title" style="margin: 0;">Featured Tracks</h1>
+          <a href="feed.html" class="section-link" style="margin-left: auto;">View All →</a>
+        </div>
         <div class="hero-tracks-grid" id="featuredTracks">
           <!-- Content will appear here when available -->
         </div>
@@ -1746,8 +1866,13 @@
       <!-- Hot 100 Section -->
       <section class="section" id="hot100Section" style="display: none;">
         <div class="section-header">
-          <h2 class="section-title">🔥 Hot 100</h2>
-          <p class="hot100-subtitle">Top trending tracks ranked by popularity and engagement</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+              <h2 class="section-title">🔥 Hot 100</h2>
+              <p class="hot100-subtitle">Top trending tracks ranked by popularity and engagement</p>
+            </div>
+            <a href="feed.html" class="section-link">View All →</a>
+          </div>
         </div>
         <div class="tracks-grid" id="hot100Tracks" style="display: none;"></div>
       </section>
@@ -1756,7 +1881,7 @@
       <section class="section" id="exploreSection" style="display: none;">
         <div class="section-header">
           <h2 class="section-title">Explore</h2>
-          <a href="#" class="section-link">View All →</a>
+          <a href="feed.html" class="section-link">View All →</a>
         </div>
         <div class="filter-tabs">
           <button class="filter-tab active" data-filter="all">All</button>
@@ -1807,8 +1932,8 @@
         <a href="about.html">About</a>
         <a href="terms.html">Terms</a>
         <a href="community-guidelines.html">Community Guidelines</a>
-        <a href="privacy.html">Privacy</a>
-        <a href="mailto:chilafrican@gmail.com">Contact</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="contact.html">Contact Us</a>
       </div>
       <div class="footer-links">
         <h4>Resources</h4>
@@ -2482,25 +2607,72 @@
     // Load featured artists
     async function loadFeaturedArtists() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/feed/trending-artists`);
-        const artists = response.ok ? await response.json() : [];
+        console.log('🔄 Loading featured artists...');
+        let artists = [];
+        
+        // Try trending-artists endpoint first
+        const trendingResponse = await fetch(`${API_BASE_URL}/api/feed/trending-artists`);
+        if (trendingResponse.ok) {
+          artists = await trendingResponse.json();
+          console.log(`📊 Trending artists API: ${artists.length} artists received`);
+        }
+        
+        // Fallback to /api/users if trending-artists returns empty
+        if (!artists || artists.length === 0) {
+          console.log('🔄 Falling back to /api/users endpoint...');
+          const usersResponse = await fetch(`${API_BASE_URL}/api/users?limit=20`);
+          if (usersResponse.ok) {
+            const users = await usersResponse.json();
+            // Filter out admin accounts
+            artists = (users || []).filter(user => {
+              const isAdmin = user.is_admin === true || user.is_admin === 1 || 
+                            (user.username && user.username.toLowerCase() === 'admin');
+              return !isAdmin;
+            });
+            console.log(`📊 Users API: ${users.length} users, ${artists.length} non-admin artists`);
+          }
+        }
         
         const container = document.getElementById('featuredArtists');
         const section = document.getElementById('artistsSection');
-        if (artists.length === 0) {
-          container.style.display = 'none';
-          if (section) section.style.display = 'none';
+        
+        if (!container) {
+          console.error('❌ featuredArtists container not found');
           return;
         }
-        container.style.display = '';
-        if (section) section.style.display = 'block';
         
-        container.innerHTML = artists.slice(0, 6).map(artist => renderFeaturedArtistCard(artist)).join('');
+        if (!section) {
+          console.error('❌ artistsSection not found');
+          return;
+        }
+        
+        if (artists.length === 0) {
+          console.warn('⚠️ No artists found in database');
+          container.style.display = 'none';
+          section.style.display = 'none';
+          return;
+        }
+        
+        // Render artist cards
+        const artistCards = artists.slice(0, 12).map(artist => renderFeaturedArtistCard(artist)).join('');
+        container.innerHTML = artistCards;
+        
+        // Force show both container and section
+        container.style.removeProperty('display');
+        container.style.setProperty('display', 'grid', 'important');
+        
+        section.style.removeProperty('display');
+        section.style.setProperty('display', 'block', 'important');
+        section.removeAttribute('style'); // Remove inline style that might conflict
+        section.style.setProperty('display', 'block', 'important');
+        
+        console.log(`✅ Loaded ${artists.length} artists, displaying ${Math.min(12, artists.length)} on home page`);
+        console.log(`✅ Section display: ${section.style.display}, Container display: ${container.style.display}`);
       } catch (error) {
-        console.error('Error loading featured artists:', error);
+        console.error('❌ Error loading featured artists:', error);
         const container = document.getElementById('featuredArtists');
-        container.style.display = 'none';
         const section = document.getElementById('artistsSection');
+        if (container) container.style.display = 'none';
         if (section) section.style.display = 'none';
       }
     }
@@ -2771,8 +2943,9 @@
             </p>
             <p class="plays" style="color: var(--muted); font-size: 11px; margin-top: 4px; font-weight: 500;">${plays.toLocaleString()} plays</p>
             <div class="track-actions" style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-              <button class="download-btn" data-track-id="${trackId || ''}" data-audio-url="${escapeHtml(audioUrl || '')}" data-track-title="${escapeHtml(title)}" style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 11px; cursor: pointer; transition: all 0.2s;">
+              <button class="download-btn" data-track-id="${trackId || ''}" data-audio-url="${escapeHtml(audioUrl || '')}" data-track-title="${escapeHtml(title)}">
                 <span>📥</span>
+                <span>Download</span>
                 <span>${(track.downloads_count || 0).toLocaleString()}</span>
               </button>
             </div>
@@ -3958,9 +4131,9 @@
       
       // Always ensure donate button is visible
       if (donateBtn) {
-        donateBtn.style.display = 'inline-flex';
-        donateBtn.style.visibility = 'visible';
-        donateBtn.style.opacity = '1';
+        donateBtn.style.display = 'none !important';
+        donateBtn.style.visibility = 'hidden';
+        donateBtn.style.opacity = '0';
       }
       
       if (authToken && userId) {

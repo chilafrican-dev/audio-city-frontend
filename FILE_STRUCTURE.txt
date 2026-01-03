@@ -1,0 +1,54 @@
+===========================================
+AUDIO CITY - FILE STRUCTURE GUIDE
+===========================================
+
+✅ SOURCE OF TRUTH (ALWAYS EDIT THESE):
+
+1. BACKEND:
+   - worker-d1.js (Cloudflare Worker with D1 database)
+
+2. FRONTEND:
+   - cloudflare-frontend/ (ALL frontend files)
+     * This is the MASTER folder
+     * Contains 27 HTML files (most complete)
+     * All changes should be made here FIRST
+
+❌ DUPLICATE FOLDERS (DO NOT EDIT DIRECTLY):
+
+- deploy-pages/ (24 HTML files - sync from cloudflare-frontend/)
+- deploy-frontend/ (24 HTML files - sync from cloudflare-frontend/)
+- Root folder HTML files (23 files - sync from cloudflare-frontend/)
+
+===========================================
+HOW TO WORK WITH FILES:
+===========================================
+
+1. Make ALL changes in:
+   - worker-d1.js (for backend)
+   - cloudflare-frontend/ (for frontend)
+
+2. After making changes, sync to deployment folders:
+   ./sync-frontend.sh
+
+3. Deploy from:
+   - worker-d1.js → Cloudflare Workers
+   - cloudflare-frontend/ → Cloudflare Pages (or sync folders)
+
+===========================================
+CURRENT FEATURES (in cloudflare-frontend/):
+===========================================
+
+✅ Manual photo cropping (3000x3000)
+   - profile.html
+   - admin-upload.html
+
+✅ Biography field
+   - admin-upload.html
+
+✅ Artist detection/creation
+   - admin-upload.html
+
+✅ All onboarding features
+✅ All UI improvements
+
+===========================================
