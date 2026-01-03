@@ -875,12 +875,43 @@
     // ADMIN EMAIL - Only this email has admin access (hardcoded for security)
     const ADMIN_EMAIL = 'chilafrican@gmail.com';
     
-    // Check admin access - ONLY by email (secure, not localStorage)
+    // Check admin access - check email AND is_admin flag
     function checkAdminAccess() {
       const userEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
-      const isAdmin = userEmail === ADMIN_EMAIL;
+      const isAdminFlag = localStorage.getItem('is_admin') === 'true';
+      const userData = localStorage.getItem('user_data');
       
-      console.log('[Admin Check]', { userEmail, isAdmin, requiredEmail: ADMIN_EMAIL });
+      let isAdmin = false;
+      
+      // Method 1: Check email
+      if (userEmail === ADMIN_EMAIL) {
+        isAdmin = true;
+      }
+      
+      // Method 2: Check is_admin flag
+      if (isAdminFlag) {
+        isAdmin = true;
+      }
+      
+      // Method 3: Check user_data object
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user.is_admin === true || user.is_admin === 1) {
+            isAdmin = true;
+          }
+        } catch (e) {
+          console.error('[Admin Check] Error parsing user_data:', e);
+        }
+      }
+      
+      console.log('[Admin Check]', { 
+        userEmail, 
+        isAdminFlag,
+        isAdmin, 
+        userData: userData ? 'present' : 'missing',
+        requiredEmail: ADMIN_EMAIL 
+      });
       
       return isAdmin;
     }
