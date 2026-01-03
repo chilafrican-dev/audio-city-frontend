@@ -875,45 +875,40 @@
     // ADMIN EMAIL - Only this email has admin access (hardcoded for security)
     const ADMIN_EMAIL = 'chilafrican@gmail.com';
     
-    // Check admin access - check email AND is_admin flag
-    function checkAdminAccess() {
-      const userEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
-      const isAdminFlag = localStorage.getItem('is_admin') === 'true';
-      const userData = localStorage.getItem('user_data');
-      
-      let isAdmin = false;
-      
-      // Method 1: Check email
-      if (userEmail === ADMIN_EMAIL) {
-        isAdmin = true;
-      }
-      
-      // Method 2: Check is_admin flag
-      if (isAdminFlag) {
-        isAdmin = true;
-      }
-      
-      // Method 3: Check user_data object
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          if (user.is_admin === true || user.is_admin === 1) {
-            isAdmin = true;
-          }
-        } catch (e) {
-          console.error('[Admin Check] Error parsing user_data:', e);
+    // Verify admin access via API - NO localStorage dependency
+    async function checkAdminAccess() {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const userEmail = localStorage.getItem('user_email');
+        
+        if (!token) {
+          console.log('[Admin Check] No auth token');
+          return false;
         }
+        
+        console.log('[Admin Check] Verifying with API...', { userEmail });
+        
+        // Call API to verify admin status
+        const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'X-Admin-Email': userEmail || '',
+            'X-User-Email': userEmail || ''
+          }
+        });
+        
+        if (response.ok) {
+          console.log('[Admin Check] ✅ API verified admin access');
+          return true;
+        } else {
+          console.log('[Admin Check] ❌ API denied access', response.status);
+          return false;
+        }
+      } catch (error) {
+        console.error('[Admin Check] Error:', error);
+        return false;
       }
-      
-      console.log('[Admin Check]', { 
-        userEmail, 
-        isAdminFlag,
-        isAdmin, 
-        userData: userData ? 'present' : 'missing',
-        requiredEmail: ADMIN_EMAIL 
-      });
-      
-      return isAdmin;
     }
     
     // ============================================
@@ -933,8 +928,30 @@
     async function checkAndInit() {
       console.log('[Admin Upload] Initializing...');
       
-      // SIMPLIFIED: Form is visible by default, just initialize it
-      // Server will verify admin access on submit anyway
+      // Check admin access via API
+      const isAdmin = await checkAdminAccess();
+      
+      if (!isAdmin) {
+        const userEmail = localStorage.getItem('user_email') || 'Not logged in';
+        document.body.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0a0a0f; color: white; font-family: sans-serif;">
+            <div style="text-align: center; padding: 40px;">
+              <h1 style="font-size: 48px; margin-bottom: 16px;">🔒</h1>
+              <h2 style="font-size: 24px; margin-bottom: 8px;">Access Denied</h2>
+              <p style="color: #a0a0b8; margin-bottom: 24px;">You need admin privileges to access this page.</p>
+              <p style="color: #666; font-size: 12px; margin-bottom: 16px;">Logged in as: ${userEmail}</p>
+              <p style="color: #444; font-size: 11px;">Admin email required: ${ADMIN_EMAIL}</p>
+              <a href="login.html" style="color: #8b5cf6; text-decoration: none; margin-top: 16px; display: inline-block;">→ Login with admin account</a>
+              <br>
+              <button onclick="localStorage.clear(); location.href='login.html';" style="margin-top: 16px; padding: 8px 16px; background: #ef4444; border: none; color: white; border-radius: 8px; cursor: pointer;">Clear & Login Again</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      console.log('[Admin Upload] ✅ Admin access verified');
+      
       const formContainer = document.getElementById('formContainer');
       
       if (!formContainer) {

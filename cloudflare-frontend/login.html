@@ -513,17 +513,11 @@
         // Store complete user data for easy access
         localStorage.setItem('user_data', JSON.stringify(data.user));
         
-        // CHECK IF ADMIN: From API response ONLY (backend determines this)
-        const isAdminUser = data.user.is_admin === true || data.user.is_admin === 1;
-        localStorage.setItem('is_admin', isAdminUser ? 'true' : 'false');
-        
-        if (isAdminUser) {
-          localStorage.setItem('admin_mode', 'true');
-          console.log('[Login] ✅ Admin user detected:', data.user.email);
-          console.log('[Login] Admin user data:', data.user);
-        } else {
-          localStorage.removeItem('admin_mode');
-          console.log('[Login] Regular user login:', data.user.email);
+        // Note: We no longer store is_admin in localStorage
+        // Admin status is verified via API calls only
+        console.log('[Login] User login successful:', data.user.email);
+        if (data.user.is_admin) {
+          console.log('[Login] ✅ User has admin privileges (will be verified via API)');
         }
         
         // Check for return URL parameter
