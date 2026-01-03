@@ -174,13 +174,8 @@ export default {
       }
       return { user: authResult.user };
     };
-        return authHeader.substring(7);
-      }
-      const urlParams = new URL(request.url).searchParams;
-      return urlParams.get('token') || null;
-    };
 
-    // Helper: Get user from token
+    // Helper: Get user from token (OLD - for backward compatibility)
     const getUserFromToken = async (token) => {
       if (!token || !env.DB) return null;
       try {
@@ -2268,26 +2263,6 @@ export default {
         }, { status: 500, headers: corsHeaders });
       }
     }
-        user.is_admin = user.is_admin === 1;
-        
-        return Response.json({
-          success: true,
-          token,
-          user: {
-            ...user,
-            password: undefined
-          }
-        }, { headers: corsHeaders });
-      } catch (error) {
-        console.error('Login error:', error);
-        console.error('Error details:', error.message, error.stack);
-        return Response.json({ 
-          error: 'Login failed',
-          details: error.message || 'Unknown error'
-        }, 
-          { status: 500, headers: corsHeaders });
-      }
-    }
 
     // POST /api/auth/forgot-password - Return success (no-op for now)
     if (url.pathname === '/api/auth/forgot-password' && request.method === 'POST') {
@@ -3823,7 +3798,8 @@ export default {
         return Response.json({ error: authResult.error }, 
           { status: authResult.status, headers: corsHeaders });
       }
-        
+      
+      try {
         if (!env.DB) {
           return Response.json({
             totalVisitors: 0,
