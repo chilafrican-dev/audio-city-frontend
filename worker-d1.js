@@ -111,12 +111,14 @@ export default {
               .bind('chilafrican@gmail.com').first();
             console.log('[Admin Bypass] ✅ Created admin user:', adminUser?.id);
           } else {
-            // Force admin status
-            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1 WHERE email = ?')
-              .bind('chilafrican@gmail.com').run();
+            // RESET/UPDATE admin account - Always force admin status and verified
+            await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ? WHERE email = ?')
+              .bind('admin', 'Admin', 'chilafrican@gmail.com').run();
             adminUser.is_admin = 1;
             adminUser.verified = 1;
-            console.log('[Admin Bypass] ✅ Admin user found, status forced');
+            adminUser.username = 'admin';
+            adminUser.name = 'Admin';
+            console.log('[Admin Bypass] ✅ Admin account reset/updated - status forced');
           }
           return adminUser;
         }
@@ -3702,6 +3704,69 @@ export default {
       } catch (error) {
         console.error('[Admin Stats] Error:', error);
         return Response.json({ error: 'Failed to load statistics' }, 
+          { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // POST /api/admin/reset - Reset admin account (admin only)
+    if (url.pathname === '/api/admin/reset' && request.method === 'POST') {
+      try {
+        const adminEmailHeader = request.headers.get('X-Admin-Email') || request.headers.get('X-User-Email');
+        const adminEmail = (adminEmailHeader || '').toString().trim().toLowerCase();
+        
+        if (adminEmail !== 'chilafrican@gmail.com') {
+          return Response.json({ error: 'Unauthorized - Admin access required' }, 
+            { status: 401, headers: corsHeaders });
+        }
+        
+        if (!env.DB) {
+          return Response.json({ error: 'Database not available' }, 
+            { status: 500, headers: corsHeaders });
+        }
+        
+        // Reset admin account
+        let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+          .bind('chilafrican@gmail.com').first();
+        
+        if (!adminUser) {
+          // Create admin user if doesn't exist
+          const adminUserId = 'admin_' + Date.now();
+          await env.DB.prepare(`
+            INSERT INTO users (
+              id, username, email, name, password, is_admin, verified, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, 1, 1, datetime('now'), datetime('now'))
+          `).bind(
+            adminUserId,
+            'admin',
+            'chilafrican@gmail.com',
+            'Admin',
+            'ssemakulanico1'
+          ).run();
+          adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+            .bind('chilafrican@gmail.com').first();
+        } else {
+          // Reset/update admin account
+          await env.DB.prepare('UPDATE users SET is_admin = 1, verified = 1, username = ?, name = ? WHERE email = ?')
+            .bind('admin', 'Admin', 'chilafrican@gmail.com').run();
+          adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+            .bind('chilafrican@gmail.com').first();
+        }
+        
+        return Response.json({ 
+          success: true, 
+          message: 'Admin account reset successfully',
+          user: {
+            id: adminUser.id,
+            email: adminUser.email,
+            username: adminUser.username,
+            name: adminUser.name,
+            is_admin: adminUser.is_admin,
+            verified: adminUser.verified
+          }
+        }, { headers: corsHeaders });
+      } catch (error) {
+        console.error('[Admin Reset] Error:', error);
+        return Response.json({ error: 'Failed to reset admin account' }, 
           { status: 500, headers: corsHeaders });
       }
     }
